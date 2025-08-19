@@ -13,6 +13,7 @@ import {
   Replace,
 } from 'lucide-react';
 import Link from 'next/link';
+import { TodaySummary } from '@/components/today-summary';
 
 export default function DashboardPage() {
   return (
@@ -26,6 +27,8 @@ export default function DashboardPage() {
           progress, get insights, and build a healthier lifestyle.
         </p>
       </header>
+
+      <TodaySummary />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/profile">
