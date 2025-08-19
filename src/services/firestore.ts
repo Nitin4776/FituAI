@@ -10,6 +10,7 @@ import {
   orderBy,
   Timestamp,
   limit,
+  deleteDoc,
 } from 'firebase/firestore';
 
 // Hardcoded user ID for now. Replace with actual user ID from auth.
@@ -43,6 +44,11 @@ export async function getMeals() {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
+export async function deleteMeal(mealId: string) {
+    const mealDocRef = doc(db, 'users', USER_ID, 'meals', mealId);
+    await deleteDoc(mealDocRef);
+}
+
 
 // --- Activities ---
 export async function addActivity(activityData: any) {
@@ -64,6 +70,11 @@ export async function getActivities() {
             ...data,
         };
     });
+}
+
+export async function deleteActivity(activityId: string) {
+    const activityDocRef = doc(db, 'users', USER_ID, 'activities', activityId);
+    await deleteDoc(activityDocRef);
 }
 
 // --- Blood Test Analysis ---

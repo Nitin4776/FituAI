@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Utensils, Sparkles, Loader2 } from 'lucide-react';
+import { PlusCircle, Utensils, Sparkles, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +16,17 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -25,9 +36,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getMealMacros } from '@/app/actions';
+import { getMealMacros, deleteMealAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { addMeal, getMeals } from '@/services/firestore';
 
@@ -115,6 +126,23 @@ export function MealPlanner() {
     }
   };
 
+  const handleDeleteMeal = async (mealId: string) => {
+    try {
+        await deleteMealAction(mealId);
+        setMeals((prev) => prev.filter(m => m.id !== mealId));
+        toast({
+            title: "Meal Deleted",
+            description: "The meal has been removed from your log.",
+        });
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Delete Failed',
+            description: 'Could not delete the meal. Please try again.',
+        });
+    }
+  }
+
   const renderMealCards = (mealType: MealFormValues['mealType']) => {
     const filteredMeals = meals.filter((m) => m.mealType === mealType && isToday(m.createdAt));
 
@@ -138,12 +166,12 @@ export function MealPlanner() {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
         {filteredMeals.map((meal) => (
-          <Card key={meal.id}>
+          <Card key={meal.id} className="flex flex-col">
             <CardHeader>
               <CardTitle className="text-lg">{meal.mealName}</CardTitle>
               <p className="text-sm text-muted-foreground">{meal.quantity}</p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow">
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>Calories: {Math.round(meal.calories)} kcal</li>
                 <li>Protein: {Math.round(meal.protein)} g</li>
@@ -151,6 +179,27 @@ export function MealPlanner() {
                 <li>Fats: {Math.round(meal.fats)} g</li>
               </ul>
             </CardContent>
+            <CardFooter>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this meal from your log.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteMeal(meal.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
           </Card>
         ))}
       </div>

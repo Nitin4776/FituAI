@@ -20,6 +20,7 @@ import {
   type CalculateActivityCaloriesInput,
   type CalculateActivityCaloriesOutput,
 } from '@/ai/flows/calculate-activity-calories';
+import { deleteActivity, deleteMeal } from '@/services/firestore';
 
 export async function getHealthySwap(
   input: HealthySwapSuggestionsInput
@@ -63,4 +64,22 @@ export async function getActivityCalories(
     console.error(error);
     throw new Error('Failed to calculate activity calories.');
   }
+}
+
+export async function deleteMealAction(mealId: string): Promise<void> {
+    try {
+        await deleteMeal(mealId);
+    } catch (error) {
+        console.error(error);
+        throw new Error('Failed to delete meal.');
+    }
+}
+
+export async function deleteActivityAction(activityId: string): Promise<void> {
+    try {
+        await deleteActivity(activityId);
+    } catch (error) {
+        console.error(error);
+        throw new Error('Failed to delete activity.');
+    }
 }

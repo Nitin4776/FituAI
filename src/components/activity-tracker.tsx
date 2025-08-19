@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Dumbbell, Footprints, Flame, Loader2, Sparkles } from 'lucide-react';
+import { PlusCircle, Flame, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +15,17 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   Form,
   FormControl,
@@ -35,7 +46,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getActivityCalories } from '@/app/actions';
+import { getActivityCalories, deleteActivityAction } from '@/app/actions';
 import { addActivity, getActivities } from '@/services/firestore';
 
 const activitySchema = z.object({
@@ -116,6 +127,23 @@ export function ActivityTracker() {
     }
   };
 
+  const handleDeleteActivity = async (activityId: string) => {
+    try {
+      await deleteActivityAction(activityId);
+      setActivities((prev) => prev.filter(act => act.id !== activityId));
+      toast({
+        title: "Activity Deleted",
+        description: "The activity has been removed from your log.",
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Delete Failed',
+        description: 'Could not delete the activity. Please try again.',
+      });
+    }
+  }
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -191,12 +219,13 @@ export function ActivityTracker() {
                 <TableHead>Activity</TableHead>
                 <TableHead className="text-right">Duration (min)</TableHead>
                 <TableHead className="text-right">Calories Burned</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
@@ -207,11 +236,32 @@ export function ActivityTracker() {
                     <TableCell className="font-medium">{act.activity}</TableCell>
                     <TableCell className="text-right">{act.duration}</TableCell>
                     <TableCell className="text-right flex items-center justify-end gap-1"><Flame className="h-4 w-4 text-orange-500" />{act.caloriesBurned} kcal</TableCell>
+                    <TableCell className="text-right">
+                       <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete this activity from your log.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteActivity(act.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No activities logged yet.
                   </TableCell>
                 </TableRow>
