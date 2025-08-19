@@ -1,43 +1,44 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Zap, User, HeartPulse } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  User,
+  HeartPulse,
+  Utensils,
+  Clock,
+  TestTube2,
+  Replace,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="font-headline text-3xl md:text-4xl text-primary">Welcome to FitLife AI</h1>
+        <h1 className="font-headline text-3xl md:text-4xl text-primary">
+          Welcome to FitLife AI
+        </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Your personalized AI-powered health and fitness companion.
-          Track your progress, get insights, and build a healthier lifestyle.
+          Your personalized AI-powered health and fitness companion. Track your
+          progress, get insights, and build a healthier lifestyle.
         </p>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/profile">
           <Card className="hover:shadow-lg transition-shadow h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Your Profile</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Your Profile
+              </CardTitle>
               <User className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-headline">Get Started</div>
               <p className="text-xs text-muted-foreground">
                 Set up your profile to calculate your fitness metrics.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/healthy-swaps">
-          <Card className="hover:shadow-lg transition-shadow h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">AI Features</CardTitle>
-              <Zap className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-headline">Supercharge Your Health</div>
-              <p className="text-xs text-muted-foreground">
-                Use AI for food swaps and blood test analysis.
               </p>
             </CardContent>
           </Card>
@@ -45,13 +46,72 @@ export default function DashboardPage() {
         <Link href="/activity">
           <Card className="hover:shadow-lg transition-shadow h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Track Everything</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Activity Tracker
+              </CardTitle>
               <HeartPulse className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-headline">Log Your Day</div>
               <p className="text-xs text-muted-foreground">
-                Keep track of your activities and meals.
+                Keep track of your activities and workouts.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/meals">
+          <Card className="hover:shadow-lg transition-shadow h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Meal Planner</CardTitle>
+              <Utensils className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Log your meals to track your nutrition.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/fasting">
+          <Card className="hover:shadow-lg transition-shadow h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Intermittent Fasting
+              </CardTitle>
+              <Clock className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Explore fasting schedules and their benefits.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/healthy-swaps">
+          <Card className="hover:shadow-lg transition-shadow h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Healthy Swaps
+              </CardTitle>
+              <Replace className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Get AI-powered food swap suggestions.
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/blood-test">
+          <Card className="hover:shadow-lg transition-shadow h-full">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Blood Test Analysis
+              </CardTitle>
+              <TestTube2 className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                Upload your report for an AI analysis.
               </p>
             </CardContent>
           </Card>
