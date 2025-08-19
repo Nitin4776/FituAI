@@ -1,0 +1,67 @@
+'use server';
+/**
+ * @fileOverview Analyzes blood test results and provides a summary,
+ * do's and don'ts, lifestyle recommendations, and highlights critical markers.
+ *
+ * - analyzeBloodTestResults - A function that processes blood test results and returns an analysis.
+ * - AnalyzeBloodTestResultsInput - The input type for the analyzeBloodTestResults function.
+ * - AnalyzeBloodTestResultsOutput - The return type for the analyzeBloodTestResults function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const AnalyzeBloodTestResultsInputSchema = z.object({
+  reportDataUri: z
+    .string()
+    .describe(
+      "A blood test report as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
+});
+export type AnalyzeBloodTestResultsInput = z.infer<typeof AnalyzeBloodTestResultsInputSchema>;
+
+const AnalyzeBloodTestResultsOutputSchema = z.object({
+  summary: z.string().describe('A summary of the blood test results in plain language.'),
+  dosAndDonts: z.string().describe('Personalized do\'s and don\'ts based on the results.'),
+  lifestyleModifications: z
+    .string()
+    .describe('Lifestyle modification recommendations (diet, exercise, sleep).'),
+  criticalMarkers: z.string().describe('Highlighted critical markers from the blood test results.'),
+});
+export type AnalyzeBloodTestResultsOutput = z.infer<typeof AnalyzeBloodTestResultsOutputSchema>;
+
+export async function analyzeBloodTestResults(
+  input: AnalyzeBloodTestResultsInput
+): Promise<AnalyzeBloodTestResultsOutput> {
+  return analyzeBloodTestResultsFlow(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'analyzeBloodTestResultsPrompt',
+  input: {schema: AnalyzeBloodTestResultsInputSchema},
+  output: {schema: AnalyzeBloodTestResultsOutputSchema},
+  prompt: `You are a medical expert specializing in interpreting blood test results.
+
+You will analyze the provided blood test report and generate the following:
+
+1.  A summary of the results in plain language.
+2.  Personalized do's and don'ts based on abnormalities.
+3.  Lifestyle modification recommendations (diet, exercise, sleep).
+4.  Highlighted critical markers (e.g., cholesterol high, Vitamin D low).
+
+Use the following blood test report as the primary source of information:
+
+Report: {{media url=reportDataUri}}`,
+});
+
+const analyzeBloodTestResultsFlow = ai.defineFlow(
+  {
+    name: 'analyzeBloodTestResultsFlow',
+    inputSchema: AnalyzeBloodTestResultsInputSchema,
+    outputSchema: AnalyzeBloodTestResultsOutputSchema,
+  },
+  async input => {
+    const {output} = await prompt(input);
+    return output!;
+  }
+);

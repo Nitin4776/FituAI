@@ -1,0 +1,176 @@
+'use client';
+
+import { useState } from 'react';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { PlusCircle, Dumbbell, Footprints, Flame } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCaption,
+} from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
+
+const activitySchema = z.object({
+  activity: z.string().min(1, 'Activity name is required'),
+  duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
+  steps: z.coerce.number().optional(),
+});
+
+type ActivityFormValues = z.infer<typeof activitySchema>;
+
+type ActivityLog = ActivityFormValues & {
+  id: string;
+  date: string;
+};
+
+export function ActivityTracker() {
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const form = useForm<ActivityFormValues>({
+    resolver: zodResolver(activitySchema),
+    defaultValues: {
+      activity: '',
+      duration: 0,
+      steps: 0,
+    },
+  });
+
+  const onSubmit: SubmitHandler<ActivityFormValues> = (data) => {
+    const newActivity: ActivityLog = {
+      ...data,
+      id: Date.now().toString(),
+      date: new Date().toLocaleDateString(),
+    };
+    setActivities((prev) => [newActivity, ...prev]);
+    form.reset();
+    setIsDialogOpen(false);
+  };
+
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex justify-end mb-4">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Activity
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="font-headline">Log New Activity</DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="activity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Activity Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Morning Run" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duration (minutes)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="30" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="steps"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Steps (optional)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="3000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit">Log Activity</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableCaption>A list of your recent activities.</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Activity</TableHead>
+                <TableHead className="text-right">Duration (min)</TableHead>
+                <TableHead className="text-right">Steps</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activities.length > 0 ? (
+                activities.map((act) => (
+                  <TableRow key={act.id}>
+                    <TableCell>{act.date}</TableCell>
+                    <TableCell className="font-medium">{act.activity}</TableCell>
+                    <TableCell className="text-right">{act.duration}</TableCell>
+                    <TableCell className="text-right">{act.steps || 'N/A'}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    No activities logged yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
