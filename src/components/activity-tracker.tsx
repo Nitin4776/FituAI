@@ -45,11 +45,15 @@ const activitySchema = z.object({
 
 type ActivityFormValues = z.infer<typeof activitySchema>;
 
-type ActivityLog = ActivityFormValues & {
+type ActivityLog = {
   id: string;
   date: string;
+  activity: string;
+  duration: number;
   caloriesBurned: number;
+  createdAt: { seconds: number, nanoseconds: number };
 };
+
 
 export function ActivityTracker() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -70,7 +74,11 @@ export function ActivityTracker() {
     async function loadActivities() {
       setIsLoading(true);
       const savedActivities = await getActivities();
-      setActivities(savedActivities as ActivityLog[]);
+      const activitiesWithDate = (savedActivities as any[]).map(act => ({
+        ...act,
+        date: new Date(act.createdAt.seconds * 1000).toLocaleDateString()
+      }))
+      setActivities(activitiesWithDate);
       setIsLoading(false);
     }
     loadActivities();
@@ -87,12 +95,13 @@ export function ActivityTracker() {
       };
       await addActivity(newActivityData);
       
-      const newActivity: ActivityLog = {
+      const newActivityForState: ActivityLog = {
         ...newActivityData,
         id: Date.now().toString(), // temp id
         date: new Date().toLocaleDateString(),
+        createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
       };
-      setActivities((prev) => [newActivity, ...prev]);
+      setActivities((prev) => [newActivityForState, ...prev]);
 
       form.reset();
       setIsDialogOpen(false);

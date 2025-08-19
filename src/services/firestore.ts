@@ -57,13 +57,11 @@ export async function getActivities() {
     const activitiesColRef = collection(db, 'users', USER_ID, 'activities');
     const q = query(activitiesColRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    // Convert Timestamps to string dates
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
         return { 
             id: doc.id, 
             ...data,
-            date: data.createdAt.toDate().toLocaleDateString() 
         };
     });
 }

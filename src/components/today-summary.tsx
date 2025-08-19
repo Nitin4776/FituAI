@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { getMeals, getProfile } from '@/services/firestore';
+import { getMeals, getProfile, getActivities } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
+import { Flame } from 'lucide-react';
 
 type MealLog = {
   id: string;
@@ -15,6 +16,14 @@ type MealLog = {
   createdAt: { seconds: number, nanoseconds: number };
 };
 
+type ActivityLog = {
+  id: string;
+  activity: string;
+  duration: number;
+  caloriesBurned: number;
+  createdAt: { seconds: number, nanoseconds: number };
+}
+
 const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
     if (!timestamp) return false;
     const date = new Date(timestamp.seconds * 1000);
@@ -25,7 +34,7 @@ const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
 };
 
 async function getSummaryData() {
-    const [savedMeals, profile] = await Promise.all([getMeals(), getProfile()]);
+    const [savedMeals, profile, savedActivities] = await Promise.all([getMeals(), getProfile(), getActivities()]);
 
     let dailyGoal = 2000; // Default goal
     if (profile) {
@@ -55,12 +64,15 @@ async function getSummaryData() {
       { calories: 0, protein: 0, carbs: 0, fats: 0 }
     );
     
-    return { dailyTotals, dailyGoal };
+    const todaysActivities = (savedActivities as ActivityLog[]).filter(activity => isToday(activity.createdAt));
+    const caloriesBurned = todaysActivities.reduce((acc, activity) => acc + activity.caloriesBurned, 0);
+
+    return { dailyTotals, dailyGoal, caloriesBurned };
 }
 
 
 export async function TodaySummary() {
-  const { dailyTotals, dailyGoal } = await getSummaryData();
+  const { dailyTotals, dailyGoal, caloriesBurned } = await getSummaryData();
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
 
   return (
@@ -73,12 +85,12 @@ export async function TodaySummary() {
           <div className="space-y-4">
               <div>
                   <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium text-muted-foreground">Calories</span>
+                      <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
                       <span className="text-sm font-medium">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div>
                       <p className="text-sm text-muted-foreground">Protein</p>
                       <p className="font-bold text-lg">{Math.round(dailyTotals.protein)}g</p>
@@ -90,6 +102,10 @@ export async function TodaySummary() {
                   <div>
                       <p className="text-sm text-muted-foreground">Fats</p>
                       <p className="font-bold text-lg">{Math.round(dailyTotals.fats)}g</p>
+                  </div>
+                  <div>
+                      <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Flame className="h-4 w-4 text-orange-500" /> Burned</p>
+                      <p className="font-bold text-lg">{Math.round(caloriesBurned)} kcal</p>
                   </div>
               </div>
           </div>
