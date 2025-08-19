@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Utensils } from 'lucide-react';
+import { PlusCircle, Utensils, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,36 +25,65 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getMealMacros } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 const mealSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
-  description: z.string().min(1, 'Description is required'),
-  calories: z.coerce.number().min(0, 'Calories must be a positive number'),
-  protein: z.coerce.number().min(0, 'Protein must be a positive number'),
-  carbs: z.coerce.number().min(0, 'Carbs must be a positive number'),
-  fats: z.coerce.number().min(0, 'Fats must be a positive number'),
+  mealName: z.string().min(1, 'Meal name is required'),
+  quantity: z.string().min(1, 'Quantity is required'),
 });
 
 type MealFormValues = z.infer<typeof mealSchema>;
-type MealLog = MealFormValues & { id: string };
+type MealLog = {
+  id: string;
+  mealType: MealFormValues['mealType'];
+  description: string;
+  quantity: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+};
 
 const mealTypes: MealFormValues['mealType'][] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 export function MealPlanner() {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<MealFormValues>({
     resolver: zodResolver(mealSchema),
-    defaultValues: { mealType: 'breakfast', description: '' },
+    defaultValues: { mealType: 'breakfast', mealName: '', quantity: '' },
   });
 
-  const onSubmit: SubmitHandler<MealFormValues> = (data) => {
-    setMeals((prev) => [...prev, { ...data, id: Date.now().toString() }]);
-    form.reset();
-    setIsDialogOpen(false);
+  const onSubmit: SubmitHandler<MealFormValues> = async (data) => {
+    setIsCalculating(true);
+    try {
+      const macros = await getMealMacros(data);
+      const newMeal: MealLog = {
+        id: Date.now().toString(),
+        mealType: data.mealType,
+        description: data.mealName,
+        quantity: data.quantity,
+        ...macros,
+      };
+      setMeals((prev) => [...prev, newMeal]);
+      form.reset();
+      setIsDialogOpen(false);
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Calculation Failed',
+        description: 'Could not calculate macros. Please try again.',
+      });
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const renderMealCards = (mealType: MealFormValues['mealType']) => {
@@ -73,13 +102,14 @@ export function MealPlanner() {
           <Card key={meal.id}>
             <CardHeader>
               <CardTitle className="text-lg">{meal.description}</CardTitle>
+              <p className="text-sm text-muted-foreground">{meal.quantity}</p>
             </CardHeader>
             <CardContent>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>Calories: {meal.calories} kcal</li>
-                <li>Protein: {meal.protein} g</li>
-                <li>Carbs: {meal.carbs} g</li>
-                <li>Fats: {meal.fats} g</li>
+                <li>Calories: {Math.round(meal.calories)} kcal</li>
+                <li>Protein: {Math.round(meal.protein)} g</li>
+                <li>Carbs: {Math.round(meal.carbs)} g</li>
+                <li>Fats: {Math.round(meal.fats)} g</li>
               </ul>
             </CardContent>
           </Card>
@@ -102,7 +132,7 @@ export function MealPlanner() {
               <DialogTitle className="font-headline">Log a New Meal</DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="mealType" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Meal Type</FormLabel>
@@ -116,31 +146,29 @@ export function MealPlanner() {
                     </FormItem>
                   )}
                 />
-                <FormField control={form.control} name="description" render={({ field }) => (
-                    <FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="e.g., Chicken Salad" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="mealName" render={({ field }) => (
+                    <FormItem><FormLabel>Meal Name</FormLabel><FormControl><Input placeholder="e.g., Chicken Salad" {...field} /></FormControl><FormMessage /></FormItem>
                   )}
                 />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="calories" render={({ field }) => (
-                      <FormItem><FormLabel>Calories</FormLabel><FormControl><Input type="number" placeholder="350" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={form.control} name="protein" render={({ field }) => (
-                      <FormItem><FormLabel>Protein (g)</FormLabel><FormControl><Input type="number" placeholder="30" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={form.control} name="carbs" render={({ field }) => (
-                      <FormItem><FormLabel>Carbs (g)</FormLabel><FormControl><Input type="number" placeholder="10" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                  <FormField control={form.control} name="fats" render={({ field }) => (
-                      <FormItem><FormLabel>Fats (g)</FormLabel><FormControl><Input type="number" placeholder="15" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                  />
-                </div>
+                <FormField control={form.control} name="quantity" render={({ field }) => (
+                    <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input placeholder="e.g., 1 bowl" {...field} /></FormControl><FormMessage /></FormItem>
+                  )}
+                />
                 <DialogFooter>
                   <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                  <Button type="submit">Log Meal</Button>
+                  <Button type="submit" disabled={isCalculating}>
+                    {isCalculating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Calculating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Log Meal with AI
+                      </>
+                    )}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>

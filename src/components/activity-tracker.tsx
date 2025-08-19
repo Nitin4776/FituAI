@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Dumbbell, Footprints, Flame } from 'lucide-react';
+import { PlusCircle, Dumbbell, Footprints, Flame, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,11 +34,12 @@ import {
   TableCaption,
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { getActivityCalories } from '@/app/actions';
 
 const activitySchema = z.object({
   activity: z.string().min(1, 'Activity name is required'),
   duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
-  steps: z.coerce.number().optional(),
 });
 
 type ActivityFormValues = z.infer<typeof activitySchema>;
@@ -46,30 +47,45 @@ type ActivityFormValues = z.infer<typeof activitySchema>;
 type ActivityLog = ActivityFormValues & {
   id: string;
   date: string;
+  caloriesBurned: number;
 };
 
 export function ActivityTracker() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
     defaultValues: {
       activity: '',
       duration: 0,
-      steps: 0,
     },
   });
 
-  const onSubmit: SubmitHandler<ActivityFormValues> = (data) => {
-    const newActivity: ActivityLog = {
-      ...data,
-      id: Date.now().toString(),
-      date: new Date().toLocaleDateString(),
-    };
-    setActivities((prev) => [newActivity, ...prev]);
-    form.reset();
-    setIsDialogOpen(false);
+  const onSubmit: SubmitHandler<ActivityFormValues> = async (data) => {
+    setIsCalculating(true);
+    try {
+      const { caloriesBurned } = await getActivityCalories(data);
+      const newActivity: ActivityLog = {
+        ...data,
+        id: Date.now().toString(),
+        date: new Date().toLocaleDateString(),
+        caloriesBurned: Math.round(caloriesBurned),
+      };
+      setActivities((prev) => [newActivity, ...prev]);
+      form.reset();
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Calculation Failed',
+        description: 'Could not estimate calories burned. Please try again.',
+      });
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   return (
@@ -114,24 +130,23 @@ export function ActivityTracker() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="steps"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Steps (optional)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="3000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   <DialogFooter>
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit">Log Activity</Button>
+                    <Button type="submit" disabled={isCalculating}>
+                      {isCalculating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Calculating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Log Activity
+                        </>
+                      )}
+                    </Button>
                   </DialogFooter>
                 </form>
               </Form>
@@ -147,7 +162,7 @@ export function ActivityTracker() {
                 <TableHead>Date</TableHead>
                 <TableHead>Activity</TableHead>
                 <TableHead className="text-right">Duration (min)</TableHead>
-                <TableHead className="text-right">Steps</TableHead>
+                <TableHead className="text-right">Calories Burned</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,7 +172,7 @@ export function ActivityTracker() {
                     <TableCell>{act.date}</TableCell>
                     <TableCell className="font-medium">{act.activity}</TableCell>
                     <TableCell className="text-right">{act.duration}</TableCell>
-                    <TableCell className="text-right">{act.steps || 'N/A'}</TableCell>
+                    <TableCell className="text-right flex items-center justify-end gap-1"><Flame className="h-4 w-4 text-orange-500" />{act.caloriesBurned} kcal</TableCell>
                   </TableRow>
                 ))
               ) : (

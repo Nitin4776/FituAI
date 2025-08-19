@@ -10,6 +10,16 @@ import {
   type HealthySwapSuggestionsInput,
   type HealthySwapSuggestionsOutput,
 } from '@/ai/flows/healthy-swap-suggestions';
+import {
+  calculateMealMacros,
+  type CalculateMealMacrosInput,
+  type CalculateMealMacrosOutput,
+} from '@/ai/flows/calculate-meal-macros';
+import {
+  calculateActivityCalories,
+  type CalculateActivityCaloriesInput,
+  type CalculateActivityCaloriesOutput,
+} from '@/ai/flows/calculate-activity-calories';
 
 export async function getHealthySwap(
   input: HealthySwapSuggestionsInput
@@ -30,5 +40,27 @@ export async function analyzeReport(
   } catch (error) {
     console.error(error);
     throw new Error('Failed to analyze blood test report.');
+  }
+}
+
+export async function getMealMacros(
+  input: CalculateMealMacrosInput
+): Promise<CalculateMealMacrosOutput> {
+  try {
+    return await calculateMealMacros(input);
+  } catch (error) {
+    console.error(error);
+    throw new Error('Failed to calculate meal macros.');
+  }
+}
+
+export async function getActivityCalories(
+  input: CalculateActivityCaloriesInput
+): Promise<CalculateActivityCaloriesOutput> {
+  try {
+    return await calculateActivityCalories(input);
+  } catch (error) {
+    console.error(error);
+    throw new Error('Failed to calculate activity calories.');
   }
 }
