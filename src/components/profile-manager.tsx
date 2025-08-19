@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Weight, Ruler, TrendingUp } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2 } from 'lucide-react';
+import { getProfile, saveProfile } from '@/services/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 const profileSchema = z.object({
   height: z.coerce.number().positive('Height must be positive'),
@@ -31,6 +33,8 @@ interface FitnessMetrics {
 
 export function ProfileManager() {
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -43,8 +47,34 @@ export function ProfileManager() {
     },
   });
 
-  const onSubmit: SubmitHandler<ProfileFormValues> = (data) => {
-    setProfile(data);
+  useEffect(() => {
+    async function loadProfile() {
+      setIsLoading(true);
+      const savedProfile = await getProfile();
+      if (savedProfile) {
+        setProfile(savedProfile as ProfileFormValues);
+        form.reset(savedProfile);
+      }
+      setIsLoading(false);
+    }
+    loadProfile();
+  }, [form]);
+
+  const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
+    try {
+      await saveProfile(data);
+      setProfile(data);
+      toast({
+        title: 'Profile Saved',
+        description: 'Your details have been successfully updated.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: 'Could not save your profile. Please try again.',
+      });
+    }
   };
 
   const metrics: FitnessMetrics | null = useMemo(() => {
@@ -82,46 +112,52 @@ export function ProfileManager() {
           <CardDescription>Enter your information to calculate metrics.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <FormField control={form.control} name="height" render={({ field }) => (
-                    <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" placeholder="180" {...field} /></FormControl><FormMessage /></FormItem>
+          {isLoading ? (
+             <div className="flex items-center justify-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="height" render={({ field }) => (
+                      <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" placeholder="180" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                  <FormField control={form.control} name="weight" render={({ field }) => (
+                      <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                </div>
+                <FormField control={form.control} name="age" render={({ field }) => (
+                    <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} /></FormControl><FormMessage /></FormItem>
                   )}/>
-                <FormField control={form.control} name="weight" render={({ field }) => (
-                    <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={form.control} name="gender" render={({ field }) => (
+                    <FormItem className="space-y-3"><FormLabel>Gender</FormLabel><FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
+                          <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="male" /></FormControl><FormLabel className="font-normal">Male</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="female" /></FormControl><FormLabel className="font-normal">Female</FormLabel></FormItem>
+                        </RadioGroup>
+                      </FormControl><FormMessage /></FormItem>
                   )}/>
-              </div>
-              <FormField control={form.control} name="age" render={({ field }) => (
-                  <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-              <FormField control={form.control} name="gender" render={({ field }) => (
-                  <FormItem className="space-y-3"><FormLabel>Gender</FormLabel><FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
-                        <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="male" /></FormControl><FormLabel className="font-normal">Male</FormLabel></FormItem>
-                        <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="female" /></FormControl><FormLabel className="font-normal">Female</FormLabel></FormItem>
-                      </RadioGroup>
-                    </FormControl><FormMessage /></FormItem>
-                )}/>
-              <FormField control={form.control} name="activityLevel" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Activity Level</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select your activity level" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
-                        <SelectItem value="light">Lightly active (light exercise/sports 1-3 days/week)</SelectItem>
-                        <SelectItem value="moderate">Moderately active (moderate exercise/sports 3-5 days/week)</SelectItem>
-                        <SelectItem value="active">Very active (hard exercise/sports 6-7 days a week)</SelectItem>
-                        <SelectItem value="very_active">Extra active (very hard exercise/physical job)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}/>
-              <Button type="submit" className="w-full">Calculate & Save</Button>
-            </form>
-          </Form>
+                <FormField control={form.control} name="activityLevel" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Activity Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select your activity level" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
+                          <SelectItem value="light">Lightly active (light exercise/sports 1-3 days/week)</SelectItem>
+                          <SelectItem value="moderate">Moderately active (moderate exercise/sports 3-5 days/week)</SelectItem>
+                          <SelectItem value="active">Very active (hard exercise/sports 6-7 days a week)</SelectItem>
+                          <SelectItem value="very_active">Extra active (very hard exercise/physical job)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                <Button type="submit" className="w-full">Calculate & Save</Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
       
@@ -131,7 +167,11 @@ export function ProfileManager() {
           <CardDescription>Results based on your provided details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {metrics ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-40">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             </div>
+          ) : metrics ? (
             <>
               <MetricCard icon={Target} label="Body Mass Index (BMI)" value={metrics.bmi.toString()} description={metrics.bmiCategory} />
               <MetricCard icon={Weight} label="Ideal Weight Range" value={metrics.idealWeight} description="Based on healthy BMI range" />

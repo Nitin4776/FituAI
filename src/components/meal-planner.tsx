@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,6 +29,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMealMacros } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { addMeal, getMeals } from '@/services/firestore';
 
 const mealSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
@@ -40,7 +41,7 @@ type MealFormValues = z.infer<typeof mealSchema>;
 type MealLog = {
   id: string;
   mealType: MealFormValues['mealType'];
-  description: string;
+  mealName: string;
   quantity: string;
   calories: number;
   protein: number;
@@ -54,6 +55,7 @@ export function MealPlanner() {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<MealFormValues>({
@@ -61,25 +63,37 @@ export function MealPlanner() {
     defaultValues: { mealType: 'breakfast', mealName: '', quantity: '' },
   });
 
+  useEffect(() => {
+    async function loadMeals() {
+      setIsLoading(true);
+      const savedMeals = await getMeals();
+      setMeals(savedMeals as MealLog[]);
+      setIsLoading(false);
+    }
+    loadMeals();
+  }, []);
+
   const onSubmit: SubmitHandler<MealFormValues> = async (data) => {
     setIsCalculating(true);
     try {
       const macros = await getMealMacros(data);
-      const newMeal: MealLog = {
-        id: Date.now().toString(),
+      const newMealData = {
         mealType: data.mealType,
-        description: data.mealName,
+        mealName: data.mealName,
         quantity: data.quantity,
         ...macros,
       };
-      setMeals((prev) => [...prev, newMeal]);
+
+      await addMeal(newMealData);
+      setMeals((prev) => [{...newMealData, id: Date.now().toString()}, ...prev]);
+
       form.reset();
       setIsDialogOpen(false);
     } catch (error) {
        toast({
         variant: 'destructive',
-        title: 'Calculation Failed',
-        description: 'Could not calculate macros. Please try again.',
+        title: 'Action Failed',
+        description: 'Could not log meal. Please try again.',
       });
     } finally {
       setIsCalculating(false);
@@ -88,6 +102,16 @@ export function MealPlanner() {
 
   const renderMealCards = (mealType: MealFormValues['mealType']) => {
     const filteredMeals = meals.filter((m) => m.mealType === mealType);
+
+    if (isLoading) {
+      return (
+        <div className="text-center text-muted-foreground py-10">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2">Loading meals...</p>
+        </div>
+      );
+    }
+
     if (filteredMeals.length === 0) {
       return (
         <div className="text-center text-muted-foreground py-10">
@@ -101,7 +125,7 @@ export function MealPlanner() {
         {filteredMeals.map((meal) => (
           <Card key={meal.id}>
             <CardHeader>
-              <CardTitle className="text-lg">{meal.description}</CardTitle>
+              <CardTitle className="text-lg">{meal.mealName}</CardTitle>
               <p className="text-sm text-muted-foreground">{meal.quantity}</p>
             </CardHeader>
             <CardContent>

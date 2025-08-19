@@ -20,13 +20,19 @@ const AnalyzeBloodTestResultsInputSchema = z.object({
 });
 export type AnalyzeBloodTestResultsInput = z.infer<typeof AnalyzeBloodTestResultsInputSchema>;
 
+const CriticalMarkerSchema = z.object({
+  marker: z.string().describe('The name of the critical marker.'),
+  value: z.string().describe('The value of the marker from the report.'),
+  level: z.string().describe('The level of the marker (e.g., "High", "Low", "Normal").'),
+});
+
 const AnalyzeBloodTestResultsOutputSchema = z.object({
   summary: z.string().describe('A summary of the blood test results in plain language.'),
   dosAndDonts: z.string().describe('Personalized do\'s and don\'ts based on the results.'),
   lifestyleModifications: z
     .string()
     .describe('Lifestyle modification recommendations (diet, exercise, sleep).'),
-  criticalMarkers: z.string().describe('Highlighted critical markers from the blood test results.'),
+  criticalMarkers: z.array(CriticalMarkerSchema).describe('A list of highlighted critical markers from the blood test results.'),
 });
 export type AnalyzeBloodTestResultsOutput = z.infer<typeof AnalyzeBloodTestResultsOutputSchema>;
 
@@ -47,7 +53,7 @@ You will analyze the provided blood test report and generate the following:
 1.  A summary of the results in plain language.
 2.  Personalized do's and don'ts based on abnormalities.
 3.  Lifestyle modification recommendations (diet, exercise, sleep).
-4.  Highlighted critical markers (e.g., cholesterol high, Vitamin D low).
+4.  A list of highlighted critical markers (e.g., cholesterol high, Vitamin D low). For each marker, provide the marker name, its value, and its level (High, Low, Normal, Borderline, etc.).
 
 Use the following blood test report as the primary source of information:
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,6 +36,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getActivityCalories } from '@/app/actions';
+import { addActivity, getActivities } from '@/services/firestore';
 
 const activitySchema = z.object({
   activity: z.string().min(1, 'Activity name is required'),
@@ -54,6 +55,7 @@ export function ActivityTracker() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<ActivityFormValues>({
@@ -63,25 +65,42 @@ export function ActivityTracker() {
       duration: 0,
     },
   });
+  
+  useEffect(() => {
+    async function loadActivities() {
+      setIsLoading(true);
+      const savedActivities = await getActivities();
+      setActivities(savedActivities as ActivityLog[]);
+      setIsLoading(false);
+    }
+    loadActivities();
+  }, []);
+
 
   const onSubmit: SubmitHandler<ActivityFormValues> = async (data) => {
     setIsCalculating(true);
     try {
       const { caloriesBurned } = await getActivityCalories(data);
-      const newActivity: ActivityLog = {
+      const newActivityData = {
         ...data,
-        id: Date.now().toString(),
-        date: new Date().toLocaleDateString(),
         caloriesBurned: Math.round(caloriesBurned),
       };
+      await addActivity(newActivityData);
+      
+      const newActivity: ActivityLog = {
+        ...newActivityData,
+        id: Date.now().toString(), // temp id
+        date: new Date().toLocaleDateString(),
+      };
       setActivities((prev) => [newActivity, ...prev]);
+
       form.reset();
       setIsDialogOpen(false);
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Calculation Failed',
-        description: 'Could not estimate calories burned. Please try again.',
+        title: 'Action Failed',
+        description: 'Could not log activity. Please try again.',
       });
     } finally {
       setIsCalculating(false);
@@ -166,7 +185,13 @@ export function ActivityTracker() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activities.length > 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                  </TableCell>
+                </TableRow>
+              ) : activities.length > 0 ? (
                 activities.map((act) => (
                   <TableRow key={act.id}>
                     <TableCell>{act.date}</TableCell>

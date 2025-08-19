@@ -4,7 +4,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Clock, Play, Pause, RefreshCw, Sunrise, Sunset, Zap } from 'lucide-react';
+import { Clock, Play, Pause, RefreshCw, Sunrise, Sunset, Zap, Loader2 } from 'lucide-react';
+import { getFastingState, saveFastingState } from '@/services/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 type FastingPlan = '16:8' | '18:6' | '20:4';
 
@@ -34,16 +36,40 @@ const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * 90; // 2 * pi * radius
 export function FastingCalculator() {
   const [selectedPlan, setSelectedPlan] = useState<FastingPlan>('16:8');
   const [isRunning, setIsRunning] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(fastingPlans[selectedPlan].fastingHours * 3600);
-  
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [endTime, setEndTime] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
   const planDetails = fastingPlans[selectedPlan];
   const totalDuration = planDetails.fastingHours * 3600;
 
   useEffect(() => {
-    // Reset timer when plan changes
-    setIsRunning(false);
-    setTimeRemaining(fastingPlans[selectedPlan].fastingHours * 3600);
-  }, [selectedPlan]);
+    async function loadState() {
+      setIsLoading(true);
+      const state = await getFastingState();
+      if (state) {
+        setSelectedPlan(state.plan);
+        if (state.endTime && state.isRunning) {
+            const now = Date.now();
+            const remaining = Math.max(0, Math.round((state.endTime - now) / 1000));
+            if (remaining > 0) {
+                setTimeRemaining(remaining);
+                setEndTime(state.endTime);
+                setIsRunning(true);
+            } else {
+                handleReset();
+            }
+        } else {
+             setTimeRemaining(fastingPlans[state.plan as FastingPlan].fastingHours * 3600);
+        }
+      } else {
+         setTimeRemaining(planDetails.fastingHours * 3600);
+      }
+      setIsLoading(false);
+    }
+    loadState();
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -51,22 +77,50 @@ export function FastingCalculator() {
       interval = setInterval(() => {
         setTimeRemaining((prevTime) => prevTime - 1);
       }, 1000);
-    } else if (timeRemaining === 0) {
+    } else if (isRunning && timeRemaining <= 0) {
       setIsRunning(false);
-      // Optional: Add a notification when the timer finishes
+      setEndTime(null);
+      toast({
+        title: "Fast Complete!",
+        description: "You've successfully completed your fast. Time to eat!",
+      });
+      saveFastingState({ plan: selectedPlan, isRunning: false, endTime: null });
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeRemaining]);
+  }, [isRunning, timeRemaining, toast, selectedPlan]);
+
+  const handlePlanChange = (plan: FastingPlan) => {
+    if (isRunning) {
+        toast({ variant: 'destructive', title: "Cannot change plan while timer is running."});
+        return;
+    }
+    setSelectedPlan(plan);
+    setTimeRemaining(fastingPlans[plan].fastingHours * 3600);
+    saveFastingState({ plan: plan, isRunning: false, endTime: null });
+  }
 
   const handleStartStop = () => {
-    setIsRunning(!isRunning);
+    const newIsRunning = !isRunning;
+    setIsRunning(newIsRunning);
+
+    let newEndTime: number | null;
+    if (newIsRunning) {
+        newEndTime = Date.now() + timeRemaining * 1000;
+        setEndTime(newEndTime);
+    } else {
+        newEndTime = endTime; // Keep endTime when pausing
+    }
+    
+    saveFastingState({ plan: selectedPlan, isRunning: newIsRunning, endTime: newEndTime });
   };
 
   const handleReset = () => {
     setIsRunning(false);
     setTimeRemaining(totalDuration);
+    setEndTime(null);
+    saveFastingState({ plan: selectedPlan, isRunning: false, endTime: null });
   };
 
   const formatTime = (seconds: number) => {
@@ -82,13 +136,6 @@ export function FastingCalculator() {
 
   const strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - progress / 100);
 
-  const eatingWindowStart = new Date();
-  eatingWindowStart.setHours(eatingWindowStart.getHours() + planDetails.fastingHours);
-
-  const eatingWindowEnd = new Date(eatingWindowStart);
-  eatingWindowEnd.setHours(eatingWindowStart.getHours() + planDetails.eatingHours);
-
-
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div className="space-y-8">
@@ -100,7 +147,8 @@ export function FastingCalculator() {
           <CardContent>
             <Select
               value={selectedPlan}
-              onValueChange={(value: FastingPlan) => setSelectedPlan(value)}
+              onValueChange={handlePlanChange}
+              disabled={isRunning}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a fasting plan" />
@@ -146,41 +194,47 @@ export function FastingCalculator() {
       </div>
       
       <Card className="flex flex-col items-center justify-center p-6">
-        <div className="relative w-64 h-64 flex items-center justify-center">
-            <svg className="absolute w-full h-full" viewBox="0 0 200 200">
-                <circle
-                    cx="100" cy="100" r="90"
-                    fill="none"
-                    stroke="hsl(var(--secondary))"
-                    strokeWidth="12"
-                />
-                <circle
-                    cx="100" cy="100" r="90"
-                    fill="none"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                    transform="rotate(-90 100 100)"
-                    strokeDasharray={CIRCLE_CIRCUMFERENCE}
-                    strokeDashoffset={strokeDashoffset}
-                    className="transition-all duration-500 ease-linear"
-                />
-            </svg>
-            <div className="z-10 text-center">
-                <p className="text-4xl font-bold font-mono text-primary">{formatTime(timeRemaining)}</p>
-                <p className="text-sm text-muted-foreground">Time Remaining</p>
+        { isLoading ? (
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        ) : (
+        <>
+            <div className="relative w-64 h-64 flex items-center justify-center">
+                <svg className="absolute w-full h-full" viewBox="0 0 200 200">
+                    <circle
+                        cx="100" cy="100" r="90"
+                        fill="none"
+                        stroke="hsl(var(--secondary))"
+                        strokeWidth="12"
+                    />
+                    <circle
+                        cx="100" cy="100" r="90"
+                        fill="none"
+                        stroke="hsl(var(--primary))"
+                        strokeWidth="12"
+                        strokeLinecap="round"
+                        transform="rotate(-90 100 100)"
+                        strokeDasharray={CIRCLE_CIRCUMFERENCE}
+                        strokeDashoffset={strokeDashoffset}
+                        className="transition-all duration-500 ease-linear"
+                    />
+                </svg>
+                <div className="z-10 text-center">
+                    <p className="text-4xl font-bold font-mono text-primary">{formatTime(timeRemaining)}</p>
+                    <p className="text-sm text-muted-foreground">Time Remaining</p>
+                </div>
             </div>
-        </div>
-        <div className="flex gap-4 mt-6">
-            <Button onClick={handleStartStop} size="lg">
-                {isRunning ? <Pause className="mr-2"/> : <Play className="mr-2"/>}
-                {isRunning ? 'Pause' : 'Start'}
-            </Button>
-            <Button onClick={handleReset} variant="outline" size="lg">
-                <RefreshCw className="mr-2"/>
-                Reset
-            </Button>
-        </div>
+            <div className="flex gap-4 mt-6">
+                <Button onClick={handleStartStop} size="lg" disabled={timeRemaining <= 0}>
+                    {isRunning ? <Pause className="mr-2"/> : <Play className="mr-2"/>}
+                    {isRunning ? 'Pause' : 'Start'}
+                </Button>
+                <Button onClick={handleReset} variant="outline" size="lg" disabled={isRunning}>
+                    <RefreshCw className="mr-2"/>
+                    Reset
+                </Button>
+            </div>
+        </>
+        )}
       </Card>
     </div>
   );
