@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
   Timestamp,
+  limit,
 } from 'firebase/firestore';
 
 // Hardcoded user ID for now. Replace with actual user ID from auth.
@@ -78,7 +79,7 @@ export async function saveBloodTestAnalysis(analysisData: any) {
 
 export async function getLatestBloodTestAnalysis() {
     const analysisColRef = collection(db, 'users', USER_ID, 'bloodTestAnalyses');
-    const q = query(analysisColRef, orderBy('createdAt', 'desc'), );
+    const q = query(analysisColRef, orderBy('createdAt', 'desc'), limit(1));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
         const latestDoc = querySnapshot.docs[0];
