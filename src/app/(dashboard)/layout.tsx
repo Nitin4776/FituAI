@@ -30,7 +30,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/profile', label: 'Profile & Metrics', icon: User },
   { href: '/activity', label: 'Activity', icon: HeartPulse },
   { href: '/meals', label: 'Meals', icon: Utensils },
   { href: '/fasting', label: 'Fasting', icon: Clock },
