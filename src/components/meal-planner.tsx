@@ -193,13 +193,13 @@ export function MealPlanner() {
               <p className="text-sm text-muted-foreground">{meal.quantity}</p>
             </CardHeader>
             <CardContent className="flex-grow">
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>Calories: {Math.round(meal.calories)} kcal</li>
-                <li>Protein: {Math.round(meal.protein)} g</li>
-                <li>Carbs: {Math.round(meal.carbs)} g</li>
-                <li>Fats: {Math.round(meal.fats)} g</li>
-                <li>Fiber: {Math.round(meal.fiber)} g</li>
-              </ul>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
+                <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
+                <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
+                <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
+                <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
+              </div>
             </CardContent>
             <CardFooter>
                  <AlertDialog>
