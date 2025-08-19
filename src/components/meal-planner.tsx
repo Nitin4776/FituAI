@@ -58,6 +58,7 @@ type MealLog = {
   protein: number;
   carbs: number;
   fats: number;
+  fiber: number;
   createdAt: { seconds: number, nanoseconds: number };
 };
 
@@ -177,6 +178,7 @@ export function MealPlanner() {
                 <li>Protein: {Math.round(meal.protein)} g</li>
                 <li>Carbs: {Math.round(meal.carbs)} g</li>
                 <li>Fats: {Math.round(meal.fats)} g</li>
+                <li>Fiber: {Math.round(meal.fiber)} g</li>
               </ul>
             </CardContent>
             <CardFooter>

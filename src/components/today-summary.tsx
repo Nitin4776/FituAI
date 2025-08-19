@@ -13,6 +13,7 @@ type MealLog = {
   protein: number;
   carbs: number;
   fats: number;
+  fiber: number;
   createdAt: { seconds: number, nanoseconds: number };
 };
 
@@ -59,9 +60,10 @@ async function getSummaryData() {
         acc.protein += meal.protein;
         acc.carbs += meal.carbs;
         acc.fats += meal.fats;
+        acc.fiber += meal.fiber || 0; // handle meals logged before fiber was added
         return acc;
       },
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
+      { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
     );
     
     const todaysActivities = (savedActivities as ActivityLog[]).filter(activity => isToday(activity.createdAt));
@@ -90,7 +92,7 @@ export async function TodaySummary() {
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   <div>
                       <p className="text-sm text-muted-foreground">Protein</p>
                       <p className="font-bold text-lg">{Math.round(dailyTotals.protein)}g</p>
@@ -102,6 +104,10 @@ export async function TodaySummary() {
                   <div>
                       <p className="text-sm text-muted-foreground">Fats</p>
                       <p className="font-bold text-lg">{Math.round(dailyTotals.fats)}g</p>
+                  </div>
+                  <div>
+                      <p className="text-sm text-muted-foreground">Fiber</p>
+                      <p className="font-bold text-lg">{Math.round(dailyTotals.fiber)}g</p>
                   </div>
                   <div>
                       <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Flame className="h-4 w-4 text-orange-500" /> Burned</p>

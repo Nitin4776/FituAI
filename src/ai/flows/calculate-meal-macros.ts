@@ -21,6 +21,7 @@ const CalculateMealMacrosOutputSchema = z.object({
   protein: z.number().describe('Estimated protein in grams.'),
   carbs: z.number().describe('Estimated carbohydrates in grams.'),
   fats: z.number().describe('Estimated fats in grams.'),
+  fiber: z.number().describe('Estimated fiber in grams.'),
 });
 export type CalculateMealMacrosOutput = z.infer<typeof CalculateMealMacrosOutputSchema>;
 
@@ -39,7 +40,7 @@ const prompt = ai.definePrompt({
 Meal: {{{mealName}}}
 Quantity: {{{quantity}}}
 
-Return the estimated calories, protein, carbohydrates, and fats as numerical values.`,
+Return the estimated calories, protein, carbohydrates, fats, and fiber as numerical values.`,
 });
 
 const calculateMealMacrosFlow = ai.defineFlow(
