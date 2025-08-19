@@ -34,7 +34,13 @@ export function ProfileManager() {
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { gender: 'male', activityLevel: 'sedentary' },
+    defaultValues: { 
+      height: '' as any, 
+      weight: '' as any,
+      age: '' as any,
+      gender: 'male', 
+      activityLevel: 'sedentary' 
+    },
   });
 
   const onSubmit: SubmitHandler<ProfileFormValues> = (data) => {
