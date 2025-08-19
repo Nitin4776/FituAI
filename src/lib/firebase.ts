@@ -4,12 +4,12 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCVton6VpvmTbUCyZHmi5dvVkE7JeB5QDE",
+  authDomain: "crickseries.firebaseapp.com",
+  projectId: "crickseries",
+  storageBucket: "crickseries.appspot.com",
+  messagingSenderId: "625037598322",
+  appId: "1:625037598322:web:4d9a5e0c112941869b2ceb"
 };
 
 // Initialize Firebase
