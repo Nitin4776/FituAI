@@ -32,10 +32,10 @@ const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/profile', label: 'Profile & Metrics', icon: User },
   { href: '/activity', label: 'Activity', icon: HeartPulse },
-  { href: '/meals', label: 'Meals', icon: Utensils },
-  { href: '/fasting', label: 'Fasting', icon: Clock },
-  { href: '/healthy-swaps', label: 'Swaps', icon: Replace },
-  { href: '/blood-test', label: 'Blood Test', icon: TestTube2 },
+  { href: '/meals', label: 'Meal Planner', icon: Utensils },
+  { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
+  { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
+  { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
 ];
 
 function BottomNavigation() {
