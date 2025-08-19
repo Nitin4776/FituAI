@@ -38,6 +38,8 @@ async function getSummaryData() {
     const [savedMeals, profile, savedActivities] = await Promise.all([getMeals(), getProfile(), getActivities()]);
 
     let dailyGoal = 2000; // Default goal
+    let macroGoals = { protein: 150, carbs: 250, fats: 67, fiber: 30 }; // Default macro goals
+
     if (profile) {
         const heightInMeters = profile.height / 100;
         const bmr =
@@ -51,6 +53,13 @@ async function getSummaryData() {
         const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
         const tdee = bmr * activityMultipliers[profile.activityLevel as keyof typeof activityMultipliers];
         dailyGoal = Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]);
+
+        macroGoals = {
+            protein: Math.round((dailyGoal * 0.3) / 4),
+            carbs: Math.round((dailyGoal * 0.4) / 4),
+            fats: Math.round((dailyGoal * 0.3) / 9),
+            fiber: Math.round((dailyGoal / 1000) * 14),
+        }
     }
 
     const todaysMeals = (savedMeals as MealLog[]).filter(meal => isToday(meal.createdAt));
@@ -69,12 +78,33 @@ async function getSummaryData() {
     const todaysActivities = (savedActivities as ActivityLog[]).filter(activity => isToday(activity.createdAt));
     const caloriesBurned = todaysActivities.reduce((acc, activity) => acc + activity.caloriesBurned, 0);
 
-    return { dailyTotals, dailyGoal, caloriesBurned };
+    return { dailyTotals, dailyGoal, caloriesBurned, macroGoals };
+}
+
+function MacroProgress({ label, consumed, goal }: { label: string; consumed: number; goal: number; }) {
+    const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
+    return (
+        <div>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="font-bold text-lg">{Math.round(consumed)}g</p>
+            <p className="text-xs text-muted-foreground">{percentage}% of goal</p>
+        </div>
+    )
+}
+
+function CaloriesBurned({ burned }: { burned: number }) {
+     return (
+        <div>
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Flame className="h-4 w-4 text-orange-500" /> Burned</p>
+            <p className="font-bold text-lg">{Math.round(burned)} kcal</p>
+            <p className="text-xs text-muted-foreground">&nbsp;</p>
+        </div>
+    )
 }
 
 
 export async function TodaySummary() {
-  const { dailyTotals, dailyGoal, caloriesBurned } = await getSummaryData();
+  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals } = await getSummaryData();
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
 
   return (
@@ -93,26 +123,11 @@ export async function TodaySummary() {
                   <Progress value={calorieProgress} className="h-2"/>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                  <div>
-                      <p className="text-sm text-muted-foreground">Protein</p>
-                      <p className="font-bold text-lg">{Math.round(dailyTotals.protein)}g</p>
-                  </div>
-                  <div>
-                      <p className="text-sm text-muted-foreground">Carbs</p>
-                      <p className="font-bold text-lg">{Math.round(dailyTotals.carbs)}g</p>
-                  </div>
-                  <div>
-                      <p className="text-sm text-muted-foreground">Fats</p>
-                      <p className="font-bold text-lg">{Math.round(dailyTotals.fats)}g</p>
-                  </div>
-                  <div>
-                      <p className="text-sm text-muted-foreground">Fiber</p>
-                      <p className="font-bold text-lg">{Math.round(dailyTotals.fiber)}g</p>
-                  </div>
-                  <div>
-                      <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Flame className="h-4 w-4 text-orange-500" /> Burned</p>
-                      <p className="font-bold text-lg">{Math.round(caloriesBurned)} kcal</p>
-                  </div>
+                  <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} />
+                  <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} />
+                  <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} />
+                  <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} />
+                  <CaloriesBurned burned={caloriesBurned} />
               </div>
           </div>
       </CardContent>
