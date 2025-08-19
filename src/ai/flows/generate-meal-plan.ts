@@ -20,7 +20,7 @@ const MealDetailSchema = z.object({
   fiber: z.number().describe('Estimated fiber in grams.'),
 });
 
-export const GenerateMealPlanInputSchema = z.object({
+const GenerateMealPlanInputSchema = z.object({
   cuisine: z.string().describe('The desired cuisine (e.g., Indian, Italian, Mexican).'),
   diet: z.enum(['vegetarian', 'non-vegetarian', 'eggetarian', 'vegan']).describe('The dietary preference.'),
   goal: z.string().describe('The user\'s primary fitness goal (e.g., "lose weight", "maintain weight", "gain muscle").'),
@@ -28,7 +28,7 @@ export const GenerateMealPlanInputSchema = z.object({
 });
 export type GenerateMealPlanInput = z.infer<typeof GenerateMealPlanInputSchema>;
 
-export const GenerateMealPlanOutputSchema = z.object({
+const GenerateMealPlanOutputSchema = z.object({
   breakfast: MealDetailSchema,
   lunch: MealDetailSchema,
   dinner: MealDetailSchema,
