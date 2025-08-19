@@ -31,7 +31,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/profile', label: 'Profile & Metrics', icon: User },
-  { href: '/activity', label: 'Activity', icon: HeartPulse },
+  { href: '/activity', label: 'Activity Tracker', icon: HeartPulse },
   { href: '/meals', label: 'Meal Planner', icon: Utensils },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
   { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
