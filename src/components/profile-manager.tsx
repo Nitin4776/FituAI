@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -66,7 +67,7 @@ export function ProfileManager() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: { 
-      height: '' as any, 
+      height: '' as any,
       weight: '' as any,
       age: '' as any,
       gender: 'male', 
