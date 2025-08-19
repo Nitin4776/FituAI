@@ -25,16 +25,48 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons/logo';
+import { cn } from '@/lib/utils';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/profile', label: 'Profile & Metrics', icon: User },
-  { href: '/activity', label: 'Activity Tracker', icon: HeartPulse },
-  { href: '/meals', label: 'Meal Planner', icon: Utensils },
-  { href: '/fasting', label: 'Fasting Calculator', icon: Clock },
-  { href: '/healthy-swaps', label: 'Healthy Swaps AI', icon: Replace },
-  { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
+  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/activity', label: 'Activity', icon: HeartPulse },
+  { href: '/meals', label: 'Meals', icon: Utensils },
+  { href: '/fasting', label: 'Fasting', icon: Clock },
+  { href: '/healthy-swaps', label: 'Swaps', icon: Replace },
+  { href: '/blood-test', label: 'Blood Test', icon: TestTube2 },
 ];
+
+function BottomNavigation() {
+  const pathname = usePathname();
+  const { isMobile } = useSidebar();
+
+  if (!isMobile) {
+    return null;
+  }
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around bg-background border-t p-2">
+      {menuItems.slice(0, 5).map((item) => (
+        <Link href={item.href} key={item.href} className="flex-1">
+          <div
+            className={cn(
+              'flex flex-col items-center justify-center p-2 rounded-md transition-colors',
+              pathname === item.href
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground'
+            )}
+          >
+            <item.icon className="size-5" />
+            <span className="text-xs mt-1">{item.label}</span>
+          </div>
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 
 export default function DashboardLayout({
   children,
@@ -73,9 +105,10 @@ export default function DashboardLayout({
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
             {children}
           </main>
+          <BottomNavigation />
         </SidebarInset>
       </div>
     </SidebarProvider>
