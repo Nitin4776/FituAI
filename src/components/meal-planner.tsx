@@ -77,12 +77,21 @@ export function MealPlanner() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const { toast } = useToast();
 
   const form = useForm<MealFormValues>({
     resolver: zodResolver(mealSchema),
     defaultValues: { mealType: 'breakfast', mealName: '', quantity: '' },
   });
+  
+  const mealNameInput = form.watch('mealName');
+
+  const uniqueMealNames = useMemo(() => {
+    const names = new Set(meals.map(m => m.mealName));
+    return Array.from(names);
+  }, [meals]);
+
 
   useEffect(() => {
     async function loadData() {
@@ -93,6 +102,17 @@ export function MealPlanner() {
     }
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (mealNameInput && mealNameInput.length > 1) {
+      const filteredSuggestions = uniqueMealNames.filter(name => 
+        name.toLowerCase().includes(mealNameInput.toLowerCase()) && name.toLowerCase() !== mealNameInput.toLowerCase()
+      );
+      setSuggestions(filteredSuggestions.slice(0, 5)); // Limit to 5 suggestions
+    } else {
+      setSuggestions([]);
+    }
+  }, [mealNameInput, uniqueMealNames]);
 
   const onSubmit: SubmitHandler<MealFormValues> = async (data) => {
     setIsCalculating(true);
@@ -238,7 +258,31 @@ export function MealPlanner() {
                   )}
                 />
                 <FormField control={form.control} name="mealName" render={({ field }) => (
-                    <FormItem><FormLabel>Meal Name</FormLabel><FormControl><Input placeholder="e.g., Chicken Salad" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem>
+                        <FormLabel>Meal Name</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input placeholder="e.g., Chicken Salad" {...field} autoComplete="off" onBlur={() => setTimeout(() => setSuggestions([]), 100)} />
+                            {suggestions.length > 0 && (
+                              <div className="absolute z-10 w-full bg-background border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                                {suggestions.map((suggestion, index) => (
+                                  <div
+                                    key={index}
+                                    className="p-2 hover:bg-accent cursor-pointer text-sm"
+                                    onMouseDown={() => {
+                                      form.setValue('mealName', suggestion);
+                                      setSuggestions([]);
+                                    }}
+                                  >
+                                    {suggestion}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
                   )}
                 />
                 <FormField control={form.control} name="quantity" render={({ field }) => (
