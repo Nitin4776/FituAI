@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Weight, Ruler, TrendingUp, Loader2 } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2, Flame } from 'lucide-react';
 import { getProfile, saveProfile } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,6 +20,7 @@ const profileSchema = z.object({
   age: z.coerce.number().int().min(1, 'Age must be positive'),
   gender: z.enum(['male', 'female']),
   activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
+  goal: z.enum(['lose', 'maintain', 'gain']),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -29,7 +30,23 @@ interface FitnessMetrics {
   bmiCategory: string;
   idealWeight: string;
   bodyFat: number;
+  dailyCalories: number;
 }
+
+const activityLevelMultipliers = {
+    sedentary: 1.2,
+    light: 1.375,
+    moderate: 1.55,
+    active: 1.725,
+    very_active: 1.9,
+};
+
+const goalCalorieAdjustments = {
+    lose: -500, // Calorie deficit for weight loss
+    maintain: 0,
+    gain: 500, // Calorie surplus for weight gain
+};
+
 
 export function ProfileManager() {
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
@@ -43,7 +60,8 @@ export function ProfileManager() {
       weight: '' as any,
       age: '' as any,
       gender: 'male', 
-      activityLevel: 'sedentary' 
+      activityLevel: 'sedentary',
+      goal: 'maintain',
     },
   });
 
@@ -91,6 +109,14 @@ export function ProfileManager() {
     const idealWeightMin = (18.5 * heightInMeters * heightInMeters).toFixed(1);
     const idealWeightMax = (24.9 * heightInMeters * heightInMeters).toFixed(1);
 
+    const bmr =
+      profile.gender === 'male'
+        ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
+        : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+
+    const tdee = bmr * activityLevelMultipliers[profile.activityLevel];
+    const dailyCalories = tdee + goalCalorieAdjustments[profile.goal];
+
     const bodyFat =
       profile.gender === 'male'
         ? 1.2 * bmi + 0.23 * profile.age - 16.2
@@ -101,6 +127,7 @@ export function ProfileManager() {
       bmiCategory,
       idealWeight: `${idealWeightMin} kg - ${idealWeightMax} kg`,
       bodyFat: parseFloat(bodyFat.toFixed(1)),
+      dailyCalories: Math.round(dailyCalories),
     };
   }, [profile]);
 
@@ -127,7 +154,7 @@ export function ProfileManager() {
                       <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                 </div>
-                <FormField control={form.control} name="age" render={({ field }) => (
+                 <FormField control={form.control} name="age" render={({ field }) => (
                     <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} /></FormControl><FormMessage /></FormItem>
                   )}/>
                 <FormField control={form.control} name="gender" render={({ field }) => (
@@ -138,7 +165,7 @@ export function ProfileManager() {
                         </RadioGroup>
                       </FormControl><FormMessage /></FormItem>
                   )}/>
-                <FormField control={form.control} name="activityLevel" render={({ field }) => (
+                 <FormField control={form.control} name="activityLevel" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Activity Level</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -153,6 +180,27 @@ export function ProfileManager() {
                       </Select>
                       <FormMessage />
                     </FormItem>
+                  )}/>
+                 <FormField control={form.control} name="goal" render={({ field }) => (
+                    <FormItem className="space-y-3"><FormLabel>Your Goal</FormLabel><FormControl>
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-3 gap-4">
+                          <FormItem><FormControl><RadioGroupItem value="lose" className="sr-only peer" /></FormControl>
+                            <Label className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                Lose Weight
+                            </Label>
+                          </FormItem>
+                          <FormItem><FormControl><RadioGroupItem value="maintain" className="sr-only peer" /></FormControl>
+                            <Label className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                Maintain Weight
+                            </Label>
+                          </FormItem>
+                          <FormItem><FormControl><RadioGroupItem value="gain" className="sr-only peer" /></FormControl>
+                             <Label className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                Gain Weight
+                            </Label>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl><FormMessage /></FormItem>
                   )}/>
                 <Button type="submit" className="w-full">Calculate & Save</Button>
               </form>
@@ -176,6 +224,7 @@ export function ProfileManager() {
               <MetricCard icon={Target} label="Body Mass Index (BMI)" value={metrics.bmi.toString()} description={metrics.bmiCategory} />
               <MetricCard icon={Weight} label="Ideal Weight Range" value={metrics.idealWeight} description="Based on healthy BMI range" />
               <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${metrics.bodyFat}%`} description="Estimated value" />
+              <MetricCard icon={Flame} label="Daily Calorie Goal" value={`${metrics.dailyCalories} kcal`} description={`To ${profile?.goal} weight`} />
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-center text-muted-foreground">

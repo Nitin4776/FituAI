@@ -30,7 +30,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/profile', label: 'Profile & Metrics', icon: User },
+  { href: '/profile', label: 'Profile & Goal', icon: User },
   { href: '/activity', label: 'Activity Tracker', icon: HeartPulse },
   { href: '/meals', label: 'Meal Planner', icon: Utensils },
   { href: '/fasting', label: 'Intermittent Fasting Calculator', icon: Clock },
