@@ -22,6 +22,15 @@ const profileSchema = z.object({
   gender: z.enum(['male', 'female']),
   activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
   goal: z.enum(['lose', 'maintain', 'gain']),
+  targetWeight: z.coerce.number().optional(),
+}).refine(data => {
+    if(data.goal !== 'maintain') {
+        return data.targetWeight !== undefined && data.targetWeight > 0;
+    }
+    return true;
+}, {
+    message: "Target weight is required for your goal",
+    path: ["targetWeight"],
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -63,8 +72,11 @@ export function ProfileManager() {
       gender: 'male', 
       activityLevel: 'sedentary',
       goal: 'maintain',
+      targetWeight: '' as any,
     },
   });
+
+  const goal = form.watch('goal');
 
   useEffect(() => {
     async function loadProfile() {
@@ -161,8 +173,8 @@ export function ProfileManager() {
                 <FormField control={form.control} name="gender" render={({ field }) => (
                     <FormItem className="space-y-3"><FormLabel>Gender</FormLabel><FormControl>
                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
-                          <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="male" /></FormControl><FormLabel className="font-normal">Male</FormLabel></FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="female" /></FormControl><FormLabel className="font-normal">Female</FormLabel></FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="male" id="male"/></FormControl><Label htmlFor="male" className="font-normal">Male</Label></FormItem>
+                          <FormItem className="flex items-center space-x-2 space-y-0"><FormControl><RadioGroupItem value="female" id="female"/></FormControl><Label htmlFor="female" className="font-normal">Female</Label></FormItem>
                         </RadioGroup>
                       </FormControl><FormMessage /></FormItem>
                   )}/>
@@ -185,24 +197,38 @@ export function ProfileManager() {
                  <FormField control={form.control} name="goal" render={({ field }) => (
                     <FormItem className="space-y-3"><FormLabel>Your Goal</FormLabel><FormControl>
                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-3 gap-4">
-                          <FormItem><FormControl><RadioGroupItem value="lose" className="sr-only peer" /></FormControl>
-                            <Label className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                Lose Weight
-                            </Label>
-                          </FormItem>
-                          <FormItem><FormControl><RadioGroupItem value="maintain" className="sr-only peer" /></FormControl>
-                            <Label className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                Maintain Weight
-                            </Label>
-                          </FormItem>
-                          <FormItem><FormControl><RadioGroupItem value="gain" className="sr-only peer" /></FormControl>
-                             <Label className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                Gain Weight
-                            </Label>
-                          </FormItem>
+                            <FormItem>
+                                <FormControl>
+                                    <RadioGroupItem value="lose" id="lose" className="sr-only peer" />
+                                </FormControl>
+                                <Label htmlFor="lose" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    Lose Weight
+                                </Label>
+                            </FormItem>
+                            <FormItem>
+                                <FormControl>
+                                    <RadioGroupItem value="maintain" id="maintain" className="sr-only peer" />
+                                </FormControl>
+                                <Label htmlFor="maintain" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    Maintain
+                                </Label>
+                            </FormItem>
+                            <FormItem>
+                                <FormControl>
+                                    <RadioGroupItem value="gain" id="gain" className="sr-only peer" />
+                                </FormControl>
+                                <Label htmlFor="gain" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    Gain Weight
+                                </Label>
+                            </FormItem>
                         </RadioGroup>
                       </FormControl><FormMessage /></FormItem>
                   )}/>
+                   {goal !== 'maintain' && (
+                    <FormField control={form.control} name="targetWeight" render={({ field }) => (
+                        <FormItem><FormLabel>Target Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="70" {...field} /></FormControl><FormMessage /></FormItem>
+                      )}/>
+                   )}
                 <Button type="submit" className="w-full">Calculate & Save</Button>
               </form>
             </Form>
