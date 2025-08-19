@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Target, Weight, Ruler, TrendingUp, Loader2, Flame } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, Wheat, Drumstick, Beef } from 'lucide-react';
 import { getProfile, saveProfile } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,6 +42,10 @@ interface FitnessMetrics {
   idealWeight: string;
   bodyFat: number;
   dailyCalories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  fiber: number;
 }
 
 const activityLevelMultipliers = {
@@ -136,12 +140,22 @@ export function ProfileManager() {
         ? 1.2 * bmi + 0.23 * profile.age - 16.2
         : 1.2 * bmi + 0.23 * profile.age - 5.4;
 
+    // Macronutrient calculations (e.g., 40% carbs, 30% protein, 30% fat)
+    const protein = Math.round((dailyCalories * 0.3) / 4);
+    const carbs = Math.round((dailyCalories * 0.4) / 4);
+    const fats = Math.round((dailyCalories * 0.3) / 9);
+    const fiber = Math.round((dailyCalories / 1000) * 14);
+
     return {
       bmi,
       bmiCategory,
       idealWeight: `${idealWeightMin} kg - ${idealWeightMax} kg`,
       bodyFat: parseFloat(bodyFat.toFixed(1)),
       dailyCalories: Math.round(dailyCalories),
+      protein,
+      carbs,
+      fats,
+      fiber,
     };
   }, [profile]);
 
@@ -227,7 +241,7 @@ export function ProfileManager() {
                   )}/>
                    {goal !== 'maintain' && (
                     <FormField control={form.control} name="targetWeight" render={({ field }) => (
-                        <FormItem><FormLabel>Target Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="70" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Target Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="70" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                       )}/>
                    )}
                 <Button type="submit" className="w-full">Calculate & Save</Button>
@@ -253,6 +267,17 @@ export function ProfileManager() {
               <MetricCard icon={Weight} label="Ideal Weight Range" value={metrics.idealWeight} description="Based on healthy BMI range" />
               <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${metrics.bodyFat}%`} description="Estimated value" />
               <MetricCard icon={Flame} label="Daily Calorie Goal" value={`${metrics.dailyCalories} kcal`} description={`To ${profile?.goal} weight`} />
+              <Card>
+                <CardHeader>
+                    <CardTitle className='text-xl font-headline'>Daily Macronutrient Goals</CardTitle>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                    <MetricCard icon={Drumstick} label="Protein" value={`${metrics.protein}g`} description="Essential for muscle repair and growth." />
+                    <MetricCard icon={Wheat} label="Carbohydrates" value={`${metrics.carbs}g`} description="Your body's main source of energy." />
+                    <MetricCard icon={Beef} label="Fats" value={`${metrics.fats}g`} description="Important for hormone production and health." />
+                    <MetricCard icon={Ruler} label="Fiber" value={`${metrics.fiber}g`} description="Crucial for digestive health." />
+                </CardContent>
+              </Card>
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-center text-muted-foreground">
@@ -286,3 +311,5 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
+
+    
