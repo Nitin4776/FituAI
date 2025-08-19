@@ -86,16 +86,16 @@ export async function saveBloodTestAnalysis(analysisData: any) {
     });
 }
 
-export async function getLatestBloodTestAnalysis() {
+export async function getBloodTestAnalyses() {
     const analysisColRef = collection(db, 'users', USER_ID, 'bloodTestAnalyses');
-    const q = query(analysisColRef, orderBy('createdAt', 'desc'), limit(1));
+    const q = query(analysisColRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
-        const latestDoc = querySnapshot.docs[0];
-        return { id: latestDoc.id, ...latestDoc.data() };
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
-    return null;
+    return [];
 }
+
 
 // --- Fasting ---
 export async function saveFastingState(fastingState: any) {
