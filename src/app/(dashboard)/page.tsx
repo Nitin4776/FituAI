@@ -5,7 +5,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
-  User,
+  Target,
   HeartPulse,
   Utensils,
   Clock,
@@ -15,8 +15,6 @@ import {
 import Link from 'next/link';
 import { TodaySummary, TodaySummarySkeleton } from '@/components/today-summary';
 import { Suspense } from 'react';
-import { CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   return (
@@ -42,7 +40,7 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-medium">
                 Profile & Goal
               </CardTitle>
-              <User className="h-4 w-4 text-primary" />
+              <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
@@ -107,7 +105,7 @@ export default function DashboardPage() {
                 Get AI-powered food swap suggestions.
               </p>
             </CardContent>
-          </card>
+          </Card>
         </Link>
         <Link href="/blood-test">
           <Card className="hover:shadow-lg transition-shadow h-full">
