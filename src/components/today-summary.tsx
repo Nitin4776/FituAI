@@ -1,10 +1,7 @@
-'use client';
-
-import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Loader2 } from 'lucide-react';
 import { getMeals, getProfile } from '@/services/firestore';
+import { Skeleton } from './ui/skeleton';
 
 type MealLog = {
   id: string;
@@ -19,6 +16,7 @@ type MealLog = {
 };
 
 const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp) return false;
     const date = new Date(timestamp.seconds * 1000);
     const today = new Date();
     return date.getDate() === today.getDate() &&
@@ -26,20 +24,14 @@ const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
            date.getFullYear() === today.getFullYear();
 };
 
-export function TodaySummary() {
-  const [meals, setMeals] = useState<MealLog[]>([]);
-  const [dailyGoal, setDailyGoal] = useState(2000); // Default goal
-  const [isLoading, setIsLoading] = useState(true);
+async function getSummaryData() {
+    const [savedMeals, profile] = await Promise.all([getMeals(), getProfile()]);
 
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      const [savedMeals, profile] = await Promise.all([getMeals(), getProfile()]);
-
-      if (profile) {
+    let dailyGoal = 2000; // Default goal
+    if (profile) {
         const heightInMeters = profile.height / 100;
         const bmr =
-          profile.gender === 'male'
+        profile.gender === 'male'
             ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
             : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
 
@@ -48,18 +40,11 @@ export function TodaySummary() {
         };
         const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
         const tdee = bmr * activityMultipliers[profile.activityLevel as keyof typeof activityMultipliers];
-        setDailyGoal(Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]));
-      }
-
-      setMeals(savedMeals as MealLog[]);
-      setIsLoading(false);
+        dailyGoal = Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]);
     }
-    loadData();
-  }, []);
 
-  const dailyTotals = useMemo(() => {
-    const todaysMeals = meals.filter(meal => isToday(meal.createdAt));
-    return todaysMeals.reduce(
+    const todaysMeals = (savedMeals as MealLog[]).filter(meal => isToday(meal.createdAt));
+    const dailyTotals = todaysMeals.reduce(
       (acc, meal) => {
         acc.calories += meal.calories;
         acc.protein += meal.protein;
@@ -69,8 +54,13 @@ export function TodaySummary() {
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0 }
     );
-  }, [meals]);
+    
+    return { dailyTotals, dailyGoal };
+}
 
+
+export async function TodaySummary() {
+  const { dailyTotals, dailyGoal } = await getSummaryData();
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
 
   return (
@@ -80,11 +70,6 @@ export function TodaySummary() {
           <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
       </CardHeader>
       <CardContent>
-          {isLoading ? (
-               <div className="flex items-center justify-center h-24">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-               </div>
-          ) : (
           <div className="space-y-4">
               <div>
                   <div className="flex justify-between items-center mb-1">
@@ -108,8 +93,23 @@ export function TodaySummary() {
                   </div>
               </div>
           </div>
-          )}
       </CardContent>
     </Card>
   );
+}
+
+export function TodaySummarySkeleton() {
+  return (
+     <Card>
+      <CardHeader>
+          <CardTitle className="font-headline">Today's Summary</CardTitle>
+          <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
+      </CardHeader>
+      <CardContent>
+          <div className="flex items-center justify-center h-24">
+             <Skeleton className="h-24 w-full" />
+           </div>
+      </CardContent>
+    </Card>
+  )
 }

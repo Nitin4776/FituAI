@@ -13,7 +13,10 @@ import {
   Replace,
 } from 'lucide-react';
 import Link from 'next/link';
-import { TodaySummary } from '@/components/today-summary';
+import { TodaySummary, TodaySummarySkeleton } from '@/components/today-summary';
+import { Suspense } from 'react';
+import { CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardPage() {
   return (
@@ -28,14 +31,16 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      <TodaySummary />
+      <Suspense fallback={<TodaySummarySkeleton />}>
+        <TodaySummary />
+      </Suspense>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/profile">
           <Card className="hover:shadow-lg transition-shadow h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Your Profile
+                Profile & Goal
               </CardTitle>
               <User className="h-4 w-4 text-primary" />
             </CardHeader>
@@ -102,7 +107,7 @@ export default function DashboardPage() {
                 Get AI-powered food swap suggestions.
               </p>
             </CardContent>
-          </Card>
+          </card>
         </Link>
         <Link href="/blood-test">
           <Card className="hover:shadow-lg transition-shadow h-full">
