@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { getMeals, getProfile, getActivities } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
-import { Flame, Drumstick, Wheat, Beef } from 'lucide-react';
+import { Flame, Drumstick, Wheat, Beef, BarChart } from 'lucide-react';
 import { isToday } from '@/lib/utils';
 import type { MealLog, ActivityLog } from '@/lib/types';
 import { SleepTracker } from './sleep-tracker';
+import Link from 'next/link';
 
 
 async function getSummaryData() {
@@ -121,7 +122,13 @@ export async function TodaySummary() {
           <div className="space-y-4">
               <div>
                   <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
+                        <Link href="/meals" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                            <BarChart className="h-3 w-3" />
+                            Insights
+                        </Link>
+                      </div>
                       <span className="text-sm font-medium">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
