@@ -102,10 +102,31 @@ function CaloriesBurned({ burned }: { burned: number }) {
     )
 }
 
+function getCalorieStatusMessage(consumed: number, goal: number): string {
+  if (goal <= 0) {
+    return "Set up your profile to get calorie tracking.";
+  }
+  if (consumed === 0) {
+    return "No calories logged yet. Let's get tracking!";
+  }
+  const percentage = (consumed / goal) * 100;
+  if (percentage < 50) {
+    return "You're off to a great start today!";
+  }
+  if (percentage <= 100) {
+    return "You're right on track with your goal.";
+  }
+  if (percentage <= 110) {
+    return "You've hit your goal! Keep it up.";
+  }
+  return "You've exceeded your daily calorie goal.";
+}
+
 
 export async function TodaySummary() {
   const { dailyTotals, dailyGoal, caloriesBurned, macroGoals } = await getSummaryData();
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
+  const statusMessage = getCalorieStatusMessage(dailyTotals.calories, dailyGoal);
 
   return (
     <Card>
@@ -121,6 +142,7 @@ export async function TodaySummary() {
                       <span className="text-sm font-medium">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
+                  <p className="text-xs text-center text-muted-foreground mt-2">{statusMessage}</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} />
