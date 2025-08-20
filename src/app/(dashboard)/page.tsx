@@ -22,7 +22,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <header>
         <h1 className="font-headline text-3xl md:text-4xl text-primary">
-          Welcome to FitLife AI
+          Welcome to fitUAI
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
           Your personalized AI-powered health and fitness companion. Track your

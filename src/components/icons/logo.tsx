@@ -24,8 +24,8 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
         `}
       </style>
       <text x="0" y="22" className="logo-text">
-        FitLife
-        <tspan className="logo-highlight"> AI</tspan>
+        fitU
+        <tspan className="logo-highlight">AI</tspan>
       </text>
     </svg>
   );

@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "FitLife AI",
+  title: "fitUAI",
   description: "Your personalized AI-powered health and fitness companion.",
 };
 
