@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera } from 'lucide-react';
+import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   DialogTrigger,
   DialogFooter,
   DialogClose,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -68,6 +69,7 @@ type MealLog = {
   carbs: number;
   fats: number;
   fiber: number;
+  recipe?: string;
   createdAt: { seconds: number, nanoseconds: number };
 };
 
@@ -104,6 +106,7 @@ export function MealPlanner() {
   const [generatedPlan, setGeneratedPlan] = useState<GenerateMealPlanOutput | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<{name: string, recipe: string} | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
@@ -401,6 +404,11 @@ export function MealPlanner() {
                                         <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
                                     </div>
                                 </CardContent>
+                                <CardFooter>
+                                    <Button variant="outline" size="sm" className="w-full" onClick={() => setSelectedRecipe({name: meal.mealName, recipe: meal.recipe || "No recipe available."})}>
+                                       <BookOpen className="mr-2 h-4 w-4" /> View Recipe
+                                    </Button>
+                                </CardFooter>
                             </Card>
                         </div>
                     </TabsContent>
@@ -612,6 +620,19 @@ export function MealPlanner() {
             </Dialog>
         </div>
       </div>
+
+       <Dialog open={!!selectedRecipe} onOpenChange={() => setSelectedRecipe(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-headline">{selectedRecipe?.name}</DialogTitle>
+            <DialogDescription>A simple recipe to get you started.</DialogDescription>
+          </DialogHeader>
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: selectedRecipe?.recipe?.replace(/\n/g, '<br />') || '' }}
+          />
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="breakfast" className="w-full">
         <TabsList className="grid w-full grid-cols-4">

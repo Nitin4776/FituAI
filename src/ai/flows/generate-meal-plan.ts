@@ -18,6 +18,7 @@ const MealDetailSchema = z.object({
   carbs: z.number().describe('Estimated carbohydrates in grams.'),
   fats: z.number().describe('Estimated fats in grams.'),
   fiber: z.number().describe('Estimated fiber in grams.'),
+  recipe: z.string().describe('A simple recipe for the meal, formatted as markdown.'),
 });
 
 const GenerateMealPlanInputSchema = z.object({
@@ -55,7 +56,7 @@ User Preferences:
 - Target Daily Calories: {{{calories}}} kcal
 
 Generate a realistic and balanced meal plan for breakfast, lunch, dinner, and a snack.
-For each meal, provide the meal name, a reasonable quantity/serving size, and the estimated macronutrient breakdown (calories, protein, carbs, fats, fiber).
+For each meal, provide the meal name, a reasonable quantity/serving size, the estimated macronutrient breakdown (calories, protein, carbs, fats, fiber), and a simple recipe formatted using markdown.
 The total calories for the day should be approximately equal to the user's target. Ensure the meals are appropriate for the selected cuisine and diet.`,
 });
 
