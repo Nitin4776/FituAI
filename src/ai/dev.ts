@@ -7,3 +7,4 @@ import '@/ai/flows/calculate-meal-macros.ts';
 import '@/ai/flows/calculate-activity-calories.ts';
 import '@/ai/flows/generate-meal-plan.ts';
 import '@/ai/flows/analyze-meal-image.ts';
+import '@/ai/flows/generate-daily-suggestion.ts';

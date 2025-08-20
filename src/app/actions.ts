@@ -30,6 +30,11 @@ import {
     type AnalyzeMealImageInput,
     type AnalyzeMealImageOutput,
 } from '@/ai/flows/analyze-meal-image';
+import {
+    generateDailySuggestion,
+    type GenerateDailySuggestionInput,
+    type GenerateDailySuggestionOutput,
+} from '@/ai/flows/generate-daily-suggestion';
 import { deleteActivity, deleteMeal, getProfile } from '@/services/firestore';
 
 export async function getHealthySwap(
@@ -139,4 +144,15 @@ export async function analyzeMealImageAction(
         console.error(error);
         throw new Error('Failed to analyze meal image.');
     }
+}
+
+export async function getDailySuggestion(
+  input: GenerateDailySuggestionInput
+): Promise<GenerateDailySuggestionOutput> {
+  try {
+    return await generateDailySuggestion(input);
+  } catch (error) {
+    console.error(error);
+    throw new Error('Failed to generate daily suggestion.');
+  }
 }

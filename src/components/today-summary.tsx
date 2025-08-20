@@ -3,36 +3,9 @@ import { Progress } from '@/components/ui/progress';
 import { getMeals, getProfile, getActivities } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
 import { Flame } from 'lucide-react';
+import { isToday } from '@/lib/utils';
+import type { MealLog, ActivityLog } from '@/lib/types';
 
-type MealLog = {
-  id: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  mealName: string;
-  quantity: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  fiber: number;
-  createdAt: { seconds: number, nanoseconds: number };
-};
-
-type ActivityLog = {
-  id: string;
-  activity: string;
-  duration: number;
-  caloriesBurned: number;
-  createdAt: { seconds: number, nanoseconds: number };
-}
-
-const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
-    if (!timestamp) return false;
-    const date = new Date(timestamp.seconds * 1000);
-    const today = new Date();
-    return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
-};
 
 async function getSummaryData() {
     const [savedMeals, profile, savedActivities] = await Promise.all([getMeals(), getProfile(), getActivities()]);
