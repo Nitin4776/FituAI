@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload, Loader2, Sparkles, FileText, Activity, ShieldQuestion, AlertTriangle, History, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, Loader2, Sparkles, FileText, Activity, ShieldQuestion, AlertTriangle, History, CheckCircle, XCircle, CalendarClock } from 'lucide-react';
 import { analyzeReport } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,56 +176,70 @@ export function BloodTestAnalyzer() {
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Upload Report</CardTitle>
-          <CardDescription>Select a new blood test report file to analyze.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="report"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Blood Report File</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type="file"
-                          accept=".pdf,.png,.jpg,.jpeg"
-                          onChange={(e) => {
-                            field.onChange(e.target.files);
-                            setFileName(e.target.files?.[0]?.name || '');
-                          }}
-                          className="pl-10"
-                        />
-                        <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                    {fileName && <p className="text-sm text-muted-foreground">Selected: {fileName}</p>}
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Analyze with AI
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <div className='space-y-8'>
+        <Card>
+            <CardHeader>
+            <CardTitle className="font-headline">Upload Report</CardTitle>
+            <CardDescription>Select a new blood test report file to analyze.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                    control={form.control}
+                    name="report"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Blood Report File</FormLabel>
+                        <FormControl>
+                        <div className="relative">
+                            <Input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={(e) => {
+                                field.onChange(e.target.files);
+                                setFileName(e.target.files?.[0]?.name || '');
+                            }}
+                            className="pl-10"
+                            />
+                            <Upload className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        </div>
+                        </FormControl>
+                        <FormMessage />
+                        {fileName && <p className="text-sm text-muted-foreground">Selected: {fileName}</p>}
+                    </FormItem>
+                    )}
+                />
+                <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Analyzing...
+                    </>
+                    ) : (
+                    <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Analyze with AI
+                    </>
+                    )}
+                </Button>
+                </form>
+            </Form>
+            </CardContent>
+        </Card>
+
+        {latestAnalysis && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><CalendarClock className="text-primary"/> Next Test Suggestion</CardTitle>
+                    <CardDescription>Based on your latest report, the AI suggests when to get your next blood test.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-lg font-semibold text-center text-primary">{latestAnalysis.nextTestDateSuggestion}</p>
+                </CardContent>
+            </Card>
+        )}
+      </div>
       
       <div className="space-y-8">
         <Card className="flex flex-col">

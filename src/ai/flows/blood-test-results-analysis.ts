@@ -38,6 +38,7 @@ const AnalyzeBloodTestResultsOutputSchema = z.object({
     .string()
     .describe('Lifestyle modification recommendations (diet, exercise, sleep), formatted as markdown bullet points.'),
   criticalMarkers: z.array(CriticalMarkerSchema).describe('A list of highlighted critical markers from the blood test results.'),
+  nextTestDateSuggestion: z.string().describe('A suggested date or timeframe for the next blood test (e.g., "in 3 months", "in 6 months", "annually").'),
 });
 export type AnalyzeBloodTestResultsOutput = z.infer<typeof AnalyzeBloodTestResultsOutputSchema>;
 
@@ -59,6 +60,7 @@ You will analyze the provided blood test report and generate the following:
 2.  Personalized do's and don'ts based on abnormalities. Provide separate lists for "Do's" and "Don'ts", with each formatted as a markdown bulleted list.
 3.  Lifestyle modification recommendations (diet, exercise, sleep). Format this as a markdown bulleted list.
 4.  A list of highlighted critical markers (e.g., cholesterol high, Vitamin D low). For each marker, provide the marker name, its value, and its level (High, Low, Normal, Borderline, etc.).
+5.  A suggested date for the next blood test. If there are critical markers, suggest a shorter follow-up time (e.g., "in 3 months"). If results are mostly normal, suggest a longer interval (e.g., "in 6-12 months").
 
 Use the following blood test report as the primary source of information:
 
