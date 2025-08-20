@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { getMeals, getProfile, getActivities } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
-import { Flame } from 'lucide-react';
+import { Flame, Drumstick, Wheat, Beef } from 'lucide-react';
 import { isToday } from '@/lib/utils';
 import type { MealLog, ActivityLog } from '@/lib/types';
 import { SleepTracker } from './sleep-tracker';
@@ -56,11 +56,14 @@ async function getSummaryData() {
     return { dailyTotals, dailyGoal, caloriesBurned, macroGoals };
 }
 
-function MacroProgress({ label, consumed, goal }: { label: string; consumed: number; goal: number; }) {
+function MacroProgress({ label, consumed, goal, icon: Icon }: { label: string; consumed: number; goal: number; icon: React.ElementType; }) {
     const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
     return (
         <div>
-            <p className="text-sm text-muted-foreground">{label}</p>
+            <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
+                <Icon className="h-4 w-4" />
+                <span>{label}</span>
+            </div>
             <p className="font-bold text-lg">{Math.round(consumed)}g</p>
             <p className="text-xs text-muted-foreground">{percentage}% of goal</p>
         </div>
@@ -125,10 +128,10 @@ export async function TodaySummary() {
                   <p className="text-xs text-center text-muted-foreground mt-2">{statusMessage}</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                  <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} />
-                  <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} />
-                  <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} />
-                  <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} />
+                  <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} icon={Drumstick} />
+                  <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} icon={Wheat} />
+                  <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} icon={Beef} />
+                  <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} icon={Wheat} />
                   <CaloriesBurned burned={caloriesBurned} />
               </div>
           </div>
