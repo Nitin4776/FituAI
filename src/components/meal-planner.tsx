@@ -115,13 +115,14 @@ const calorieDistribution = {
 
 function MacroDisplay({ label, value, unit, icon: Icon }: { label: string; value: number; unit: string; icon: React.ElementType }) {
   return (
-    <div className="flex items-center text-sm text-muted-foreground">
-      <Icon className="h-4 w-4 mr-2 text-primary" />
-      <span className="font-semibold">{label}:</span>
-      <span className="ml-1">{Math.round(value)} {unit}</span>
+    <div className="flex flex-col items-center text-center">
+      <Icon className="h-5 w-5 text-primary" />
+      <span className="font-bold text-sm">{Math.round(value)}{unit}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 }
+
 
 export function MealPlanner() {
   const [meals, setMeals] = useState<MealLog[]>([]);
@@ -386,24 +387,18 @@ export function MealPlanner() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredMeals.map((meal) => (
-                    <Card key={meal.id} className="flex flex-col">
-                        <CardHeader className='pb-4'>
-                          <CardTitle className="text-lg">{meal.mealName}</CardTitle>
-                          <p className="text-sm text-muted-foreground">{meal.quantity}</p>
-                          {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-2">
-                           <MacroDisplay label="Calories" value={meal.calories} unit="kcal" icon={Flame} />
-                           <MacroDisplay label="Protein" value={meal.protein} unit="g" icon={Drumstick} />
-                           <MacroDisplay label="Carbs" value={meal.carbs} unit="g" icon={Wheat} />
-                           <MacroDisplay label="Fats" value={meal.fats} unit="g" icon={Beef} />
-                           <MacroDisplay label="Fiber" value={meal.fiber} unit="g" icon={Wheat} />
-                        </CardContent>
-                        <CardFooter>
-                            <AlertDialog>
+                    <Card key={meal.id}>
+                        <CardHeader className='pb-2'>
+                          <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-lg">{meal.mealName}</CardTitle>
+                                <p className="text-sm text-muted-foreground">{meal.quantity}</p>
+                                {meal.description && <p className="text-xs text-muted-foreground pt-1 italic">"{meal.description}"</p>}
+                            </div>
+                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                    <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600 h-8 w-8 flex-shrink-0">
+                                        <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -419,7 +414,15 @@ export function MealPlanner() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                        </CardFooter>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-5 gap-2 pt-2">
+                           <MacroDisplay label="Calories" value={meal.calories} unit="kcal" icon={Flame} />
+                           <MacroDisplay label="Protein" value={meal.protein} unit="g" icon={Drumstick} />
+                           <MacroDisplay label="Carbs" value={meal.carbs} unit="g" icon={Wheat} />
+                           <MacroDisplay label="Fats" value={meal.fats} unit="g" icon={Beef} />
+                           <MacroDisplay label="Fiber" value={meal.fiber} unit="g" icon={Wheat} />
+                        </CardContent>
                     </Card>
                     ))}
                 </div>
