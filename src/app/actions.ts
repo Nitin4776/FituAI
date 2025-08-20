@@ -25,6 +25,11 @@ import {
     type GenerateMealPlanInput,
     type GenerateMealPlanOutput,
 } from '@/ai/flows/generate-meal-plan';
+import {
+    analyzeMealImage,
+    type AnalyzeMealImageInput,
+    type AnalyzeMealImageOutput,
+} from '@/ai/flows/analyze-meal-image';
 import { deleteActivity, deleteMeal, getProfile } from '@/services/firestore';
 
 export async function getHealthySwap(
@@ -122,5 +127,16 @@ export async function generateMealPlanAction(
     } catch (error) {
         console.error(error);
         throw new Error('Failed to generate meal plan.');
+    }
+}
+
+export async function analyzeMealImageAction(
+    input: AnalyzeMealImageInput
+): Promise<AnalyzeMealImageOutput> {
+    try {
+        return await analyzeMealImage(input);
+    } catch (error) {
+        console.error(error);
+        throw new Error('Failed to analyze meal image.');
     }
 }

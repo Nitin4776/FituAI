@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot } from 'lucide-react';
+import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -36,12 +36,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getMealMacros, deleteMealAction, generateMealPlanAction } from '@/app/actions';
+import { getMealMacros, deleteMealAction, generateMealPlanAction, analyzeMealImageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { addMeal, getMeals } from '@/services/firestore';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
 const mealSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
@@ -82,15 +83,32 @@ const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
            date.getFullYear() === today.getFullYear();
 };
 
+const toDataURL = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+  });
+
 export function MealPlanner() {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [isAddMealDialogOpen, setIsAddMealDialogOpen] = useState(false);
   const [isPlanMealDialogOpen, setIsPlanMealDialogOpen] = useState(false);
+  const [isAnalyzeMealDialogOpen, setIsAnalyzeMealDialogOpen] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [generatedPlan, setGeneratedPlan] = useState<GenerateMealPlanOutput | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const photoRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
 
   const form = useForm<MealFormValues>({
@@ -120,6 +138,32 @@ export function MealPlanner() {
     }
     loadData();
   }, []);
+  
+  useEffect(() => {
+    if (isAnalyzeMealDialogOpen) {
+        const getCameraPermission = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: true});
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+            setHasCameraPermission(true);
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            setHasCameraPermission(false);
+        }
+        };
+        getCameraPermission();
+    } else {
+        // Stop camera stream when dialog is closed
+        if (videoRef.current?.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+    }
+  }, [isAnalyzeMealDialogOpen]);
+
 
   useEffect(() => {
     if (mealNameInput && mealNameInput.length > 1) {
@@ -198,6 +242,63 @@ export function MealPlanner() {
             title: 'Delete Failed',
             description: 'Could not delete the meal. Please try again.',
         });
+    }
+  }
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setImagePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const takePicture = () => {
+    if (videoRef.current && photoRef.current) {
+        const video = videoRef.current;
+        const photo = photoRef.current;
+        const context = photo.getContext('2d');
+        
+        photo.width = video.videoWidth;
+        photo.height = video.videoHeight;
+        
+        context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        const dataUri = photo.toDataURL('image/jpeg');
+        setImagePreview(dataUri);
+    }
+  };
+
+  const handleAnalyzeImage = async () => {
+    if (!imagePreview) return;
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeMealImageAction({ imageDataUri: imagePreview });
+        if (!result.isFood) {
+             toast({
+                variant: 'destructive',
+                title: 'Analysis Failed',
+                description: "The AI couldn't recognize a food item in the image. Please log your meal manually.",
+            });
+            setIsAnalyzeMealDialogOpen(false);
+        } else {
+            form.setValue('mealName', result.mealName);
+            form.setValue('quantity', result.quantity);
+            // This is a bit of a hack. The getMealMacros will be called again on submit,
+            // but we pre-fill the form for user confirmation.
+            setIsAnalyzeMealDialogOpen(false);
+            setIsAddMealDialogOpen(true); // Open the manual log dialog with pre-filled data
+        }
+
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Analysis Failed',
+            description: "An error occurred while analyzing the image. Please try again or log manually.",
+        });
+    } finally {
+        setIsAnalyzing(false);
+        setImagePreview(null);
     }
   }
 
@@ -312,12 +413,74 @@ export function MealPlanner() {
   return (
     <>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-headline">Log Your Meals</h2>
-        <div className='flex gap-2'>
+        <h2 className="text-2xl font-headline">Today's Meals</h2>
+        <div className='flex flex-wrap gap-2 justify-end'>
+            <Dialog open={isAnalyzeMealDialogOpen} onOpenChange={(isOpen) => {
+                setIsAnalyzeMealDialogOpen(isOpen);
+                if (!isOpen) {
+                    setImagePreview(null);
+                    setHasCameraPermission(null);
+                }
+            }}>
+                <DialogTrigger asChild>
+                    <Button variant="outline">
+                        <Camera className="mr-2 h-4 w-4" /> Analyze Meal with AI
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Analyze Meal from Image</DialogTitle>
+                        <CardDescription>Upload a photo or use your camera to get an AI analysis of your meal.</CardDescription>
+                    </DialogHeader>
+                    <div className='space-y-4'>
+                        {imagePreview ? (
+                            <div className='space-y-4'>
+                                <img src={imagePreview} alt="Meal Preview" className="rounded-md w-full" />
+                                 <Button onClick={handleAnalyzeImage} className="w-full" disabled={isAnalyzing}>
+                                    {isAnalyzing ? <Loader2 className='animate-spin mr-2' /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                    Analyze Image
+                                </Button>
+                                <Button variant="outline" className="w-full" onClick={() => setImagePreview(null)}>Take a different picture</Button>
+                            </div>
+                        ) : (
+                            <Tabs defaultValue="camera">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="camera">Camera</TabsTrigger>
+                                    <TabsTrigger value="upload">Upload</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="camera">
+                                    <div className="space-y-2">
+                                        <video ref={videoRef} className="w-full aspect-video rounded-md bg-secondary" autoPlay muted playsInline />
+                                        <canvas ref={photoRef} className="hidden" />
+                                        {hasCameraPermission === false ? (
+                                            <Alert variant="destructive">
+                                                <AlertTitle>Camera Access Denied</AlertTitle>
+                                                <AlertDescription>Please allow camera access in your browser settings to use this feature.</AlertDescription>
+                                            </Alert>
+                                        ) : (
+                                            <Button onClick={takePicture} className="w-full" disabled={!hasCameraPermission}>
+                                                <Camera className="mr-2 h-4 w-4" /> Take Picture
+                                            </Button>
+                                        )}
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="upload">
+                                    <div className="space-y-2">
+                                        <Input type="file" accept="image/*" onChange={handleImageUpload} ref={fileInputRef} className="hidden" />
+                                        <Button onClick={() => fileInputRef.current?.click()} className="w-full">
+                                            <Upload className="mr-2 h-4 w-4" /> Choose from Library
+                                        </Button>
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
             <Dialog open={isPlanMealDialogOpen} onOpenChange={setIsPlanMealDialogOpen}>
                 <DialogTrigger asChild>
                     <Button variant="outline">
-                        <Bot className="mr-2 h-4 w-4" /> Plan meal with AI
+                        <Bot className="mr-2 h-4 w-4" /> Plan Day with AI
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -373,7 +536,7 @@ export function MealPlanner() {
             <Dialog open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
             <DialogTrigger asChild>
                 <Button>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Meal
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Meal Manually
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
