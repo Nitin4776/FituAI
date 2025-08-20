@@ -40,7 +40,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/profile">
-          <Card className="hover:shadow-lg transition-shadow h-full">
+          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Profile & Goal
@@ -55,7 +55,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/activity">
-          <Card className="hover:shadow-lg transition-shadow h-full">
+          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Activity Tracker
@@ -70,7 +70,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/meals">
-          <Card className="hover:shadow-lg transition-shadow h-full">
+          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Meal Planner</CardTitle>
               <Utensils className="h-4 w-4 text-primary" />
@@ -83,7 +83,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/fasting">
-          <Card className="hover:shadow-lg transition-shadow h-full">
+          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Intermittent Fasting
@@ -98,7 +98,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/healthy-swaps">
-          <Card className="hover:shadow-lg transition-shadow h-full">
+          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Healthy Swaps
@@ -113,7 +113,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         <Link href="/blood-test">
-          <Card className="hover:shadow-lg transition-shadow h-full">
+          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Blood Test Analysis
