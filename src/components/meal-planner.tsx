@@ -44,11 +44,13 @@ import { useToast } from '@/hooks/use-toast';
 import { addMeal, getMeals } from '@/services/firestore';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
+import { Textarea } from './ui/textarea';
 
 const mealSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
   mealName: z.string().min(1, 'Meal name is required'),
   quantity: z.string().min(1, 'Quantity is required'),
+  description: z.string().optional(),
 });
 
 const planSchema = z.object({
@@ -64,6 +66,7 @@ type MealLog = {
   mealType: MealFormValues['mealType'];
   mealName: string;
   quantity: string;
+  description?: string;
   calories: number;
   protein: number;
   carbs: number;
@@ -116,7 +119,7 @@ export function MealPlanner() {
 
   const form = useForm<MealFormValues>({
     resolver: zodResolver(mealSchema),
-    defaultValues: { mealType: 'breakfast', mealName: '', quantity: '' },
+    defaultValues: { mealType: 'breakfast', mealName: '', quantity: '', description: '' },
   });
   
   const planForm = useForm<PlanFormValues>({
@@ -187,6 +190,7 @@ export function MealPlanner() {
         mealType: data.mealType,
         mealName: data.mealName,
         quantity: data.quantity,
+        description: data.description,
         ...macros,
       };
 
@@ -332,6 +336,7 @@ export function MealPlanner() {
             <CardHeader>
               <CardTitle className="text-lg">{meal.mealName}</CardTitle>
               <p className="text-sm text-muted-foreground">{meal.quantity}</p>
+              {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
             </CardHeader>
             <CardContent className="flex-grow">
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
@@ -597,6 +602,19 @@ export function MealPlanner() {
                     <FormField control={form.control} name="quantity" render={({ field }) => (
                         <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input placeholder="e.g., 1 bowl" {...field} /></FormControl><FormMessage /></FormItem>
                     )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Description (Optional)</FormLabel>
+                            <FormControl>
+                            <Textarea placeholder="e.g., Made with grilled chicken, romaine lettuce, and a light vinaigrette." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
                     />
                     <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>

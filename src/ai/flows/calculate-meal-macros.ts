@@ -13,6 +13,7 @@ import {z} from 'genkit';
 const CalculateMealMacrosInputSchema = z.object({
   mealName: z.string().describe('The name of the meal (e.g., "Chicken Salad").'),
   quantity: z.string().describe('The quantity or serving size of the meal (e.g., "1 bowl").'),
+  description: z.string().optional().describe('An optional description with more details about the meal.'),
 });
 export type CalculateMealMacrosInput = z.infer<typeof CalculateMealMacrosInputSchema>;
 
@@ -36,9 +37,13 @@ const prompt = ai.definePrompt({
   input: {schema: CalculateMealMacrosInputSchema},
   output: {schema: CalculateMealMacrosOutputSchema},
   prompt: `You are a nutritionist. Analyze the provided meal and quantity to estimate its macronutrient content.
+Use the optional description for more context.
 
 Meal: {{{mealName}}}
 Quantity: {{{quantity}}}
+{{#if description}}
+Description: {{{description}}}
+{{/if}}
 
 Return the estimated calories, protein, carbohydrates, fats, and fiber as numerical values.`,
 });
