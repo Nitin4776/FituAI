@@ -45,6 +45,7 @@ const toDataURL = (file: File): Promise<string> =>
   });
 
 function MarkdownList({ content }: { content: string }) {
+    if (!content) return null;
     const items = content.split('\n').map(item => item.trim().replace(/^- \*/, '').replace(/^-/, '').replace(/^\*/, '').trim()).filter(Boolean);
     return (
         <ul className="list-disc pl-5 space-y-1">
