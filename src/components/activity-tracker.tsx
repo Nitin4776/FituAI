@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
@@ -48,10 +47,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getActivityCalories, deleteActivityAction } from '@/app/actions';
 import { addActivity, getActivities } from '@/services/firestore';
+import { Textarea } from './ui/textarea';
 
 const activitySchema = z.object({
   activity: z.string().min(1, 'Activity name is required'),
   duration: z.coerce.number().min(1, 'Duration must be at least 1 minute'),
+  description: z.string().optional(),
 });
 
 type ActivityFormValues = z.infer<typeof activitySchema>;
@@ -62,6 +63,7 @@ type ActivityLog = {
   activity: string;
   duration: number;
   caloriesBurned: number;
+  description?: string;
   createdAt: { seconds: number, nanoseconds: number };
 };
 
@@ -87,6 +89,7 @@ export function ActivityTracker() {
     defaultValues: {
       activity: '',
       duration: 0,
+      description: '',
     },
   });
   
@@ -197,6 +200,19 @@ export function ActivityTracker() {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="e.g., Ran at a steady pace with a few sprints." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <DialogFooter>
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
@@ -244,7 +260,10 @@ export function ActivityTracker() {
                 activities.map((act) => (
                   <TableRow key={act.id}>
                     <TableCell>{act.date}</TableCell>
-                    <TableCell className="font-medium">{act.activity}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>{act.activity}</div>
+                      {act.description && <div className="text-xs text-muted-foreground">{act.description}</div>}
+                    </TableCell>
                     <TableCell className="text-right">{act.duration}</TableCell>
                     <TableCell className="text-right flex items-center justify-end gap-1"><Flame className="h-4 w-4 text-orange-500" />{act.caloriesBurned} kcal</TableCell>
                     <TableCell className="text-right">

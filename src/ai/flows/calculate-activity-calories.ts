@@ -13,6 +13,7 @@ import {z} from 'genkit';
 const CalculateActivityCaloriesInputSchema = z.object({
   activity: z.string().describe('The name of the physical activity.'),
   duration: z.number().describe('The duration of the activity in minutes.'),
+  description: z.string().optional().describe('An optional description with more details about the activity.'),
 });
 export type CalculateActivityCaloriesInput = z.infer<typeof CalculateActivityCaloriesInputSchema>;
 
@@ -31,10 +32,13 @@ const prompt = ai.definePrompt({
   name: 'calculateActivityCaloriesPrompt',
   input: {schema: CalculateActivityCaloriesInputSchema},
   output: {schema: CalculateActivityCaloriesOutputSchema},
-  prompt: `You are a fitness expert. Based on the provided physical activity and its duration, estimate the number of calories burned.
+  prompt: `You are a fitness expert. Based on the provided physical activity, its duration, and optional description, estimate the number of calories burned.
 
 Activity: {{{activity}}}
 Duration: {{{duration}}} minutes
+{{#if description}}
+Description: {{{description}}}
+{{/if}}
 
 Provide a single numerical value for the estimated calories burned.`,
 });
