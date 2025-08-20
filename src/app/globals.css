@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --background: 210 40% 98%; /* Light Blue */
-    --foreground: 224 71% 4%; /* Dark Blue-Black */
+    --foreground: 224 71% 15%; /* Dark Blue-Black - Lightened */
 
     --card: 210 40% 98% / 0.6; /* Semi-transparent for glass effect */
     --card-foreground: 224 71% 4%;
@@ -13,7 +13,7 @@
     --popover: 210 40% 98%;
     --popover-foreground: 224 71% 4%;
 
-    --primary: 142 76% 36%; /* Vibrant Green */
+    --primary: 142 76% 46%; /* Vibrant Green - Lightened */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 90%;
@@ -59,7 +59,7 @@
     --popover: 224 71% 4%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 142 76% 46%;
+    --primary: 142 76% 56%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 224 71% 15%;
@@ -107,6 +107,6 @@
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
-    text-shadow: 0 1px 2px hsl(var(--foreground) / 0.1);
+    text-shadow: 0 1px 3px hsl(var(--foreground) / 0.2);
   }
 }
