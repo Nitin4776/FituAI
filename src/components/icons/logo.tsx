@@ -11,9 +11,8 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
     >
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
           .logo-text {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Montserrat', serif;
             font-size: 24px;
             font-weight: 700;
             fill: hsl(var(--sidebar-foreground));
