@@ -11,6 +11,9 @@ import {
   Timestamp,
   limit,
   deleteDoc,
+  where,
+  startOfDay,
+  endOfDay,
 } from 'firebase/firestore';
 
 // Hardcoded user ID for now. Replace with actual user ID from auth.
@@ -107,4 +110,20 @@ export async function getFastingState() {
     const fastingDocRef = doc(db, 'users', USER_ID, 'fastingState', 'current');
     const docSnap = await getDoc(fastingDocRef);
     return docSnap.exists() ? docSnap.data() : null;
+}
+
+
+// --- Sleep ---
+export async function saveSleepLog(sleepData: { quality: string }) {
+  const sleepLogRef = doc(db, 'users', USER_ID, 'sleep', new Date().toISOString().split('T')[0]);
+  await setDoc(sleepLogRef, {
+    ...sleepData,
+    createdAt: Timestamp.now(),
+  }, { merge: true });
+}
+
+export async function getSleepLogForToday() {
+  const sleepLogRef = doc(db, 'users', USER_ID, 'sleep', new Date().toISOString().split('T')[0]);
+  const docSnap = await getDoc(sleepLogRef);
+  return docSnap.exists() ? docSnap.data() : null;
 }

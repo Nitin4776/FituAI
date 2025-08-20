@@ -27,3 +27,8 @@ export type AnalysisRecord = {
     lifestyleModifications: string;
     createdAt: { seconds: number; nanoseconds: number };
 }
+
+export type SleepLog = {
+  quality: 'excellent' | 'good' | 'moderate' | 'low';
+  createdAt: { seconds: number; nanoseconds: number };
+};

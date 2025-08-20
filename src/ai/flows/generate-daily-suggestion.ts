@@ -9,13 +9,14 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import type { MealLog, ActivityLog, AnalysisRecord } from '@/lib/types';
+import type { MealLog, ActivityLog, AnalysisRecord, SleepLog } from '@/lib/types';
 
 
 const GenerateDailySuggestionInputSchema = z.object({
   latestBloodTest: z.any().optional().describe('The summary and critical markers from the user\'s most recent blood test analysis.'),
   todaysMeals: z.any().describe('A list of meals the user has logged today, including macronutrient information.'),
   todaysActivities: z.any().describe('A list of physical activities the user has logged today, including calories burned.'),
+  todaysSleep: z.any().optional().describe("The user's logged sleep quality for today (e.g., 'excellent', 'good', 'moderate', 'low')."),
 });
 export type GenerateDailySuggestionInput = z.infer<typeof GenerateDailySuggestionInputSchema>;
 
@@ -39,7 +40,7 @@ const prompt = ai.definePrompt({
 Analyze the following user data:
 
 {{#if latestBloodTest}}
-User's Latest Blood Test Summary:
+User's Latest BloodTest Summary:
 - Summary: {{{latestBloodTest.summary}}}
 - Critical Markers:
 {{#each latestBloodTest.criticalMarkers}}
@@ -47,6 +48,10 @@ User's Latest Blood Test Summary:
 {{/each}}
 {{else}}
 User has no blood test data.
+{{/if}}
+
+{{#if todaysSleep}}
+Today's Sleep Quality: {{{todaysSleep.quality}}}
 {{/if}}
 
 Today's Meals:
@@ -67,7 +72,7 @@ Today's Activities:
 No activities logged yet today.
 {{/if}}
 
-Based on all of this information, provide one single, encouraging, and actionable health tip for today. For example, if meals are high in carbs and there's no activity, suggest a short walk. If a blood marker is low, suggest a food that could help. If they have logged a good workout, praise them. If no data is present, provide a general wellness tip.
+Based on all of this information, provide one single, encouraging, and actionable health tip for today. For example, if meals are high in carbs and there's no activity, suggest a short walk. If a blood marker is low, suggest a food that could help. If sleep quality was low, suggest a relaxing activity or an early bedtime. If they have logged a good workout, praise them. If no data is present, provide a general wellness tip.
 `,
 });
 

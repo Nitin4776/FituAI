@@ -1,25 +1,28 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getMeals, getActivities, getBloodTestAnalyses } from '@/services/firestore';
+import { getMeals, getActivities, getBloodTestAnalyses, getSleepLogForToday } from '@/services/firestore';
 import { getDailySuggestion } from '@/app/actions';
 import { isToday } from '@/lib/utils';
 import { Bot, Lightbulb } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 async function getSuggestionData() {
-    const [savedMeals, savedActivities, savedAnalyses] = await Promise.all([
+    const [savedMeals, savedActivities, savedAnalyses, savedSleep] = await Promise.all([
         getMeals(),
         getActivities(),
-        getBloodTestAnalyses()
+        getBloodTestAnalyses(),
+        getSleepLogForToday()
     ]);
 
     const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
     const todaysActivities = (savedActivities as any[]).filter(activity => isToday(activity.createdAt));
     const latestBloodTest = savedAnalyses?.[0] || null;
+    const todaysSleep = savedSleep || null;
 
     const suggestionInput = {
         todaysMeals,
         todaysActivities,
         latestBloodTest,
+        todaysSleep,
     };
     
     try {

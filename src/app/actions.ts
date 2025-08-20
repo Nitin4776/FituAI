@@ -35,7 +35,7 @@ import {
     type GenerateDailySuggestionInput,
     type GenerateDailySuggestionOutput,
 } from '@/ai/flows/generate-daily-suggestion';
-import { deleteActivity, deleteMeal, getProfile } from '@/services/firestore';
+import { deleteActivity, deleteMeal, getProfile, saveSleepLog } from '@/services/firestore';
 
 export async function getHealthySwap(
   input: HealthySwapSuggestionsInput
@@ -155,4 +155,13 @@ export async function getDailySuggestion(
     console.error(error);
     throw new Error('Failed to generate daily suggestion.');
   }
+}
+
+export async function saveSleepLogAction(quality: string) {
+    try {
+        await saveSleepLog({ quality });
+    } catch (error) {
+        console.error('Failed to save sleep log:', error);
+        throw new Error('Could not save your sleep quality. Please try again.');
+    }
 }
