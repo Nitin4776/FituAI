@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { getMeals, getProfile, getActivities } from '@/services/firestore';
@@ -105,8 +106,13 @@ export async function TodaySummary() {
   return (
     <Card>
       <CardHeader>
-          <CardTitle className="font-headline">Today's Summary</CardTitle>
-          <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle className="font-headline">Today's Summary</CardTitle>
+                <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
+            </div>
+            <SleepTracker />
+        </div>
       </CardHeader>
       <CardContent>
           <div className="space-y-4">
@@ -118,13 +124,12 @@ export async function TodaySummary() {
                   <Progress value={calorieProgress} className="h-2"/>
                   <p className="text-xs text-center text-muted-foreground mt-2">{statusMessage}</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} />
                   <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} />
                   <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} />
                   <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} />
                   <CaloriesBurned burned={caloriesBurned} />
-                  <SleepTracker />
               </div>
           </div>
       </CardContent>

@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import type { SleepLog } from '@/lib/types';
+import { Label } from './ui/label';
 
 const sleepOptions = {
     excellent: '🤩',
@@ -37,7 +38,9 @@ export function SleepTracker() {
     }, []);
 
     const handleSelectSleep = async (quality: SleepQuality) => {
-        setSelectedSleep(quality);
+        if (isLoading) return; // Prevent clicking while still loading/saving
+        const originalState = selectedSleep;
+        setSelectedSleep(quality); // Optimistic update
         try {
             await saveSleepLogAction(quality);
             toast({
@@ -45,7 +48,7 @@ export function SleepTracker() {
                 description: `You've logged your sleep as "${quality}".`,
             });
         } catch (error) {
-            setSelectedSleep(null); // Revert on error
+            setSelectedSleep(originalState); // Revert on error
             toast({
                 variant: 'destructive',
                 title: 'Log Failed',
@@ -54,45 +57,39 @@ export function SleepTracker() {
         }
     };
 
-    if (isLoading) {
-        return (
-            <div>
-                 <p className="text-sm text-muted-foreground">Sleep</p>
-                 <div className='flex justify-center items-center h-full'>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                 </div>
-            </div>
-        )
-    }
-
     return (
-        <div>
-            <p className="text-sm text-muted-foreground">Sleep</p>
-            <div className='flex gap-1 items-center justify-center pt-2'>
-                <TooltipProvider>
-                    {Object.entries(sleepOptions).map(([quality, emoji]) => (
-                        <Tooltip key={quality}>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                        'text-2xl rounded-full h-9 w-9 transition-all duration-200',
-                                        selectedSleep === quality ? 'bg-primary/20 scale-110' : 'opacity-50 hover:opacity-100'
-                                    )}
-                                    onClick={() => handleSelectSleep(quality as SleepQuality)}
-                                >
-                                    {emoji}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p className='capitalize'>{quality}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
-                </TooltipProvider>
+        <div className="text-center">
+            <Label className="text-sm text-muted-foreground">How was your sleep?</Label>
+            <div className='flex gap-1 items-center justify-center pt-1'>
+                {isLoading ? (
+                    <div className='flex items-center justify-center h-9 w-full'>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                ) : (
+                    <TooltipProvider>
+                        {Object.entries(sleepOptions).map(([quality, emoji]) => (
+                            <Tooltip key={quality}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn(
+                                            'text-2xl rounded-full h-9 w-9 transition-all duration-200',
+                                            selectedSleep === quality ? 'bg-primary/20 scale-110' : 'opacity-50 hover:opacity-100'
+                                        )}
+                                        onClick={() => handleSelectSleep(quality as SleepQuality)}
+                                    >
+                                        {emoji}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className='capitalize'>{quality}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ))}
+                    </TooltipProvider>
+                )}
             </div>
-             <p className="text-xs text-muted-foreground">&nbsp;</p>
         </div>
     );
 }
