@@ -45,6 +45,7 @@ import { addMeal, getMeals, getProfile } from '@/services/firestore';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
+import { Progress } from './ui/progress';
 
 const mealSchema = z.object({
   mealType: z.enum(['breakfast', 'morningSnack', 'lunch', 'eveningSnack', 'dinner']),
@@ -88,6 +89,7 @@ const cuisineTypes = ['Indian', 'Subcontinental', 'Italian', 'Mexican', 'Chinese
 const dietTypes: PlanFormValues['diet'][] = ['vegetarian', 'non-vegetarian', 'eggetarian', 'vegan'];
 
 const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp) return false;
     const date = new Date(timestamp.seconds * 1000);
     const today = new Date();
     return date.getDate() === today.getDate() &&
@@ -344,6 +346,8 @@ export function MealPlanner() {
   const renderMealCards = (mealTypeValue: MealFormValues['mealType']) => {
     const filteredMeals = meals.filter((m) => m.mealType === mealTypeValue && isToday(m.createdAt));
     const targetCalories = Math.round(dailyGoal * calorieDistribution[mealTypeValue]);
+    const consumedCalories = filteredMeals.reduce((sum, meal) => sum + meal.calories, 0);
+    const progress = targetCalories > 0 ? (consumedCalories / targetCalories) * 100 : 0;
 
      if (isLoading) {
        return (
@@ -353,61 +357,66 @@ export function MealPlanner() {
          </div>
        );
      }
-
-    if (filteredMeals.length === 0) {
-      return (
-        <div className="text-center text-muted-foreground py-10">
-          <Utensils className="mx-auto h-8 w-8" />
-          <p className="mt-2">No {mealTypeValue} logged for today yet.</p>
-           <p className="text-sm text-primary">Recommended: ~{targetCalories} kcal</p>
-        </div>
-      );
-    }
+     
     return (
-        <>
-        <p className="text-sm text-primary text-center my-2">Recommended: ~{targetCalories} kcal</p>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
-            {filteredMeals.map((meal) => (
-            <Card key={meal.id} className="flex flex-col">
-                <CardHeader>
-                <CardTitle className="text-lg">{meal.mealName}</CardTitle>
-                <p className="text-sm text-muted-foreground">{meal.quantity}</p>
-                {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
-                </CardHeader>
-                <CardContent className="flex-grow">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                    <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
-                    <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
-                    <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
-                    <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
-                    <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
+        <div className="space-y-4">
+            <div className="text-center text-sm text-muted-foreground bg-secondary p-2 rounded-md">
+                <div className="flex justify-between items-center text-xs px-1">
+                    <span>Consumed: {Math.round(consumedCalories)} kcal</span>
+                    <span>Recommended: ~{targetCalories} kcal</span>
                 </div>
-                </CardContent>
-                <CardFooter>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete this meal from your log.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteMeal(meal.id)}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </CardFooter>
-            </Card>
-            ))}
-        </div>
-      </>
+                <Progress value={progress} className="h-1 mt-1" />
+            </div>
+
+            {filteredMeals.length === 0 ? (
+                 <div className="text-center text-muted-foreground py-10">
+                    <Utensils className="mx-auto h-8 w-8" />
+                    <p className="mt-2">No {mealTypes.find(mt => mt.value === mealTypeValue)?.name} logged for today yet.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredMeals.map((meal) => (
+                    <Card key={meal.id} className="flex flex-col">
+                        <CardHeader>
+                        <CardTitle className="text-lg">{meal.mealName}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{meal.quantity}</p>
+                        {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                            <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
+                            <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
+                            <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
+                            <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
+                            <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
+                        </div>
+                        </CardContent>
+                        <CardFooter>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete this meal from your log.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteMeal(meal.id)}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardFooter>
+                    </Card>
+                    ))}
+                </div>
+            )}
+      </div>
     );
   };
   
