@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getMeals, getActivities, getBloodTestAnalyses, getSleepLogForToday } from '@/services/firestore';
 import { getDailySuggestion } from '@/app/actions';
@@ -30,6 +31,9 @@ async function getSuggestionData() {
         return suggestion;
     } catch (error) {
         console.error("Failed to get daily suggestion:", error);
+        if (error instanceof Error && (error.message.includes('503') || error.message.toLowerCase().includes('overloaded'))) {
+            return "The AI coach is very popular right now! Please try again in a moment.";
+        }
         return "Could not load a suggestion at this time. Please check your connection.";
     }
 }
