@@ -121,18 +121,22 @@ export async function TodaySummary() {
       <CardContent>
           <div className="space-y-4">
               <div>
-                  <div className="flex justify-between items-center mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
-                        <Link href="/meals" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                            <BarChart className="h-3 w-3" />
-                            Insights
-                        </Link>
-                      </div>
-                      <span className="text-sm font-medium">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
+                  <div className="flex justify-between items-baseline mb-1">
+                      <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
+                      <Link
+                        href="/meals"
+                        className="flex items-center gap-1 text-xs text-accent font-bold hover:brightness-110 transition-all"
+                        style={{ textShadow: '0 0 8px hsl(var(--accent) / 0.5)' }}
+                      >
+                          <BarChart className="h-3 w-3" />
+                          Insights
+                      </Link>
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
-                  <p className="text-xs text-center text-muted-foreground mt-2">{statusMessage}</p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-muted-foreground">{statusMessage}</p>
+                    <span className="text-sm font-bold">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
+                  </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} icon={Drumstick} />
