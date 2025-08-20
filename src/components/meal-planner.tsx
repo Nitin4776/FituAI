@@ -385,7 +385,7 @@ export function MealPlanner() {
                     <p className="mt-2">No {mealTypes.find(mt => mt.value === mealTypeValue)?.name} logged for today yet.</p>
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-4">
                     {filteredMeals.map((meal) => (
                     <Card key={meal.id}>
                         <CardHeader className='pb-2'>
@@ -457,13 +457,13 @@ export function MealPlanner() {
                 </TabsList>
                 {planEntries.map(([mealType, meal]) => (
                     <TabsContent key={mealType} value={mealType}>
-                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+                         <div className="space-y-4 mt-4">
                             <Card className="flex flex-col">
                                 <CardHeader className='pb-4'>
                                     <CardTitle className="text-lg">{meal.mealName}</CardTitle>
                                     <p className="text-sm text-muted-foreground">{meal.quantity}</p>
                                 </CardHeader>
-                                <CardContent className="flex-grow space-y-2">
+                                <CardContent className="flex-grow grid grid-cols-5 gap-2">
                                     <MacroDisplay label="Calories" value={meal.calories} unit="kcal" icon={Flame} />
                                     <MacroDisplay label="Protein" value={meal.protein} unit="g" icon={Drumstick} />
                                     <MacroDisplay label="Carbs" value={meal.carbs} unit="g" icon={Wheat} />
