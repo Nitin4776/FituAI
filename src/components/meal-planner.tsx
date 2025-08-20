@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera, BookOpen, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
+import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera, BookOpen, Flame, Drumstick, Wheat, Beef, Pencil, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -61,6 +61,8 @@ const planSchema = z.object({
 
 type MealFormValues = z.infer<typeof mealSchema>;
 type PlanFormValues = z.infer<typeof planSchema>;
+type DialogStep = 'choice' | 'manual' | 'analyze';
+
 
 type MealLog = {
   id: string;
@@ -126,9 +128,9 @@ function MacroDisplay({ label, value, unit, icon: Icon }: { label: string; value
 
 export function MealPlanner() {
   const [meals, setMeals] = useState<MealLog[]>([]);
-  const [isAddMealDialogOpen, setIsAddMealDialogOpen] = useState(false);
+  const [isLogMealDialogOpen, setIsLogMealDialogOpen] = useState(false);
+  const [logMealDialogStep, setLogMealDialogStep] = useState<DialogStep>('choice');
   const [isPlanMealDialogOpen, setIsPlanMealDialogOpen] = useState(false);
-  const [isAnalyzeMealDialogOpen, setIsAnalyzeMealDialogOpen] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -191,7 +193,7 @@ export function MealPlanner() {
   }, []);
   
   useEffect(() => {
-    if (isAnalyzeMealDialogOpen) {
+    if (isLogMealDialogOpen && logMealDialogStep === 'analyze') {
         const getCameraPermission = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({video: true});
@@ -206,14 +208,14 @@ export function MealPlanner() {
         };
         getCameraPermission();
     } else {
-        // Stop camera stream when dialog is closed
+        // Stop camera stream when dialog is closed or step changes
         if (videoRef.current?.srcObject) {
             const stream = videoRef.current.srcObject as MediaStream;
             stream.getTracks().forEach(track => track.stop());
             videoRef.current.srcObject = null;
         }
     }
-  }, [isAnalyzeMealDialogOpen]);
+  }, [isLogMealDialogOpen, logMealDialogStep]);
 
 
   useEffect(() => {
@@ -249,7 +251,7 @@ export function MealPlanner() {
       setMeals((prev) => [newMealForState, ...prev]);
 
       form.reset();
-      setIsAddMealDialogOpen(false);
+      setIsLogMealDialogOpen(false);
     } catch (error) {
        toast({
         variant: 'destructive',
@@ -332,14 +334,12 @@ export function MealPlanner() {
                 title: 'Analysis Failed',
                 description: "The AI couldn't recognize a food item in the image. Please log your meal manually.",
             });
-            setIsAnalyzeMealDialogOpen(false);
+            setLogMealDialogStep('manual');
         } else {
             form.setValue('mealName', result.mealName);
             form.setValue('quantity', result.quantity);
-            // This is a bit of a hack. The getMealMacros will be called again on submit,
-            // but we pre-fill the form for user confirmation.
-            setIsAnalyzeMealDialogOpen(false);
-            setIsAddMealDialogOpen(true); // Open the manual log dialog with pre-filled data
+            // Pre-fill the form for user confirmation.
+            setLogMealDialogStep('manual');
         }
 
     } catch (error) {
@@ -484,73 +484,177 @@ export function MealPlanner() {
     )
   }
 
+  const renderLogMealDialogContent = () => {
+    switch (logMealDialogStep) {
+        case 'analyze':
+            return (
+                <div className='space-y-4'>
+                    {imagePreview ? (
+                        <div className='space-y-4'>
+                            <img src={imagePreview} alt="Meal Preview" className="rounded-md w-full" />
+                            <Button onClick={handleAnalyzeImage} className="w-full" disabled={isAnalyzing}>
+                                {isAnalyzing ? <Loader2 className='animate-spin mr-2' /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                Analyze Image
+                            </Button>
+                            <Button variant="outline" className="w-full" onClick={() => setImagePreview(null)}>Take a different picture</Button>
+                        </div>
+                    ) : (
+                        <Tabs defaultValue="camera">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="camera">Camera</TabsTrigger>
+                                <TabsTrigger value="upload">Upload</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="camera">
+                                <div className="space-y-2">
+                                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-secondary" autoPlay muted playsInline />
+                                    <canvas ref={photoRef} className="hidden" />
+                                    {hasCameraPermission === false ? (
+                                        <Alert variant="destructive">
+                                            <AlertTitle>Camera Access Denied</AlertTitle>
+                                            <AlertDescription>Please allow camera access in your browser settings to use this feature.</AlertDescription>
+                                        </Alert>
+                                    ) : (
+                                        <Button onClick={takePicture} className="w-full" disabled={!hasCameraPermission}>
+                                            <Camera className="mr-2 h-4 w-4" /> Take Picture
+                                        </Button>
+                                    )}
+                                </div>
+                            </TabsContent>
+                            <TabsContent value="upload">
+                                <div className="space-y-2">
+                                    <Input type="file" accept="image/*" onChange={handleImageUpload} ref={fileInputRef} className="hidden" />
+                                    <Button onClick={() => fileInputRef.current?.click()} className="w-full">
+                                        <Upload className="mr-2 h-4 w-4" /> Choose from Library
+                                    </Button>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                    )}
+                     <Button variant="link" onClick={() => setLogMealDialogStep('choice')}>Back to options</Button>
+                </div>
+            );
+        case 'manual':
+            return (
+                 <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onAddMealSubmit)} className="space-y-4">
+                        <FormField control={form.control} name="mealType" render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Meal Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select meal type" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                {mealTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField control={form.control} name="mealName" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Meal Name</FormLabel>
+                                <FormControl>
+                                <div className="relative">
+                                    <Input placeholder="e.g., Chicken Salad" {...field} autoComplete="off" onBlur={() => setTimeout(() => setSuggestions([]), 100)} />
+                                    {suggestions.length > 0 && (
+                                    <div className="absolute z-10 w-full bg-background border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
+                                        {suggestions.map((suggestion, index) => (
+                                        <div
+                                            key={index}
+                                            className="p-2 hover:bg-accent cursor-pointer text-sm"
+                                            onMouseDown={() => {
+                                            form.setValue('mealName', suggestion);
+                                            setSuggestions([]);
+                                            }}
+                                        >
+                                            {suggestion}
+                                        </div>
+                                        ))}
+                                    </div>
+                                    )}
+                                </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField control={form.control} name="quantity" render={({ field }) => (
+                            <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input placeholder="e.g., 1 bowl" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Description (Optional)</FormLabel>
+                                <FormControl>
+                                <Textarea placeholder="e.g., Made with grilled chicken, romaine lettuce, and a light vinaigrette." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <DialogFooter>
+                        <Button type="button" variant="link" onClick={() => setLogMealDialogStep('choice')}>Back to options</Button>
+                        <Button type="submit" disabled={isCalculating}>
+                            {isCalculating ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Calculating...
+                            </>
+                            ) : (
+                            <>
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Log Meal with AI
+                            </>
+                            )}
+                        </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            );
+        case 'choice':
+        default:
+            return (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                    <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => setLogMealDialogStep('manual')}>
+                       <Pencil className="h-6 w-6" />
+                        Log Manually
+                    </Button>
+                    <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => setLogMealDialogStep('analyze')}>
+                       <Image className="h-6 w-6" />
+                        Analyze with Photo
+                    </Button>
+                </div>
+            );
+    }
+  }
+  
+  const getDialogTitle = () => {
+    switch (logMealDialogStep) {
+        case 'manual': return 'Log a New Meal';
+        case 'analyze': return 'Analyze Meal from Image';
+        case 'choice':
+        default: return 'Log Meal / Analyze with AI';
+    }
+  }
+
+  const getDialogDescription = () => {
+    switch (logMealDialogStep) {
+        case 'manual': return 'Fill in the details of your meal below.';
+        case 'analyze': return 'Upload a photo or use your camera to get an AI analysis.';
+        case 'choice':
+        default: return 'How would you like to log your meal?';
+    }
+  }
+
+
   return (
     <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-headline">Today's Meals</h2>
         <div className='flex flex-wrap gap-2 justify-end'>
-            <Dialog open={isAnalyzeMealDialogOpen} onOpenChange={(isOpen) => {
-                setIsAnalyzeMealDialogOpen(isOpen);
-                if (!isOpen) {
-                    setImagePreview(null);
-                    setHasCameraPermission(null);
-                }
-            }}>
-                <DialogTrigger asChild>
-                    <Button variant="outline">
-                        <Camera className="mr-2 h-4 w-4" /> Analyze Meal with AI
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Analyze Meal from Image</DialogTitle>
-                        <CardDescription>Upload a photo or use your camera to get an AI analysis of your meal.</CardDescription>
-                    </DialogHeader>
-                    <div className='space-y-4'>
-                        {imagePreview ? (
-                            <div className='space-y-4'>
-                                <img src={imagePreview} alt="Meal Preview" className="rounded-md w-full" />
-                                 <Button onClick={handleAnalyzeImage} className="w-full" disabled={isAnalyzing}>
-                                    {isAnalyzing ? <Loader2 className='animate-spin mr-2' /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                    Analyze Image
-                                </Button>
-                                <Button variant="outline" className="w-full" onClick={() => setImagePreview(null)}>Take a different picture</Button>
-                            </div>
-                        ) : (
-                            <Tabs defaultValue="camera">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="camera">Camera</TabsTrigger>
-                                    <TabsTrigger value="upload">Upload</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="camera">
-                                    <div className="space-y-2">
-                                        <video ref={videoRef} className="w-full aspect-video rounded-md bg-secondary" autoPlay muted playsInline />
-                                        <canvas ref={photoRef} className="hidden" />
-                                        {hasCameraPermission === false ? (
-                                            <Alert variant="destructive">
-                                                <AlertTitle>Camera Access Denied</AlertTitle>
-                                                <AlertDescription>Please allow camera access in your browser settings to use this feature.</AlertDescription>
-                                            </Alert>
-                                        ) : (
-                                            <Button onClick={takePicture} className="w-full" disabled={!hasCameraPermission}>
-                                                <Camera className="mr-2 h-4 w-4" /> Take Picture
-                                            </Button>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="upload">
-                                    <div className="space-y-2">
-                                        <Input type="file" accept="image/*" onChange={handleImageUpload} ref={fileInputRef} className="hidden" />
-                                        <Button onClick={() => fileInputRef.current?.click()} className="w-full">
-                                            <Upload className="mr-2 h-4 w-4" /> Choose from Library
-                                        </Button>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
             <Dialog open={isPlanMealDialogOpen} onOpenChange={setIsPlanMealDialogOpen}>
                 <DialogTrigger asChild>
                     <Button variant="outline">
@@ -607,95 +711,28 @@ export function MealPlanner() {
                     </Form>
                 </DialogContent>
             </Dialog>
-            <Dialog open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Meal Manually
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                <DialogTitle className="font-headline">Log a New Meal</DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(onAddMealSubmit)} className="space-y-4">
-                    <FormField control={form.control} name="mealType" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Meal Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select meal type" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                            {mealTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField control={form.control} name="mealName" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Meal Name</FormLabel>
-                            <FormControl>
-                            <div className="relative">
-                                <Input placeholder="e.g., Chicken Salad" {...field} autoComplete="off" onBlur={() => setTimeout(() => setSuggestions([]), 100)} />
-                                {suggestions.length > 0 && (
-                                <div className="absolute z-10 w-full bg-background border rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto">
-                                    {suggestions.map((suggestion, index) => (
-                                    <div
-                                        key={index}
-                                        className="p-2 hover:bg-accent cursor-pointer text-sm"
-                                        onMouseDown={() => {
-                                        form.setValue('mealName', suggestion);
-                                        setSuggestions([]);
-                                        }}
-                                    >
-                                        {suggestion}
-                                    </div>
-                                    ))}
-                                </div>
-                                )}
-                            </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField control={form.control} name="quantity" render={({ field }) => (
-                        <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input placeholder="e.g., 1 bowl" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Description (Optional)</FormLabel>
-                            <FormControl>
-                            <Textarea placeholder="e.g., Made with grilled chicken, romaine lettuce, and a light vinaigrette." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <DialogFooter>
-                    <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                    <Button type="submit" disabled={isCalculating}>
-                        {isCalculating ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Calculating...
-                        </>
-                        ) : (
-                        <>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Log Meal with AI
-                        </>
-                        )}
+            <Dialog open={isLogMealDialogOpen} onOpenChange={(isOpen) => {
+                setIsLogMealDialogOpen(isOpen);
+                 if (!isOpen) {
+                    // Reset state when closing
+                    setLogMealDialogStep('choice');
+                    setImagePreview(null);
+                    setHasCameraPermission(null);
+                    form.reset();
+                }
+            }}>
+                <DialogTrigger asChild>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Log Meal
                     </Button>
-                    </DialogFooter>
-                </form>
-                </Form>
-            </DialogContent>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="font-headline">{getDialogTitle()}</DialogTitle>
+                        <DialogDescription>{getDialogDescription()}</DialogDescription>
+                    </DialogHeader>
+                    {renderLogMealDialogContent()}
+                </DialogContent>
             </Dialog>
         </div>
       </div>
