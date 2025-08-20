@@ -435,8 +435,14 @@ export function MealPlanner() {
                 </div>
             </div>
             <Tabs defaultValue="breakfast" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    {mealTypes.map(t => <TabsTrigger key={t.value} value={t.value} className="capitalize">{t.name}</TabsTrigger>)}
+                <TabsList className="flex-wrap h-auto">
+                    {Object.keys(generatedPlan).map(key => {
+                        const mealType = mealTypes.find(mt => mt.value === key);
+                        if (!mealType) return null;
+                        return (
+                             <TabsTrigger key={mealType.value} value={mealType.value} className="capitalize">{mealType.name}</TabsTrigger>
+                        )
+                    })}
                 </TabsList>
                 {planEntries.map(([mealType, meal]) => (
                     <TabsContent key={mealType} value={mealType}>
