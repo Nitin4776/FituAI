@@ -26,9 +26,14 @@ const CriticalMarkerSchema = z.object({
   level: z.string().describe('The level of the marker (e.g., "High", "Low", "Normal").'),
 });
 
+const DosAndDontsSchema = z.object({
+    dos: z.string().describe('A list of "Do\'s" based on the analysis, formatted as markdown bullet points.'),
+    donts: z.string().describe('A list of "Don\'ts" based on the analysis, formatted as markdown bullet points.'),
+});
+
 const AnalyzeBloodTestResultsOutputSchema = z.object({
   summary: z.string().describe('A summary of the blood test results in plain language, formatted as markdown bullet points.'),
-  dosAndDonts: z.string().describe('Personalized do\'s and don\'ts based on the results, formatted as markdown bullet points.'),
+  dosAndDonts: DosAndDontsSchema.describe('Personalized do\'s and don\'ts based on the results.'),
   lifestyleModifications: z
     .string()
     .describe('Lifestyle modification recommendations (diet, exercise, sleep), formatted as markdown bullet points.'),
@@ -51,7 +56,7 @@ const prompt = ai.definePrompt({
 You will analyze the provided blood test report and generate the following:
 
 1.  A summary of the results in plain language. Format this as a markdown bulleted list.
-2.  Personalized do's and don'ts based on abnormalities. Format this as a markdown bulleted list.
+2.  Personalized do's and don'ts based on abnormalities. Provide separate lists for "Do's" and "Don'ts", with each formatted as a markdown bulleted list.
 3.  Lifestyle modification recommendations (diet, exercise, sleep). Format this as a markdown bulleted list.
 4.  A list of highlighted critical markers (e.g., cholesterol high, Vitamin D low). For each marker, provide the marker name, its value, and its level (High, Low, Normal, Borderline, etc.).
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload, Loader2, Sparkles, FileText, Activity, ShieldQuestion, AlertTriangle, History } from 'lucide-react';
+import { Upload, Loader2, Sparkles, FileText, Activity, ShieldQuestion, AlertTriangle, History, CheckCircle, XCircle } from 'lucide-react';
 import { analyzeReport } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,17 @@ const toDataURL = (file: File): Promise<string> =>
     reader.onerror = reject;
   });
 
+function MarkdownList({ content }: { content: string }) {
+    const items = content.split('\n').map(item => item.trim().replace(/^- \*/, '').replace(/^-/, '').replace(/^\*/, '').trim()).filter(Boolean);
+    return (
+        <ul className="list-disc pl-5 space-y-1">
+            {items.map((item, index) => (
+                <li key={index} className="text-muted-foreground">{item}</li>
+            ))}
+        </ul>
+    );
+}
+
 function AnalysisAccordion({ analysis }: { analysis: AnalysisRecord }) {
     
     const getBadgeVariant = (level: string): 'destructive' | 'warning' | 'default' => {
@@ -61,8 +72,8 @@ function AnalysisAccordion({ analysis }: { analysis: AnalysisRecord }) {
         <Accordion type="single" collapsible defaultValue="summary" className="w-full">
             <AccordionItem value="summary">
                 <AccordionTrigger><FileText className="mr-2 text-primary" /> Summary</AccordionTrigger>
-                <AccordionContent className="prose prose-sm dark:prose-invert max-w-none">
-                {analysis.summary}
+                <AccordionContent>
+                    <MarkdownList content={analysis.summary} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="markers">
@@ -92,14 +103,21 @@ function AnalysisAccordion({ analysis }: { analysis: AnalysisRecord }) {
             </AccordionItem>
             <AccordionItem value="dos_donts">
                 <AccordionTrigger><ShieldQuestion className="mr-2 text-primary" /> Do's & Don'ts</AccordionTrigger>
-                <AccordionContent className="prose prose-sm dark:prose-invert max-w-none">
-                {analysis.dosAndDonts}
+                <AccordionContent className="space-y-4">
+                    <div>
+                        <h4 className="font-semibold flex items-center gap-2 mb-2 text-green-600"><CheckCircle /> Do's</h4>
+                        <MarkdownList content={analysis.dosAndDonts.dos} />
+                    </div>
+                    <div>
+                        <h4 className="font-semibold flex items-center gap-2 mb-2 text-red-600"><XCircle /> Don'ts</h4>
+                        <MarkdownList content={analysis.dosAndDonts.donts} />
+                    </div>
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="lifestyle">
                 <AccordionTrigger><Activity className="mr-2 text-primary" /> Lifestyle Modifications</AccordionTrigger>
-                <AccordionContent className="prose prose-sm dark:prose-invert max-w-none">
-                {analysis.lifestyleModifications}
+                <AccordionContent>
+                    <MarkdownList content={analysis.lifestyleModifications} />
                 </AccordionContent>
             </AccordionItem>
         </Accordion>
