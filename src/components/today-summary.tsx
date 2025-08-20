@@ -125,7 +125,7 @@ export async function TodaySummary() {
                       <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
                       <Link
                         href="/meals"
-                        className="flex items-center gap-1 text-xs text-accent font-bold hover:brightness-110 transition-all"
+                        className="flex items-center gap-1 text-xs text-accent font-bold hover:brightness-110 transition-all hover:scale-105"
                         style={{ textShadow: '0 0 8px hsl(var(--accent) / 0.5)' }}
                       >
                           <BarChart className="h-3 w-3" />
