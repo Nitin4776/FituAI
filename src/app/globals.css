@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* Light Blue */
-    --foreground: 224 71% 15%; /* Dark Blue-Black - Lightened */
+    --background: 30 100% 98%; /* Light Orange */
+    --foreground: 20 71% 15%; /* Dark Orange-Black - Lightened */
 
     --card: 210 40% 98% / 0.6; /* Semi-transparent for glass effect */
     --card-foreground: 224 71% 4%;
@@ -101,8 +101,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at top right, hsl(180 100% 97% / 0.5), transparent),
-                      radial-gradient(circle at bottom left, hsl(240 100% 97% / 0.5), transparent);
+    background-image: radial-gradient(circle at top right, hsl(30 100% 97% / 0.5), transparent),
+                      radial-gradient(circle at bottom left, hsl(40 100% 97% / 0.5), transparent);
     background-attachment: fixed;
   }
   h1, h2, h3, h4, h5, h6 {
