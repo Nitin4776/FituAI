@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera, BookOpen } from 'lucide-react';
+import { PlusCircle, Utensils, Sparkles, Loader2, Trash2, Bot, Upload, Camera, BookOpen, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -111,6 +111,16 @@ const calorieDistribution = {
     lunch: 0.35,
     eveningSnack: 0.075,
     dinner: 0.25,
+}
+
+function MacroDisplay({ label, value, unit, icon: Icon }: { label: string; value: number; unit: string; icon: React.ElementType }) {
+  return (
+    <div className="flex items-center text-sm text-muted-foreground">
+      <Icon className="h-4 w-4 mr-2 text-primary" />
+      <span className="font-semibold">{label}:</span>
+      <span className="ml-1">{Math.round(value)} {unit}</span>
+    </div>
+  );
 }
 
 export function MealPlanner() {
@@ -377,19 +387,17 @@ export function MealPlanner() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredMeals.map((meal) => (
                     <Card key={meal.id} className="flex flex-col">
-                        <CardHeader>
-                        <CardTitle className="text-lg">{meal.mealName}</CardTitle>
-                        <p className="text-sm text-muted-foreground">{meal.quantity}</p>
-                        {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
+                        <CardHeader className='pb-4'>
+                          <CardTitle className="text-lg">{meal.mealName}</CardTitle>
+                          <p className="text-sm text-muted-foreground">{meal.quantity}</p>
+                          {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
                         </CardHeader>
-                        <CardContent className="flex-grow">
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                            <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
-                            <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
-                            <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
-                            <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
-                            <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
-                        </div>
+                        <CardContent className="flex-grow space-y-2">
+                           <MacroDisplay label="Calories" value={meal.calories} unit="kcal" icon={Flame} />
+                           <MacroDisplay label="Protein" value={meal.protein} unit="g" icon={Drumstick} />
+                           <MacroDisplay label="Carbs" value={meal.carbs} unit="g" icon={Wheat} />
+                           <MacroDisplay label="Fats" value={meal.fats} unit="g" icon={Beef} />
+                           <MacroDisplay label="Fiber" value={meal.fiber} unit="g" icon={Wheat} />
                         </CardContent>
                         <CardFooter>
                             <AlertDialog>
@@ -435,7 +443,7 @@ export function MealPlanner() {
                 </div>
             </div>
             <Tabs defaultValue="breakfast" className="w-full">
-                <TabsList className="flex-wrap h-auto">
+                <TabsList className="grid w-full grid-cols-5">
                     {Object.keys(generatedPlan).map(key => {
                         const mealType = mealTypes.find(mt => mt.value === key);
                         if (!mealType) return null;
@@ -448,18 +456,16 @@ export function MealPlanner() {
                     <TabsContent key={mealType} value={mealType}>
                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
                             <Card className="flex flex-col">
-                                <CardHeader>
+                                <CardHeader className='pb-4'>
                                     <CardTitle className="text-lg">{meal.mealName}</CardTitle>
                                     <p className="text-sm text-muted-foreground">{meal.quantity}</p>
                                 </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                                        <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
-                                        <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
-                                        <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
-                                        <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
-                                        <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
-                                    </div>
+                                <CardContent className="flex-grow space-y-2">
+                                    <MacroDisplay label="Calories" value={meal.calories} unit="kcal" icon={Flame} />
+                                    <MacroDisplay label="Protein" value={meal.protein} unit="g" icon={Drumstick} />
+                                    <MacroDisplay label="Carbs" value={meal.carbs} unit="g" icon={Wheat} />
+                                    <MacroDisplay label="Fats" value={meal.fats} unit="g" icon={Beef} />
+                                    <MacroDisplay label="Fiber" value={meal.fiber} unit="g" icon={Wheat} />
                                 </CardContent>
                                 <CardFooter>
                                     <Button variant="outline" size="sm" className="w-full" onClick={() => setSelectedRecipe({name: meal.mealName, recipe: meal.recipe || "No recipe available."})}>
