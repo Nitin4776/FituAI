@@ -160,7 +160,7 @@ export function ProfileManager() {
   }, [profile]);
 
   return (
-    <div className="grid md:grid-cols-2 gap-8">
+    <div className="space-y-8">
       <Card>
         <CardHeader>
           <CardTitle className="font-headline">Your Details</CardTitle>
@@ -305,11 +305,13 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
             </div>
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="text-xl font-bold font-headline">{value}</p>
+                <p className="text-lg font-bold font-headline">{value}</p>
                 <p className="text-xs text-muted-foreground">{description}</p>
             </div>
         </div>
     )
 }
+
+    
 
     
