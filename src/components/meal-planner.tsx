@@ -657,7 +657,7 @@ export function MealPlanner() {
         <div className='flex flex-wrap gap-2 justify-end'>
             <Dialog open={isPlanMealDialogOpen} onOpenChange={setIsPlanMealDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button variant="outline">
+                    <Button>
                         <Bot className="mr-2 h-4 w-4" /> Plan Day with AI
                     </Button>
                 </DialogTrigger>
