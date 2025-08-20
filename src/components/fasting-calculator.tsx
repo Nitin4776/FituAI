@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Clock, Play, Pause, RefreshCw, Sunrise, Sunset, Zap, Loader2 } from 'lucide-react';
 import { getFastingState, saveFastingState } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
-type FastingPlan = '16:8' | '18:6' | '20:4';
+type FastingPlan = '16:8' | '18:6' | '20:4' | 'custom';
 
 const fastingPlans = {
   '16:8': {
@@ -29,6 +31,12 @@ const fastingPlans = {
     eatingHours: 4,
     description: 'This is an advanced form of intermittent fasting, involving a 20-hour fast and a 4-hour eating window. It typically involves one large meal per day.',
   },
+  'custom': {
+    name: 'Custom Plan',
+    fastingHours: 0,
+    eatingHours: 0,
+    description: 'Set your own fasting and eating windows by defining a start and end time for your fast.',
+  }
 };
 
 const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * 90; // 2 * pi * radius
@@ -39,17 +47,34 @@ export function FastingCalculator() {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [endTime, setEndTime] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [customStartTime, setCustomStartTime] = useState('20:00');
+  const [customEndTime, setCustomEndTime] = useState('12:00');
+  const [totalDuration, setTotalDuration] = useState(fastingPlans[selectedPlan].fastingHours * 3600);
+
   const { toast } = useToast();
 
   const planDetails = fastingPlans[selectedPlan];
-  const totalDuration = planDetails.fastingHours * 3600;
 
   useEffect(() => {
     async function loadState() {
       setIsLoading(true);
       const state = await getFastingState();
       if (state) {
-        setSelectedPlan(state.plan);
+        const plan = state.plan as FastingPlan;
+        setSelectedPlan(plan);
+        
+        let initialDuration;
+        if (plan === 'custom') {
+            const start = state.customStartTime || '20:00';
+            const end = state.customEndTime || '12:00';
+            setCustomStartTime(start);
+            setCustomEndTime(end);
+            initialDuration = calculateCustomDuration(start, end);
+        } else {
+            initialDuration = fastingPlans[plan].fastingHours * 3600;
+        }
+        setTotalDuration(initialDuration);
+
         if (state.endTime && state.isRunning) {
             const now = Date.now();
             const remaining = Math.max(0, Math.round((state.endTime - now) / 1000));
@@ -61,10 +86,12 @@ export function FastingCalculator() {
                 handleReset();
             }
         } else {
-             setTimeRemaining(fastingPlans[state.plan as FastingPlan].fastingHours * 3600);
+             setTimeRemaining(initialDuration);
         }
       } else {
-         setTimeRemaining(planDetails.fastingHours * 3600);
+         const initialPlanDuration = fastingPlans['16:8'].fastingHours * 3600;
+         setTimeRemaining(initialPlanDuration);
+         setTotalDuration(initialPlanDuration);
       }
       setIsLoading(false);
     }
@@ -84,12 +111,41 @@ export function FastingCalculator() {
         title: "Fast Complete!",
         description: "You've successfully completed your fast. Time to eat!",
       });
-      saveFastingState({ plan: selectedPlan, isRunning: false, endTime: null });
+      saveFastingState({ plan: selectedPlan, isRunning: false, endTime: null, customStartTime, customEndTime });
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeRemaining, toast, selectedPlan]);
+  }, [isRunning, timeRemaining, toast, selectedPlan, customStartTime, customEndTime]);
+
+  const calculateCustomDuration = (start: string, end: string) => {
+      const [startHours, startMinutes] = start.split(':').map(Number);
+      const [endHours, endMinutes] = end.split(':').map(Number);
+
+      const startDate = new Date();
+      startDate.setHours(startHours, startMinutes, 0, 0);
+
+      const endDate = new Date();
+      endDate.setHours(endHours, endMinutes, 0, 0);
+
+      if (endDate <= startDate) {
+        endDate.setDate(endDate.getDate() + 1);
+      }
+      
+      return (endDate.getTime() - startDate.getTime()) / 1000;
+  }
+
+  const handleSetCustomPlan = () => {
+     if (isRunning) {
+        toast({ variant: 'destructive', title: "Cannot change plan while timer is running."});
+        return;
+    }
+    const duration = calculateCustomDuration(customStartTime, customEndTime);
+    setTotalDuration(duration);
+    setTimeRemaining(duration);
+    saveFastingState({ plan: 'custom', isRunning: false, endTime: null, customStartTime, customEndTime });
+    toast({ title: "Custom plan set!", description: `Your fast is set for ${formatTime(duration)}.`})
+  }
 
   const handlePlanChange = (plan: FastingPlan) => {
     if (isRunning) {
@@ -97,8 +153,12 @@ export function FastingCalculator() {
         return;
     }
     setSelectedPlan(plan);
-    setTimeRemaining(fastingPlans[plan].fastingHours * 3600);
-    saveFastingState({ plan: plan, isRunning: false, endTime: null });
+    if (plan !== 'custom') {
+        const duration = fastingPlans[plan].fastingHours * 3600;
+        setTotalDuration(duration);
+        setTimeRemaining(duration);
+        saveFastingState({ plan: plan, isRunning: false, endTime: null });
+    }
   }
 
   const handleStartStop = () => {
@@ -113,14 +173,14 @@ export function FastingCalculator() {
         newEndTime = endTime; // Keep endTime when pausing
     }
     
-    saveFastingState({ plan: selectedPlan, isRunning: newIsRunning, endTime: newEndTime });
+    saveFastingState({ plan: selectedPlan, isRunning: newIsRunning, endTime: newEndTime, customStartTime, customEndTime });
   };
 
   const handleReset = () => {
     setIsRunning(false);
     setTimeRemaining(totalDuration);
     setEndTime(null);
-    saveFastingState({ plan: selectedPlan, isRunning: false, endTime: null });
+    saveFastingState({ plan: selectedPlan, isRunning: false, endTime: null, customStartTime, customEndTime });
   };
 
   const formatTime = (seconds: number) => {
@@ -131,7 +191,8 @@ export function FastingCalculator() {
   };
 
   const progress = useMemo(() => {
-    return (timeRemaining / totalDuration) * 100;
+    if (totalDuration === 0) return 0;
+    return ((totalDuration - timeRemaining) / totalDuration) * 100;
   }, [timeRemaining, totalDuration]);
 
   const strokeDashoffset = CIRCLE_CIRCUMFERENCE * (1 - progress / 100);
@@ -161,6 +222,22 @@ export function FastingCalculator() {
                 ))}
               </SelectContent>
             </Select>
+            { selectedPlan === 'custom' && !isRunning && (
+                <div className='mt-4 space-y-4 p-4 border rounded-md'>
+                    <h4 className='font-medium'>Set Custom Times</h4>
+                     <div className='grid grid-cols-2 gap-4'>
+                        <div className='space-y-2'>
+                            <Label htmlFor="start-time">Fast Starts</Label>
+                            <Input id="start-time" type="time" value={customStartTime} onChange={(e) => setCustomStartTime(e.target.value)} />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor="end-time">Fast Ends</Label>
+                            <Input id="end-time" type="time" value={customEndTime} onChange={(e) => setCustomEndTime(e.target.value)} />
+                        </div>
+                     </div>
+                     <Button onClick={handleSetCustomPlan} className='w-full'>Set Custom Fast</Button>
+                </div>
+            )}
           </CardContent>
         </Card>
         
@@ -170,25 +247,36 @@ export function FastingCalculator() {
             <CardDescription>Your recommended schedule and plan benefits.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center"><Clock className="mr-2 h-4 w-4 text-primary"/> Schedule</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                  <div className="p-4 bg-secondary rounded-lg">
-                      <div className="font-medium flex items-center"><Sunrise className="mr-2 h-4 w-4 text-green-600"/> Eating Window</div>
-                      <p className="text-muted-foreground">{planDetails.eatingHours} hours</p>
-                  </div>
-                  <div className="p-4 bg-secondary rounded-lg">
-                      <div className="font-medium flex items-center"><Sunset className="mr-2 h-4 w-4 text-blue-600"/> Fasting Window</div>
-                      <p className="text-muted-foreground">{planDetails.fastingHours} hours</p>
-                  </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center"><Zap className="mr-2 h-4 w-4 text-primary"/> Benefits & Info</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {planDetails.description} Common benefits of intermittent fasting include weight loss, improved metabolic health, and cellular repair. Always consult with a healthcare professional before starting a new diet plan.
-              </p>
-            </div>
+            { selectedPlan !== 'custom' ? (
+                <>
+                <div>
+                <h3 className="font-semibold mb-2 flex items-center"><Clock className="mr-2 h-4 w-4 text-primary"/> Schedule</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div className="p-4 bg-secondary rounded-lg">
+                        <div className="font-medium flex items-center"><Sunrise className="mr-2 h-4 w-4 text-green-600"/> Eating Window</div>
+                        <p className="text-muted-foreground">{planDetails.eatingHours} hours</p>
+                    </div>
+                    <div className="p-4 bg-secondary rounded-lg">
+                        <div className="font-medium flex items-center"><Sunset className="mr-2 h-4 w-4 text-blue-600"/> Fasting Window</div>
+                        <p className="text-muted-foreground">{planDetails.fastingHours} hours</p>
+                    </div>
+                </div>
+                </div>
+                <div>
+                <h3 className="font-semibold mb-2 flex items-center"><Zap className="mr-2 h-4 w-4 text-primary"/> Benefits & Info</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    {planDetails.description} Common benefits of intermittent fasting include weight loss, improved metabolic health, and cellular repair. Always consult with a healthcare professional before starting a new diet plan.
+                </p>
+                </div>
+                </>
+            ) : (
+                 <div>
+                    <h3 className="font-semibold mb-2 flex items-center"><Zap className="mr-2 h-4 w-4 text-primary"/> Info</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        {planDetails.description}
+                    </p>
+                </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -224,7 +312,7 @@ export function FastingCalculator() {
                 </div>
             </div>
             <div className="flex gap-4 mt-6">
-                <Button onClick={handleStartStop} size="lg" disabled={timeRemaining <= 0}>
+                <Button onClick={handleStartStop} size="lg" disabled={timeRemaining <= 0 && !isRunning}>
                     {isRunning ? <Pause className="mr-2"/> : <Play className="mr-2"/>}
                     {isRunning ? 'Pause' : 'Start'}
                 </Button>

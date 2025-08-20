@@ -100,7 +100,7 @@ export async function getBloodTestAnalyses() {
 // --- Fasting ---
 export async function saveFastingState(fastingState: any) {
     const fastingDocRef = doc(db, 'users', USER_ID, 'fastingState', 'current');
-    await setDoc(fastingDocRef, fastingState);
+    await setDoc(fastingDocRef, fastingState, { merge: true });
 }
 
 export async function getFastingState() {
