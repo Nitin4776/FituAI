@@ -275,7 +275,7 @@ export function ProfileManager() {
                     <MetricCard icon={Drumstick} label="Protein" value={`${metrics.protein}g`} description="Essential for muscle repair and growth." />
                     <MetricCard icon={Wheat} label="Carbohydrates" value={`${metrics.carbs}g`} description="Your body's main source of energy." />
                     <MetricCard icon={Beef} label="Fats" value={`${metrics.fats}g`} description="Important for hormone production and health." />
-                    <MetricCard icon={Ruler} label="Fiber" value={`${metrics.fiber}g`} description="Crucial for digestive health." />
+                    <MetricCard icon={Wheat} label="Fiber" value={`${metrics.fiber}g`} description="Crucial for digestive health." />
                 </CardContent>
               </Card>
             </>

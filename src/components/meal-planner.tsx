@@ -41,13 +41,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMealMacros, deleteMealAction, generateMealPlanAction, analyzeMealImageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { addMeal, getMeals } from '@/services/firestore';
+import { addMeal, getMeals, getProfile } from '@/services/firestore';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
 
 const mealSchema = z.object({
-  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+  mealType: z.enum(['breakfast', 'morningSnack', 'lunch', 'eveningSnack', 'dinner']),
   mealName: z.string().min(1, 'Meal name is required'),
   quantity: z.string().min(1, 'Quantity is required'),
   description: z.string().optional(),
@@ -76,7 +76,14 @@ type MealLog = {
   createdAt: { seconds: number, nanoseconds: number };
 };
 
-const mealTypes: MealFormValues['mealType'][] = ['breakfast', 'lunch', 'dinner', 'snack'];
+const mealTypes: {name: string, value: MealFormValues['mealType']}[] = [
+    { name: 'Breakfast', value: 'breakfast'},
+    { name: 'Morning Snack', value: 'morningSnack'},
+    { name: 'Lunch', value: 'lunch'},
+    { name: 'Evening Snack', value: 'eveningSnack'},
+    { name: 'Dinner', value: 'dinner'},
+];
+
 const cuisineTypes = ['Indian', 'Subcontinental', 'Italian', 'Mexican', 'Chinese', 'Mediterranean'];
 const dietTypes: PlanFormValues['diet'][] = ['vegetarian', 'non-vegetarian', 'eggetarian', 'vegan'];
 
@@ -96,6 +103,14 @@ const toDataURL = (file: File): Promise<string> =>
     reader.onerror = reject;
   });
 
+const calorieDistribution = {
+    breakfast: 0.25,
+    morningSnack: 0.075,
+    lunch: 0.35,
+    eveningSnack: 0.075,
+    dinner: 0.25,
+}
+
 export function MealPlanner() {
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [isAddMealDialogOpen, setIsAddMealDialogOpen] = useState(false);
@@ -105,6 +120,7 @@ export function MealPlanner() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyGoal, setDailyGoal] = useState(2000); // Default
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [generatedPlan, setGeneratedPlan] = useState<GenerateMealPlanOutput | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -138,8 +154,24 @@ export function MealPlanner() {
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
-      const savedMeals = await getMeals();
+      const [savedMeals, profile] = await Promise.all([getMeals(), getProfile()]);
       setMeals(savedMeals as MealLog[]);
+      
+      if (profile) {
+        const heightInMeters = profile.height / 100;
+        const bmr =
+        profile.gender === 'male'
+            ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
+            : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+
+        const activityMultipliers = {
+            sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9
+        };
+        const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
+        const tdee = bmr * activityMultipliers[profile.activityLevel as keyof typeof activityMultipliers];
+        setDailyGoal(Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]));
+      }
+
       setIsLoading(false);
     }
     loadData();
@@ -309,8 +341,9 @@ export function MealPlanner() {
     }
   }
 
-  const renderMealCards = (mealType: MealFormValues['mealType']) => {
-    const filteredMeals = meals.filter((m) => m.mealType === mealType && isToday(m.createdAt));
+  const renderMealCards = (mealTypeValue: MealFormValues['mealType']) => {
+    const filteredMeals = meals.filter((m) => m.mealType === mealTypeValue && isToday(m.createdAt));
+    const targetCalories = Math.round(dailyGoal * calorieDistribution[mealTypeValue]);
 
      if (isLoading) {
        return (
@@ -325,52 +358,56 @@ export function MealPlanner() {
       return (
         <div className="text-center text-muted-foreground py-10">
           <Utensils className="mx-auto h-8 w-8" />
-          <p className="mt-2">No {mealType} logged for today yet.</p>
+          <p className="mt-2">No {mealTypeValue} logged for today yet.</p>
+           <p className="text-sm text-primary">Recommended: ~{targetCalories} kcal</p>
         </div>
       );
     }
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
-        {filteredMeals.map((meal) => (
-          <Card key={meal.id} className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-lg">{meal.mealName}</CardTitle>
-              <p className="text-sm text-muted-foreground">{meal.quantity}</p>
-              {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
-                <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
-                <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
-                <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
-                <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
-              </div>
-            </CardContent>
-            <CardFooter>
-                 <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete this meal from your log.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteMeal(meal.id)}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
+        <>
+        <p className="text-sm text-primary text-center my-2">Recommended: ~{targetCalories} kcal</p>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+            {filteredMeals.map((meal) => (
+            <Card key={meal.id} className="flex flex-col">
+                <CardHeader>
+                <CardTitle className="text-lg">{meal.mealName}</CardTitle>
+                <p className="text-sm text-muted-foreground">{meal.quantity}</p>
+                {meal.description && <p className="text-sm text-muted-foreground pt-2 italic">"{meal.description}"</p>}
+                </CardHeader>
+                <CardContent className="flex-grow">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                    <div><span className="font-semibold">Calories:</span> {Math.round(meal.calories)} kcal</div>
+                    <div><span className="font-semibold">Protein:</span> {Math.round(meal.protein)} g</div>
+                    <div><span className="font-semibold">Carbs:</span> {Math.round(meal.carbs)} g</div>
+                    <div><span className="font-semibold">Fats:</span> {Math.round(meal.fats)} g</div>
+                    <div><span className="font-semibold">Fiber:</span> {Math.round(meal.fiber)} g</div>
+                </div>
+                </CardContent>
+                <CardFooter>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete this meal from your log.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteMeal(meal.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardFooter>
+            </Card>
+            ))}
+        </div>
+      </>
     );
   };
   
@@ -390,7 +427,7 @@ export function MealPlanner() {
             </div>
             <Tabs defaultValue="breakfast" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                    {mealTypes.map(t => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
+                    {mealTypes.map(t => <TabsTrigger key={t.value} value={t.value} className="capitalize">{t.name}</TabsTrigger>)}
                 </TabsList>
                 {planEntries.map(([mealType, meal]) => (
                     <TabsContent key={mealType} value={mealType}>
@@ -564,7 +601,7 @@ export function MealPlanner() {
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Select meal type" /></SelectTrigger></FormControl>
                             <SelectContent>
-                            {mealTypes.map(t => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
+                            {mealTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <FormMessage />
@@ -653,10 +690,10 @@ export function MealPlanner() {
       </Dialog>
 
       <Tabs defaultValue="breakfast" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          {mealTypes.map(t => <TabsTrigger key={t} value={t} className="capitalize">{t}</TabsTrigger>)}
+        <TabsList className="grid w-full grid-cols-5">
+          {mealTypes.map(t => <TabsTrigger key={t.value} value={t.value}>{t.name}</TabsTrigger>)}
         </TabsList>
-        {mealTypes.map(t => <TabsContent key={t} value={t}>{renderMealCards(t)}</TabsContent>)}
+        {mealTypes.map(t => <TabsContent key={t.value} value={t.value}>{renderMealCards(t.value)}</TabsContent>)}
       </Tabs>
 
       {renderAiPlan()}

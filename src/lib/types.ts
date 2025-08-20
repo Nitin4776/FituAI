@@ -1,6 +1,6 @@
 export type MealLog = {
   id: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: 'breakfast' | 'morningSnack' | 'lunch' | 'eveningSnack' | 'dinner';
   mealName: string;
   quantity: string;
   calories: number;
