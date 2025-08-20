@@ -65,6 +65,15 @@ type ActivityLog = {
   createdAt: { seconds: number, nanoseconds: number };
 };
 
+const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp) return false;
+    const date = new Date(timestamp.seconds * 1000);
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+};
+
 
 export function ActivityTracker() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -85,11 +94,13 @@ export function ActivityTracker() {
     async function loadActivities() {
       setIsLoading(true);
       const savedActivities = await getActivities();
-      const activitiesWithDate = (savedActivities as any[]).map(act => ({
-        ...act,
-        date: new Date(act.createdAt.seconds * 1000).toLocaleDateString()
-      }))
-      setActivities(activitiesWithDate);
+      const todaysActivities = (savedActivities as any[])
+        .filter(act => isToday(act.createdAt))
+        .map(act => ({
+          ...act,
+          date: new Date(act.createdAt.seconds * 1000).toLocaleDateString()
+        }));
+      setActivities(todaysActivities);
       setIsLoading(false);
     }
     loadActivities();
@@ -262,7 +273,7 @@ export function ActivityTracker() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No activities logged yet.
+                    No activities logged for today yet.
                   </TableCell>
                 </TableRow>
               )}
