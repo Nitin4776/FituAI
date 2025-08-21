@@ -196,33 +196,45 @@ export async function getDailySummaryForToday() {
     const todayId = getTodayDocId();
     const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
     const docSnap = await getDoc(summaryDocRef);
+
     if (docSnap.exists()) {
         return docSnap.data();
     } else {
-        const profile = await getProfile();
+        const profile = await getProfile(); // Correctly await the profile
         if (profile && (profile as any).dailyCalories) {
             const newSummary = {
                 ...defaultSummary,
                 dailyGoal: (profile as any).dailyCalories,
                 macroGoals: {
-                    protein: (profile as any).protein,
-                    carbs: (profile as any).carbs,
-                    fats: (profile as any).fats,
-                    fiber: (profile as any).fiber,
+                    protein: (profile as any).protein || 0,
+                    carbs: (profile as any).carbs || 0,
+                    fats: (profile as any).fats || 0,
+                    fiber: (profile as any).fiber || 0,
                 },
             };
             await setDoc(summaryDocRef, newSummary);
             return newSummary;
         }
+        // If no profile or no goals in profile, create a default summary
+        await setDoc(summaryDocRef, defaultSummary);
         return defaultSummary;
     }
 }
+
 
 export async function updateDailySummaryWithNewGoals(goals: { dailyGoal: number, macroGoals: object }) {
     const userId = getCurrentUserId();
     if (!userId) return;
     const todayId = getTodayDocId();
     const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
+
+    // Ensure document exists before updating, creating if necessary
+    const docSnap = await getDoc(summaryDocRef);
+    if (!docSnap.exists()) {
+        await getDailySummaryForToday(); // This will create it with potentially old goals
+    }
+    
+    // Now set the new goals
     await setDoc(summaryDocRef, {
         dailyGoal: goals.dailyGoal,
         macroGoals: goals.macroGoals,
