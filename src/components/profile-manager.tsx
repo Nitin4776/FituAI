@@ -141,6 +141,14 @@ export function ProfileManager() {
   };
 
   const onGoalSubmit: SubmitHandler<GoalFormValues> = async (data) => {
+    if (!profile || !profile.height || !profile.weight || !profile.age) {
+        toast({
+            variant: 'destructive',
+            title: 'Details Needed',
+            description: 'Please save your physical details before setting a goal.',
+        });
+        return;
+    }
     try {
         const fullProfileData = { ...profile, ...data } as FullProfile;
         await saveProfile(fullProfileData);
@@ -268,7 +276,7 @@ export function ProfileManager() {
                         )}/>
                         <div className="flex flex-col sm:flex-row gap-2">
                             <Button type="submit" className="w-full">Save Details</Button>
-                             <Button type="button" variant="secondary" className="w-full" onClick={() => goalCardRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+                             <Button type="button" variant="default" className="w-full" onClick={() => goalCardRef.current?.scrollIntoView({ behavior: 'smooth' })}>
                                 <ArrowDown className="mr-2 h-4 w-4"/>
                                 Set Your Goal
                             </Button>
