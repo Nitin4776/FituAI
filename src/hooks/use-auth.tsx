@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { getAuth, onIdTokenChanged, type User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { signOutAction } from '@/app/auth/actions';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 const auth = getAuth(app);
@@ -17,10 +17,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const publicPages = ['/signin', '/signup'];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, (user) => {
@@ -30,6 +33,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+
+    // If user is logged in and on a public page (signin/signup), redirect to profile
+    if (user && publicPages.includes(pathname)) {
+      router.push('/profile');
+    }
+
+    // If user is not logged in and on a protected page, middleware will handle it.
+    // This hook primarily handles the case after a successful login action.
+
+  }, [user, loading, pathname, router]);
+
 
   const signOut = async () => {
     try {

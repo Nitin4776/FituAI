@@ -33,7 +33,6 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -48,12 +47,9 @@ export default function SignInPage() {
       setIsSuccess(true);
       toast({
         title: 'Sign In Successful',
-        description: "Redirecting to your dashboard...",
+        description: "Redirecting to your profile...",
       });
-      // Add a short delay to allow cookie to be set and auth state to propagate
-      setTimeout(() => {
-        router.push('/');
-      }, 1500);
+      // The redirect is now handled by the AuthProvider
     } catch (error) {
       toast({
         variant: 'destructive',
