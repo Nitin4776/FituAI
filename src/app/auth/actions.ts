@@ -1,13 +1,16 @@
 'use server';
 
 import { z } from 'zod';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { cookies } from 'next/headers';
+import { saveProfile } from '@/services/firestore';
+
 
 const auth = getAuth(app);
 
 const signUpSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email(),
   password: z.string().min(6),
 });
@@ -26,6 +29,16 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
       validatedCredentials.email,
       validatedCredentials.password
     );
+    
+    // Add display name to firebase auth profile
+    await updateProfile(userCredential.user, {
+      displayName: validatedCredentials.name
+    });
+
+    // Save name to firestore profile
+    await saveProfile({ name: validatedCredentials.name }, userCredential.user.uid);
+
+
     const idToken = await userCredential.user.getIdToken();
     
     cookies().set('session', idToken, {

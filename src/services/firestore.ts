@@ -1,4 +1,4 @@
-import { db } from '@/lib/firebase';
+import { db, auth as firebaseAuth } from '@/lib/firebase';
 import {
   collection,
   doc,
@@ -15,25 +15,43 @@ import {
   startOfDay,
   endOfDay,
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-// Hardcoded user ID for now. Replace with actual user ID from auth.
-const USER_ID = 'test-user';
+
+function getCurrentUserId() {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+        return user.uid;
+    }
+    // This is a fallback for server actions where currentUser is not available.
+    // A more robust solution would involve passing the UID from the client
+    // or decoding the session cookie on the server.
+    return 'test-user'; 
+}
+
 
 // --- Profile ---
-export async function saveProfile(profileData: any) {
-  const userDocRef = doc(db, 'users', USER_ID);
+export async function saveProfile(profileData: any, uid?: string) {
+  const userId = uid || getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+  const userDocRef = doc(db, 'users', userId);
   await setDoc(userDocRef, profileData, { merge: true });
 }
 
 export async function getProfile() {
-  const userDocRef = doc(db, 'users', USER_ID);
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  const userDocRef = doc(db, 'users', userId);
   const docSnap = await getDoc(userDocRef);
   return docSnap.exists() ? docSnap.data() : null;
 }
 
 // --- Meals ---
 export async function addMeal(mealData: any) {
-  const mealsColRef = collection(db, 'users', USER_ID, 'meals');
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+  const mealsColRef = collection(db, 'users', userId, 'meals');
   await addDoc(mealsColRef, {
     ...mealData,
     createdAt: Timestamp.now(),
@@ -41,21 +59,27 @@ export async function addMeal(mealData: any) {
 }
 
 export async function getMeals() {
-  const mealsColRef = collection(db, 'users', USER_ID, 'meals');
+  const userId = getCurrentUserId();
+  if (!userId) return [];
+  const mealsColRef = collection(db, 'users', userId, 'meals');
   const q = query(mealsColRef, orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
 export async function deleteMeal(mealId: string) {
-    const mealDocRef = doc(db, 'users', USER_ID, 'meals', mealId);
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const mealDocRef = doc(db, 'users', userId, 'meals', mealId);
     await deleteDoc(mealDocRef);
 }
 
 
 // --- Activities ---
 export async function addActivity(activityData: any) {
-  const activitiesColRef = collection(db, 'users', USER_ID, 'activities');
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+  const activitiesColRef = collection(db, 'users', userId, 'activities');
   await addDoc(activitiesColRef, {
     ...activityData,
     createdAt: Timestamp.now(),
@@ -63,7 +87,9 @@ export async function addActivity(activityData: any) {
 }
 
 export async function getActivities() {
-    const activitiesColRef = collection(db, 'users', USER_ID, 'activities');
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+    const activitiesColRef = collection(db, 'users', userId, 'activities');
     const q = query(activitiesColRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => {
@@ -76,13 +102,17 @@ export async function getActivities() {
 }
 
 export async function deleteActivity(activityId: string) {
-    const activityDocRef = doc(db, 'users', USER_ID, 'activities', activityId);
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const activityDocRef = doc(db, 'users', userId, 'activities', activityId);
     await deleteDoc(activityDocRef);
 }
 
 // --- Blood Test Analysis ---
 export async function saveBloodTestAnalysis(analysisData: any) {
-    const analysisColRef = collection(db, 'users', USER_ID, 'bloodTestAnalyses');
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const analysisColRef = collection(db, 'users', userId, 'bloodTestAnalyses');
     await addDoc(analysisColRef, {
         ...analysisData,
         createdAt: Timestamp.now(),
@@ -90,7 +120,9 @@ export async function saveBloodTestAnalysis(analysisData: any) {
 }
 
 export async function getBloodTestAnalyses() {
-    const analysisColRef = collection(db, 'users', USER_ID, 'bloodTestAnalyses');
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+    const analysisColRef = collection(db, 'users', userId, 'bloodTestAnalyses');
     const q = query(analysisColRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
@@ -102,12 +134,16 @@ export async function getBloodTestAnalyses() {
 
 // --- Fasting ---
 export async function saveFastingState(fastingState: any) {
-    const fastingDocRef = doc(db, 'users', USER_ID, 'fastingState', 'current');
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const fastingDocRef = doc(db, 'users', userId, 'fastingState', 'current');
     await setDoc(fastingDocRef, fastingState, { merge: true });
 }
 
 export async function getFastingState() {
-    const fastingDocRef = doc(db, 'users', USER_ID, 'fastingState', 'current');
+    const userId = getCurrentUserId();
+    if (!userId) return null;
+    const fastingDocRef = doc(db, 'users', userId, 'fastingState', 'current');
     const docSnap = await getDoc(fastingDocRef);
     return docSnap.exists() ? docSnap.data() : null;
 }
@@ -115,7 +151,9 @@ export async function getFastingState() {
 
 // --- Sleep ---
 export async function saveSleepLog(sleepData: { quality: string }) {
-  const sleepLogRef = doc(db, 'users', USER_ID, 'sleep', new Date().toISOString().split('T')[0]);
+  const userId = getCurrentUserId();
+  if (!userId) throw new Error("User not authenticated");
+  const sleepLogRef = doc(db, 'users', userId, 'sleep', new Date().toISOString().split('T')[0]);
   await setDoc(sleepLogRef, {
     ...sleepData,
     createdAt: Timestamp.now(),
@@ -123,7 +161,9 @@ export async function saveSleepLog(sleepData: { quality: string }) {
 }
 
 export async function getSleepLogForToday() {
-  const sleepLogRef = doc(db, 'users', USER_ID, 'sleep', new Date().toISOString().split('T')[0]);
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  const sleepLogRef = doc(db, 'users', userId, 'sleep', new Date().toISOString().split('T')[0]);
   const docSnap = await getDoc(sleepLogRef);
   return docSnap.exists() ? docSnap.data() : null;
 }
