@@ -33,7 +33,7 @@ const menuItems = [
   { href: '/profile', label: 'Profile & Goal', icon: User },
   { href: '/activity', label: 'Activity Tracker', icon: HeartPulse },
   { href: '/meals', label: 'Meal Planner', icon: Utensils },
-  { href: '/fasting', label: 'Intermittent Fasting Calculator', icon: Clock },
+  { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
   { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
   { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
 ];
