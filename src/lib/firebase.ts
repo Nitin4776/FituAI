@@ -5,12 +5,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC6tNInkw-ucc4ktW-p5NGtJwgGVk3nhxI",
-  authDomain: "fitlife-ai-u0s3q.firebaseapp.com",
-  projectId: "fitlife-ai-u0s3q",
-  storageBucket: "fitlife-ai-u0s3q.appspot.com",
-  messagingSenderId: "1073563159152",
-  appId: "1:1073563159152:web:d6ac6b3219523bdf6ac2b5"
+  "projectId": "fitlife-ai-u0s3q",
+  "appId": "1:1073563159152:web:d6ac6b3219523bdf6ac2b5",
+  "storageBucket": "fitlife-ai-u0s3q.appspot.com",
+  "apiKey": "AIzaSyC6tNInkw-ucc4ktW-p5NGtJwgGVk3nhxI",
+  "authDomain": "fitlife-ai-u0s3q.firebaseapp.com",
+  "messagingSenderId": "1073563159152"
 };
 
 // Initialize Firebase
