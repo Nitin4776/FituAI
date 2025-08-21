@@ -27,7 +27,7 @@ async function setSessionCookie(user: User | null) {
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: '/',
       secure: process.env.NODE_ENV === 'production',
-      httpOnly: false, // Must be false for client-side access
+      httpOnly: false, 
     });
   } else {
     deleteCookie('session');
@@ -53,12 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    // If user is logged in and on a public page (signin/signup), redirect to dashboard
-    if (user && publicPages.includes(pathname)) {
-      router.push('/');
-    }
+    const isPublic = publicPages.includes(pathname);
 
-    // If user is not logged in and on a protected page, the middleware will handle redirection.
+    if (user && isPublic) {
+      router.push('/');
+    } else if (!user && !isPublic) {
+      router.push('/signin');
+    }
 
   }, [user, loading, pathname, router]);
 
@@ -74,6 +75,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  const isPublic = publicPages.includes(pathname);
+  if (!loading && !user && !isPublic) {
+    return (
+       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );

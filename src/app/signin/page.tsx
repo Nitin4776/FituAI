@@ -20,7 +20,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { signInAction } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
-import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -32,7 +31,6 @@ type FormValues = z.infer<typeof formSchema>;
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -43,8 +41,7 @@ export default function SignInPage() {
     setIsLoading(true);
     try {
       await signInAction(data);
-      // The redirect is now handled by the AuthProvider,
-      // so no router.push() is needed here.
+      // The redirect is now handled by the AuthProvider.
     } catch (error) {
       toast({
         variant: 'destructive',

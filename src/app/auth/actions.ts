@@ -1,4 +1,4 @@
-'use client'; // Changed to a client component for direct SDK usage
+'use client'; 
 
 import { z } from 'zod';
 import { 
@@ -35,12 +35,10 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
       validatedCredentials.password
     );
     
-    // Add display name to firebase auth profile
     await updateProfile(userCredential.user, {
       displayName: validatedCredentials.name
     });
 
-    // Save name to firestore profile using a server action
     await saveProfileServerAction({ name: validatedCredentials.name }, userCredential.user.uid);
 
   } catch (error: any) {

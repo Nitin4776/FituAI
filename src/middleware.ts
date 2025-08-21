@@ -7,14 +7,11 @@ export async function middleware(request: NextRequest) {
 
   const isPublicPage = pathname === '/signin' || pathname === '/signup';
 
-  // If no session and trying to access a protected route, redirect to signin
+  // Let the client-side AuthProvider handle redirects.
+  // The middleware's primary job is to protect API routes if needed,
+  // but for page routes, client-side handling provides a better UX.
   if (!session && !isPublicPage) {
     return NextResponse.redirect(new URL('/signin', request.url));
-  }
-  
-  // If there is a session and the user is on a public page, redirect to dashboard
-  if (session && isPublicPage) {
-      return NextResponse.redirect(new URL('/', request.url));
   }
   
   return NextResponse.next();
