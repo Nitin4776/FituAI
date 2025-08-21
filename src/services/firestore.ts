@@ -14,6 +14,7 @@ import {
   where,
   startOfDay,
   endOfDay,
+  increment,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
@@ -25,6 +26,10 @@ function getCurrentUserId() {
         return user.uid;
     }
     return null;
+}
+
+function getTodayDocId() {
+    return new Date().toISOString().split('T')[0];
 }
 
 
@@ -45,14 +50,15 @@ export async function getProfile() {
 }
 
 // --- Meals ---
-export async function addMeal(mealData: any) {
+export async function addMeal(mealData: any): Promise<string> {
   const userId = getCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
   const mealsColRef = collection(db, 'users', userId, 'meals');
-  await addDoc(mealsColRef, {
+  const docRef = await addDoc(mealsColRef, {
     ...mealData,
     createdAt: Timestamp.now(),
   });
+  return docRef.id;
 }
 
 export async function getMeals() {
@@ -73,14 +79,15 @@ export async function deleteMeal(mealId: string) {
 
 
 // --- Activities ---
-export async function addActivity(activityData: any) {
+export async function addActivity(activityData: any): Promise<string> {
   const userId = getCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
   const activitiesColRef = collection(db, 'users', userId, 'activities');
-  await addDoc(activitiesColRef, {
+  const docRef = await addDoc(activitiesColRef, {
     ...activityData,
     createdAt: Timestamp.now(),
   });
+  return docRef.id;
 }
 
 export async function getActivities() {
@@ -163,4 +170,99 @@ export async function getSleepLogForToday() {
   const sleepLogRef = doc(db, 'users', userId, 'sleep', new Date().toISOString().split('T')[0]);
   const docSnap = await getDoc(sleepLogRef);
   return docSnap.exists() ? docSnap.data() : null;
+}
+
+
+// --- Daily Summary ---
+const defaultSummary = {
+    consumedCalories: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+    fiber: 0,
+    caloriesBurned: 0,
+    dailyGoal: 2000,
+    macroGoals: {
+        protein: 150,
+        carbs: 250,
+        fats: 67,
+        fiber: 30,
+    },
+};
+
+export async function getDailySummaryForToday() {
+    const userId = getCurrentUserId();
+    if (!userId) return defaultSummary;
+    const todayId = getTodayDocId();
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
+    const docSnap = await getDoc(summaryDocRef);
+    if (docSnap.exists()) {
+        return docSnap.data();
+    } else {
+        const profile = await getProfile();
+        if (profile && (profile as any).dailyCalories) {
+            const newSummary = {
+                ...defaultSummary,
+                dailyGoal: (profile as any).dailyCalories,
+                macroGoals: {
+                    protein: (profile as any).protein,
+                    carbs: (profile as any).carbs,
+                    fats: (profile as any).fats,
+                    fiber: (profile as any).fiber,
+                },
+            };
+            await setDoc(summaryDocRef, newSummary);
+            return newSummary;
+        }
+        return defaultSummary;
+    }
+}
+
+export async function updateDailySummaryWithNewGoals(goals: { dailyGoal: number, macroGoals: object }) {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    const todayId = getTodayDocId();
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
+    await setDoc(summaryDocRef, {
+        dailyGoal: goals.dailyGoal,
+        macroGoals: goals.macroGoals,
+    }, { merge: true });
+}
+
+export async function updateDailySummaryOnMealChange(macros: { calories: number, protein: number, carbs: number, fats: number, fiber: number }) {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    const todayId = getTodayDocId();
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
+    
+    // Ensure the document exists before trying to increment
+    const docSnap = await getDoc(summaryDocRef);
+    if (!docSnap.exists()) {
+        await getDailySummaryForToday(); // This will create the doc with default/profile values
+    }
+
+    await setDoc(summaryDocRef, {
+        consumedCalories: increment(macros.calories),
+        protein: increment(macros.protein),
+        carbs: increment(macros.carbs),
+        fats: increment(macros.fats),
+        fiber: increment(macros.fiber),
+    }, { merge: true });
+}
+
+export async function updateDailySummaryOnActivityChange(caloriesBurned: number) {
+    const userId = getCurrentUserId();
+    if (!userId) return;
+    const todayId = getTodayDocId();
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
+    
+    // Ensure the document exists before trying to increment
+    const docSnap = await getDoc(summaryDocRef);
+    if (!docSnap.exists()) {
+        await getDailySummaryForToday();
+    }
+
+    await setDoc(summaryDocRef, {
+        caloriesBurned: increment(caloriesBurned),
+    }, { merge: true });
 }

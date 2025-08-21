@@ -47,7 +47,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getActivityCalories, deleteActivityAction } from '@/app/actions';
-import { addActivity, getActivities } from '@/services/firestore';
+import { addActivity, getActivities, updateDailySummaryOnActivityChange } from '@/services/firestore';
 import { Textarea } from './ui/textarea';
 
 const activitySchema = z.object({
@@ -115,15 +115,19 @@ export function ActivityTracker() {
     setIsCalculating(true);
     try {
       const { caloriesBurned } = await getActivityCalories(data);
+      const calories = Math.round(caloriesBurned);
+      
       const newActivityData = {
         ...data,
-        caloriesBurned: Math.round(caloriesBurned),
+        caloriesBurned: calories,
       };
-      await addActivity(newActivityData);
+      
+      const docId = await addActivity(newActivityData);
+      await updateDailySummaryOnActivityChange(calories);
       
       const newActivityForState: ActivityLog = {
         ...newActivityData,
-        id: Date.now().toString(), // temp id
+        id: docId,
         date: new Date().toLocaleDateString(),
         createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
       };
@@ -142,9 +146,10 @@ export function ActivityTracker() {
     }
   };
 
-  const handleDeleteActivity = async (activityId: string) => {
+  const handleDeleteActivity = async (activityId: string, caloriesBurned: number) => {
     try {
       await deleteActivityAction(activityId);
+      await updateDailySummaryOnActivityChange(-caloriesBurned);
       setActivities((prev) => prev.filter(act => act.id !== activityId));
       toast({
         title: "Activity Deleted",
@@ -283,7 +288,7 @@ export function ActivityTracker() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteActivity(act.id)}>Delete</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDeleteActivity(act.id, act.caloriesBurned)}>Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>

@@ -1,44 +1,30 @@
 
 
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { getMeals, getProfile, getActivities } from '@/services/firestore';
+import { getDailySummaryForToday } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
 import { Flame, Drumstick, Wheat, Beef, BarChart } from 'lucide-react';
-import { isToday } from '@/lib/utils';
-import type { MealLog, ActivityLog } from '@/lib/types';
 import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
 
-
 async function getSummaryData() {
-    const [savedMeals, profile, savedActivities] = await Promise.all([getMeals(), getProfile(), getActivities()]);
+    const summary = await getDailySummaryForToday();
 
-    const dailyGoal = profile?.dailyCalories || 2000;
-    const macroGoals = {
-        protein: profile?.protein || 150,
-        carbs: profile?.carbs || 250,
-        fats: profile?.fats || 67,
-        fiber: profile?.fiber || 30,
+    return {
+        dailyTotals: {
+            calories: summary.consumedCalories,
+            protein: summary.protein,
+            carbs: summary.carbs,
+            fats: summary.fats,
+            fiber: summary.fiber,
+        },
+        dailyGoal: summary.dailyGoal,
+        caloriesBurned: summary.caloriesBurned,
+        macroGoals: summary.macroGoals,
+        hasProfile: summary.dailyGoal > 0,
     };
-
-    const todaysMeals = (savedMeals as MealLog[]).filter(meal => isToday(meal.createdAt));
-    const dailyTotals = todaysMeals.reduce(
-      (acc, meal) => {
-        acc.calories += meal.calories;
-        acc.protein += meal.protein;
-        acc.carbs += meal.carbs;
-        acc.fats += meal.fats;
-        acc.fiber += meal.fiber || 0;
-        return acc;
-      },
-      { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
-    );
-    
-    const todaysActivities = (savedActivities as ActivityLog[]).filter(activity => isToday(activity.createdAt));
-    const caloriesBurned = todaysActivities.reduce((acc, activity) => acc + activity.caloriesBurned, 0);
-
-    return { dailyTotals, dailyGoal, caloriesBurned, macroGoals, hasProfile: !!profile?.goal };
 }
 
 function MacroProgress({ label, consumed, goal, icon: Icon }: { label: string; consumed: number; goal: number; icon: React.ElementType; }) {

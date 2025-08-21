@@ -20,8 +20,6 @@ import { DailyAiSuggestion, DailyAiSuggestionSkeleton } from '@/components/daily
 import { Suspense } from 'react';
 import { DashboardHeader, DashboardHeaderSkeleton } from '@/components/dashboard-header';
 
-export const dynamic = 'force-dynamic';
-
 export default function DashboardPage() {
   return (
     <div className="space-y-8">

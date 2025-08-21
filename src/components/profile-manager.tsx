@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, Wheat, Drumstick, Beef, ArrowDown } from 'lucide-react';
-import { getProfile, saveProfile } from '@/services/firestore';
+import { getProfile, saveProfile, updateDailySummaryWithNewGoals } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 const profileSchema = z.object({
@@ -176,6 +176,15 @@ export function ProfileManager() {
             ...goalMetrics,
         };
         await saveProfile(fullProfileData);
+        await updateDailySummaryWithNewGoals({
+            dailyGoal: goalMetrics.dailyCalories,
+            macroGoals: {
+                protein: goalMetrics.protein,
+                carbs: goalMetrics.carbs,
+                fats: goalMetrics.fats,
+                fiber: goalMetrics.fiber,
+            }
+        });
         setProfile(fullProfileData);
         toast({
             title: 'Goal Set!',

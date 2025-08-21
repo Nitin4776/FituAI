@@ -41,7 +41,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMealMacros, deleteMealAction, generateMealPlanAction, analyzeMealImageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { addMeal, getMeals, getProfile } from '@/services/firestore';
+import { addMeal, getMeals, getProfile, updateDailySummaryOnMealChange } from '@/services/firestore';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
@@ -170,7 +170,8 @@ export function MealPlanner() {
     async function loadData() {
       setIsLoading(true);
       const [savedMeals, profile] = await Promise.all([getMeals(), getProfile()]);
-      setMeals(savedMeals as MealLog[]);
+      const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
+      setMeals(todaysMeals as MealLog[]);
       
       if (profile) {
         const heightInMeters = profile.height / 100;
@@ -241,11 +242,12 @@ export function MealPlanner() {
         ...macros,
       };
 
-      await addMeal(newMealData);
+      const docId = await addMeal(newMealData);
+      await updateDailySummaryOnMealChange(macros);
       
       const newMealForState = {
         ...newMealData,
-        id: Date.now().toString(),
+        id: docId,
         createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
       }
       setMeals((prev) => [newMealForState, ...prev]);
@@ -282,10 +284,18 @@ export function MealPlanner() {
     }
   }
 
-  const handleDeleteMeal = async (mealId: string) => {
+  const handleDeleteMeal = async (meal: MealLog) => {
     try {
-        await deleteMealAction(mealId);
-        setMeals((prev) => prev.filter(m => m.id !== mealId));
+        await deleteMealAction(meal.id);
+        const negativeMacros = {
+            calories: -meal.calories,
+            protein: -meal.protein,
+            carbs: -meal.carbs,
+            fats: -meal.fats,
+            fiber: -meal.fiber,
+        };
+        await updateDailySummaryOnMealChange(negativeMacros);
+        setMeals((prev) => prev.filter(m => m.id !== meal.id));
         toast({
             title: "Meal Deleted",
             description: "The meal has been removed from your log.",
@@ -355,7 +365,7 @@ export function MealPlanner() {
   }
 
   const renderMealCards = (mealTypeValue: MealFormValues['mealType']) => {
-    const filteredMeals = meals.filter((m) => m.mealType === mealTypeValue && isToday(m.createdAt));
+    const filteredMeals = meals.filter((m) => m.mealType === mealTypeValue);
     const targetCalories = Math.round(dailyGoal * calorieDistribution[mealTypeValue]);
     const consumedCalories = filteredMeals.reduce((sum, meal) => sum + meal.calories, 0);
     const progress = targetCalories > 0 ? (consumedCalories / targetCalories) * 100 : 0;
@@ -410,7 +420,7 @@ export function MealPlanner() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteMeal(meal.id)}>Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDeleteMeal(meal)}>Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
