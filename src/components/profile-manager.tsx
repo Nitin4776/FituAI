@@ -96,7 +96,7 @@ export function ProfileManager() {
     resolver: zodResolver(goalSchema),
     defaultValues: {
         goal: 'maintain',
-        targetWeight: '' as any
+        targetWeight: '' as any,
     }
   });
 
@@ -109,7 +109,10 @@ export function ProfileManager() {
       if (savedProfile) {
         setProfile(savedProfile as FullProfile);
         profileForm.reset(savedProfile);
-        goalForm.reset(savedProfile);
+        goalForm.reset({
+            goal: savedProfile.goal || 'maintain',
+            targetWeight: savedProfile.targetWeight || '',
+        });
         if (savedProfile.height && savedProfile.weight && savedProfile.age) {
             setShowGoalCard(true);
         }
@@ -117,7 +120,7 @@ export function ProfileManager() {
       setIsLoading(false);
     }
     loadProfile();
-  }, [profileForm, goalForm]);
+  }, []);
 
   const onProfileSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
     try {
