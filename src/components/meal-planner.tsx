@@ -446,7 +446,7 @@ export function MealPlanner() {
                 </div>
             </div>
             <Tabs defaultValue="breakfast" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-2 h-auto sm:grid-cols-5">
                     {Object.keys(generatedPlan).map(key => {
                         const mealType = mealTypes.find(mt => mt.value === key);
                         if (!mealType) return null;
@@ -751,7 +751,7 @@ export function MealPlanner() {
       </Dialog>
 
       <Tabs defaultValue="breakfast" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="w-full justify-start sm:grid sm:w-full sm:grid-cols-5">
           {mealTypes.map(t => <TabsTrigger key={t.value} value={t.value}>{t.name}</TabsTrigger>)}
         </TabsList>
         {mealTypes.map(t => <TabsContent key={t.value} value={t.value}>{renderMealCards(t.value)}</TabsContent>)}
