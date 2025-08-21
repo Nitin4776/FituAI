@@ -53,12 +53,11 @@ export async function signInWithGoogle() {
     }
 }
 
-export async function sendOtp(phoneNumber: string): Promise<ConfirmationResult> {
+export async function sendOtp(phoneNumber: string): Promise<void> {
     const appVerifier = window.recaptchaVerifier;
     try {
         const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
         window.confirmationResult = confirmationResult;
-        return confirmationResult;
     } catch (error: any) {
          // This can happen if the phone number is invalid, or if ReCAPTCHA fails.
          // We need to reset the verifier.
@@ -84,9 +83,12 @@ export async function verifyOtp(otp: string) {
     }
 }
 
-export async function signUpWithPhoneNumber(name: string, confirmationResult: ConfirmationResult, otp: string) {
+export async function signUpWithPhoneNumber(name: string, otp: string) {
      try {
-        const userCredential = await confirmationResult.confirm(otp);
+        if (!window.confirmationResult) {
+            throw new Error("Please request an OTP first.");
+        }
+        const userCredential = await window.confirmationResult.confirm(otp);
         
         await updateProfile(userCredential.user, {
             displayName: name

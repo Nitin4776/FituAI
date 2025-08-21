@@ -21,7 +21,6 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { signUpAction, signInWithGoogle, sendOtp, signUpWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
-import type { ConfirmationResult } from 'firebase/auth';
 
 
 const emailSchema = z.object({
@@ -57,7 +56,6 @@ const GoogleIcon = () => (
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const { toast } = useToast();
 
@@ -115,8 +113,7 @@ export default function SignUpPage() {
     
     setIsLoading(true);
     try {
-        const result = await sendOtp(fullPhoneNumber);
-        setConfirmationResult(result);
+        await sendOtp(fullPhoneNumber);
         setIsOtpSent(true);
         toast({ title: 'OTP Sent', description: 'Check your phone for the verification code.' });
     } catch(error) {
@@ -135,13 +132,10 @@ export default function SignUpPage() {
         phoneForm.setError('otp', { type: 'manual', message: 'Please enter the OTP.' });
         return;
     }
-    if (!confirmationResult) {
-         toast({ variant: 'destructive', title: 'Error', description: 'Please request an OTP first.' });
-        return;
-    }
+
     setIsLoading(true);
     try {
-      await signUpWithPhoneNumber(data.name, confirmationResult, data.otp);
+      await signUpWithPhoneNumber(data.name, data.otp);
     } catch (error) {
        toast({
         variant: 'destructive',
@@ -180,7 +174,7 @@ export default function SignUpPage() {
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Name</FormLabel>
-                                    <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                                    <FormControl><Input placeholder="John Doe" {...field} disabled={isOtpSent} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}
