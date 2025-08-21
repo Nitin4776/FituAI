@@ -4,7 +4,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from './ui/skeleton';
 
 export function DashboardHeader() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <DashboardHeaderSkeleton />;
+  }
 
   return (
     <header>

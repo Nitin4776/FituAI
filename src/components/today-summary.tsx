@@ -1,5 +1,4 @@
-
-
+'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -8,24 +7,27 @@ import { Skeleton } from './ui/skeleton';
 import { Flame, Drumstick, Wheat, Beef, BarChart } from 'lucide-react';
 import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
-async function getSummaryData() {
-    const summary = await getDailySummaryForToday();
-
-    return {
-        dailyTotals: {
-            calories: summary.consumedCalories,
-            protein: summary.protein,
-            carbs: summary.carbs,
-            fats: summary.fats,
-            fiber: summary.fiber,
-        },
-        dailyGoal: summary.dailyGoal,
-        caloriesBurned: summary.caloriesBurned,
-        macroGoals: summary.macroGoals,
-        hasProfile: summary.dailyGoal > 0,
+type SummaryData = {
+    dailyTotals: {
+        calories: number;
+        protein: number;
+        carbs: number;
+        fats: number;
+        fiber: number;
     };
-}
+    dailyGoal: number;
+    caloriesBurned: number;
+    macroGoals: {
+        protein: number;
+        carbs: number;
+        fats: number;
+        fiber: number;
+    };
+    hasProfile: boolean;
+};
+
 
 function MacroProgress({ label, consumed, goal, icon: Icon }: { label: string; consumed: number; goal: number; icon: React.ElementType; }) {
     const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
@@ -72,8 +74,36 @@ function getCalorieStatusMessage(consumed: number, goal: number, hasProfile: boo
 }
 
 
-export async function TodaySummary() {
-  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals, hasProfile } = await getSummaryData();
+export function TodaySummary() {
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function getSummaryData() {
+        const summary = await getDailySummaryForToday();
+        setSummaryData({
+            dailyTotals: {
+                calories: summary.consumedCalories,
+                protein: summary.protein,
+                carbs: summary.carbs,
+                fats: summary.fats,
+                fiber: summary.fiber,
+            },
+            dailyGoal: summary.dailyGoal,
+            caloriesBurned: summary.caloriesBurned,
+            macroGoals: summary.macroGoals,
+            hasProfile: summary.dailyGoal > 0,
+        });
+        setIsLoading(false);
+    }
+    getSummaryData();
+  }, []);
+
+  if (isLoading || !summaryData) {
+      return <TodaySummarySkeleton />;
+  }
+
+  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals, hasProfile } = summaryData;
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
   const statusMessage = getCalorieStatusMessage(dailyTotals.calories, dailyGoal, hasProfile);
 
@@ -125,8 +155,22 @@ export function TodaySummarySkeleton() {
   return (
      <Card>
       <CardHeader>
-          <CardTitle className="font-headline">Today's Summary</CardTitle>
-          <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
+          <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="font-headline">Today's Summary</CardTitle>
+                <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
+              </div>
+              {/* Skeleton for sleep tracker */}
+               <div className="text-center">
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <div className='flex gap-1 items-center justify-center pt-1'>
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                    </div>
+                </div>
+          </div>
       </CardHeader>
       <CardContent>
           <div className="space-y-4">

@@ -1,5 +1,6 @@
 
 
+
 import {
   Card,
   CardContent,
@@ -15,21 +16,17 @@ import {
   Replace,
 } from 'lucide-react';
 import Link from 'next/link';
-import { TodaySummary, TodaySummarySkeleton } from '@/components/today-summary';
+import { TodaySummary } from '@/components/today-summary';
 import { DailyAiSuggestion, DailyAiSuggestionSkeleton } from '@/components/daily-ai-suggestion';
 import { Suspense } from 'react';
-import { DashboardHeader, DashboardHeaderSkeleton } from '@/components/dashboard-header';
+import { DashboardHeader } from '@/components/dashboard-header';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
-      <Suspense fallback={<DashboardHeaderSkeleton />}>
-        <DashboardHeader />
-      </Suspense>
+      <DashboardHeader />
 
-      <Suspense fallback={<TodaySummarySkeleton />}>
-        <TodaySummary />
-      </Suspense>
+      <TodaySummary />
 
       <Suspense fallback={<DailyAiSuggestionSkeleton />}>
         <DailyAiSuggestion />
