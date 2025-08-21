@@ -157,19 +157,25 @@ export async function getFastingState() {
 export async function saveSleepLog(sleepData: { quality: string }) {
   const userId = getCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
-  const sleepLogRef = doc(db, 'users', userId, 'sleep', new Date().toISOString().split('T')[0]);
-  await setDoc(sleepLogRef, {
-    ...sleepData,
-    createdAt: Timestamp.now(),
-  }, { merge: true });
+  // Save sleep quality directly to the daily summary document.
+  const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+  await setDoc(summaryDocRef, {
+    sleepQuality: sleepData.quality,
+  }, { merge: true }); // Using merge:true will create the doc if it doesn't exist.
 }
 
 export async function getSleepLogForToday() {
   const userId = getCurrentUserId();
   if (!userId) return null;
-  const sleepLogRef = doc(db, 'users', userId, 'sleep', new Date().toISOString().split('T')[0]);
-  const docSnap = await getDoc(sleepLogRef);
-  return docSnap.exists() ? docSnap.data() : null;
+  // Read sleep quality from the daily summary document.
+  const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+  const docSnap = await getDoc(summaryDocRef);
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    // Return the sleep data if it exists on the summary
+    return data.sleepQuality ? { quality: data.sleepQuality } : null;
+  }
+  return null;
 }
 
 
