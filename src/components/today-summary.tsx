@@ -1,4 +1,5 @@
 
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { getMeals, getProfile, getActivities } from '@/services/firestore';
@@ -54,7 +55,7 @@ async function getSummaryData() {
     const todaysActivities = (savedActivities as ActivityLog[]).filter(activity => isToday(activity.createdAt));
     const caloriesBurned = todaysActivities.reduce((acc, activity) => acc + activity.caloriesBurned, 0);
 
-    return { dailyTotals, dailyGoal, caloriesBurned, macroGoals };
+    return { dailyTotals, dailyGoal, caloriesBurned, macroGoals, hasProfile: !!profile?.goal };
 }
 
 function MacroProgress({ label, consumed, goal, icon: Icon }: { label: string; consumed: number; goal: number; icon: React.ElementType; }) {
@@ -81,8 +82,8 @@ function CaloriesBurned({ burned }: { burned: number }) {
     )
 }
 
-function getCalorieStatusMessage(consumed: number, goal: number): string {
-  if (goal <= 0 || goal === 2000) {
+function getCalorieStatusMessage(consumed: number, goal: number, hasProfile: boolean): string {
+  if (!hasProfile) {
     return "Set up your profile to get calorie tracking.";
   }
   if (consumed === 0) {
@@ -103,9 +104,9 @@ function getCalorieStatusMessage(consumed: number, goal: number): string {
 
 
 export async function TodaySummary() {
-  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals } = await getSummaryData();
+  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals, hasProfile } = await getSummaryData();
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
-  const statusMessage = getCalorieStatusMessage(dailyTotals.calories, dailyGoal);
+  const statusMessage = getCalorieStatusMessage(dailyTotals.calories, dailyGoal, hasProfile);
 
   return (
     <Card>
