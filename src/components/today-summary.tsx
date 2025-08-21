@@ -14,30 +14,13 @@ import Link from 'next/link';
 async function getSummaryData() {
     const [savedMeals, profile, savedActivities] = await Promise.all([getMeals(), getProfile(), getActivities()]);
 
-    let dailyGoal = 2000; // Default goal
-    let macroGoals = { protein: 150, carbs: 250, fats: 67, fiber: 30 }; // Default macro goals
-
-    if (profile && profile.height && profile.weight && profile.age && profile.activityLevel && profile.goal) {
-        const heightInMeters = profile.height / 100;
-        const bmr =
-        profile.gender === 'male'
-            ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
-            : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
-
-        const activityMultipliers = {
-            sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9
-        };
-        const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
-        const tdee = bmr * activityMultipliers[profile.activityLevel as keyof typeof activityMultipliers];
-        dailyGoal = Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]);
-
-        macroGoals = {
-            protein: Math.round((dailyGoal * 0.3) / 4),
-            carbs: Math.round((dailyGoal * 0.4) / 4),
-            fats: Math.round((dailyGoal * 0.3) / 9),
-            fiber: Math.round((dailyGoal / 1000) * 14),
-        }
-    }
+    const dailyGoal = profile?.dailyCalories || 2000;
+    const macroGoals = {
+        protein: profile?.protein || 150,
+        carbs: profile?.carbs || 250,
+        fats: profile?.fats || 67,
+        fiber: profile?.fiber || 30,
+    };
 
     const todaysMeals = (savedMeals as MealLog[]).filter(meal => isToday(meal.createdAt));
     const dailyTotals = todaysMeals.reduce(
@@ -46,7 +29,7 @@ async function getSummaryData() {
         acc.protein += meal.protein;
         acc.carbs += meal.carbs;
         acc.fats += meal.fats;
-        acc.fiber += meal.fiber || 0; // handle meals logged before fiber was added
+        acc.fiber += meal.fiber || 0;
         return acc;
       },
       { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }
@@ -186,3 +169,5 @@ export function TodaySummarySkeleton() {
     </Card>
   )
 }
+
+    

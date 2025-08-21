@@ -40,7 +40,14 @@ const goalSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type GoalFormValues = z.infer<typeof goalSchema>;
-type FullProfile = ProfileFormValues & GoalFormValues;
+
+type FullProfile = ProfileFormValues & GoalFormValues & {
+    dailyCalories?: number;
+    protein?: number;
+    carbs?: number;
+    fats?: number;
+    fiber?: number;
+};
 
 
 interface FitnessMetrics {
@@ -84,9 +91,9 @@ export function ProfileManager() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: { 
-      height: '',
-      weight: '',
-      age: '',
+      height: '' as any,
+      weight: '' as any,
+      age: '' as any,
       gender: 'male', 
       activityLevel: 'sedentary',
     },
@@ -96,7 +103,7 @@ export function ProfileManager() {
     resolver: zodResolver(goalSchema),
     defaultValues: {
         goal: 'maintain',
-        targetWeight: '',
+        targetWeight: '' as any,
     }
   });
 
@@ -150,7 +157,8 @@ export function ProfileManager() {
   };
 
   const onGoalSubmit: SubmitHandler<GoalFormValues> = async (data) => {
-    if (!profile || !profile.height || !profile.weight || !profile.age) {
+    const currentProfile = profileForm.getValues();
+     if (!currentProfile.height || !currentProfile.weight || !currentProfile.age) {
         toast({
             variant: 'destructive',
             title: 'Details Needed',
@@ -159,12 +167,19 @@ export function ProfileManager() {
         return;
     }
     try {
-        const fullProfileData = { ...profile, ...data } as FullProfile;
+        const metrics = calculateBaseMetrics(currentProfile);
+        const goalMetrics = calculateGoalMetrics(metrics, currentProfile.activityLevel, data.goal);
+
+        const fullProfileData: FullProfile = {
+            ...currentProfile,
+            ...data,
+            ...goalMetrics,
+        };
         await saveProfile(fullProfileData);
         setProfile(fullProfileData);
         toast({
             title: 'Goal Set!',
-            description: 'Your daily nutritional goals have been calculated.',
+            description: 'Your daily nutritional goals have been calculated and saved.',
         });
     } catch (error) {
         toast({
@@ -175,15 +190,7 @@ export function ProfileManager() {
     }
   }
 
-  const baseMetrics: FitnessMetrics | null = useMemo(() => {
-    const profileData = profileForm.getValues();
-    const isDataValid = profileData.height > 0 && profileData.weight > 0 && profileData.age > 0;
-
-    if (!isDataValid && !profile) return null;
-    
-    const data = isDataValid ? profileData : profile;
-    if (!data?.height || !data?.weight || !data?.age) return null;
-
+  const calculateBaseMetrics = (data: ProfileFormValues): FitnessMetrics => {
     const heightInMeters = data.height / 100;
     const bmi = parseFloat((data.weight / (heightInMeters * heightInMeters)).toFixed(1));
 
@@ -204,30 +211,38 @@ export function ProfileManager() {
     const bmr = Math.round(data.gender === 'male'
         ? 10 * data.weight + 6.25 * data.height - 5 * data.age + 5
         : 10 * data.weight + 6.25 * data.height - 5 * data.age - 161);
-
-    return {
-      bmi,
-      bmiCategory,
-      idealWeight: `${idealWeightMin} kg - ${idealWeightMax} kg`,
-      bodyFat: parseFloat(bodyFat.toFixed(1)),
-      bmr,
-    };
-  }, [profile, profileForm.watch('height'), profileForm.watch('weight'), profileForm.watch('age'), profileForm.watch('gender')]);
-
-  const goalMetrics: GoalMetrics | null = useMemo(() => {
-    if (!profile || !profile.goal || !baseMetrics) return null;
     
-    const tdee = baseMetrics.bmr * activityLevelMultipliers[profile.activityLevel];
-    const dailyCalories = tdee + goalCalorieAdjustments[profile.goal];
+    return { bmi, bmiCategory, idealWeight: `${idealWeightMin} kg - ${idealWeightMax} kg`, bodyFat: parseFloat(bodyFat.toFixed(1)), bmr };
+  }
+  
+  const calculateGoalMetrics = (baseMetrics: FitnessMetrics, activityLevel: ProfileFormValues['activityLevel'], goal: GoalFormValues['goal']): GoalMetrics => {
+      const tdee = baseMetrics.bmr * activityLevelMultipliers[activityLevel];
+      const dailyCalories = tdee + goalCalorieAdjustments[goal];
 
-    const protein = Math.round((dailyCalories * 0.3) / 4);
-    const carbs = Math.round((dailyCalories * 0.4) / 4);
-    const fats = Math.round((dailyCalories * 0.3) / 9);
-    const fiber = Math.round((dailyCalories / 1000) * 14);
+      const protein = Math.round((dailyCalories * 0.3) / 4);
+      const carbs = Math.round((dailyCalories * 0.4) / 4);
+      const fats = Math.round((dailyCalories * 0.3) / 9);
+      const fiber = Math.round((dailyCalories / 1000) * 14);
 
-    return { dailyCalories: Math.round(dailyCalories), protein, carbs, fats, fiber };
+      return { dailyCalories: Math.round(dailyCalories), protein, carbs, fats, fiber };
+  }
 
-  }, [profile, baseMetrics]);
+  const baseMetrics = useMemo(() => {
+    const profileData = profileForm.getValues();
+    if (!profileData.height || !profileData.weight || !profileData.age) return null;
+    return calculateBaseMetrics(profileData);
+  }, [profileForm.watch('height'), profileForm.watch('weight'), profileForm.watch('age'), profileForm.watch('gender')]);
+
+  const goalMetrics = useMemo(() => {
+     if (!profile || !profile.goal || !profile.dailyCalories) return null;
+     return {
+        dailyCalories: profile.dailyCalories,
+        protein: profile.protein,
+        carbs: profile.carbs,
+        fats: profile.fats,
+        fiber: profile.fiber
+     }
+  }, [profile]);
 
 
   return (
@@ -417,11 +432,5 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
-
-    
-
-    
-
-    
 
     
