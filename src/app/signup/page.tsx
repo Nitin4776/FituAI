@@ -18,8 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus, MessageSquare, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { signUpAction, signInWithGoogle, sendOtp, signUpWithPhoneNumber } from '../auth/actions';
+import { useState, useEffect } from 'react';
+import { signUpAction, signInWithGoogle, sendOtp, signUpWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
 import type { ConfirmationResult } from 'firebase/auth';
 
@@ -59,6 +59,10 @@ export default function SignUpPage() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    initializeRecaptchaVerifier();
+  }, []);
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),

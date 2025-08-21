@@ -19,10 +19,12 @@ import { saveProfile as saveProfileServerAction } from '@/services/firestore.ser
 
 const auth = getAuth(app);
 
-if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
-  window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-    'size': 'invisible',
-  });
+export function initializeRecaptchaVerifier() {
+    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+        });
+    }
 }
 
 

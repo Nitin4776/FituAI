@@ -18,8 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, MessageSquare, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { signInAction, signInWithGoogle, sendOtp, verifyOtp } from '../auth/actions';
+import { useState, useEffect } from 'react';
+import { signInAction, signInWithGoogle, sendOtp, verifyOtp, initializeRecaptchaVerifier } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
 
 const emailSchema = z.object({
@@ -48,6 +48,10 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    initializeRecaptchaVerifier();
+  }, []);
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
