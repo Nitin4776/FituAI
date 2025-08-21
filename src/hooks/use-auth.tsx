@@ -1,12 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onIdTokenChanged, type User, getIdToken } from 'firebase/auth';
+import { getAuth, onIdTokenChanged, type User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { signOutAction } from '@/app/auth/actions';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { setCookie, deleteCookie } from 'cookies-next';
 
 const auth = getAuth(app);
 
@@ -20,20 +19,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicPages = ['/signin', '/signup'];
 
-async function setSessionCookie(user: User | null) {
-  if (user) {
-    const idToken = await getIdToken(user);
-    setCookie('session', idToken, {
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: false, 
-    });
-  } else {
-    deleteCookie('session');
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+    const unsubscribe = onIdTokenChanged(auth, (user) => {
       setUser(user);
-      await setSessionCookie(user);
       setLoading(false);
     });
 
@@ -53,14 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    const isPublic = publicPages.includes(pathname);
+    const isPublicPage = publicPages.includes(pathname);
 
-    if (user && isPublic) {
+    if (user && isPublicPage) {
       router.push('/');
-    } else if (!user && !isPublic) {
+    } else if (!user && !isPublicPage) {
       router.push('/signin');
     }
-
   }, [user, loading, pathname, router]);
 
   const signOut = async () => {
@@ -72,18 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  if (loading) {
+  const isPublicPage = publicPages.includes(pathname);
+  
+  if (loading || (!user && !isPublicPage)) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  const isPublic = publicPages.includes(pathname);
-  if (!loading && !user && !isPublic) {
-    return (
-       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );

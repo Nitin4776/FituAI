@@ -73,7 +73,8 @@ export async function signInAction(credentials: z.infer<typeof signInSchema>) {
             validatedCredentials.email,
             validatedCredentials.password
         );
-    } catch (error: any) {
+    } catch (error: any)
+{
         let errorMessage = 'An unexpected error occurred.';
         if (error.code) {
             switch (error.code) {
