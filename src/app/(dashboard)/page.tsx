@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -27,8 +28,7 @@ export default function DashboardPage() {
           Welcome to fitUAI
         </h1>
         <p className="mt-2 text-lg text-muted-foreground">
-          Your personalized AI-powered health and fitness companion. Track your
-          progress, get insights, and build a healthier lifestyle.
+          Your personalized AI-powered health and fitness companion.
         </p>
       </header>
 
