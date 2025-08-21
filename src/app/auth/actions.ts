@@ -60,9 +60,10 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
         window.confirmationResult = confirmationResult;
     } catch (error: any) {
          // This can happen if the phone number is invalid, or if ReCAPTCHA fails.
-         // We need to reset the verifier.
+         // We need to reset the verifier to allow retries.
         if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.render().then((widgetId: any) => {
+            // @ts-ignore
+            window.recaptchaVerifier.render().then((widgetId) => {
                 // @ts-ignore
                 grecaptcha.reset(widgetId);
             });
