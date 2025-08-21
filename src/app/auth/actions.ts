@@ -6,13 +6,25 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   updateProfile,
-  signOut
+  signOut,
+  signInWithPopup,
+  GoogleAuthProvider,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  type ConfirmationResult
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { saveProfile as saveProfileServerAction } from '@/services/firestore.server';
 
 
 const auth = getAuth(app);
+
+if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+    'size': 'invisible',
+  });
+}
+
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -24,6 +36,69 @@ const signInSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+
+export async function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    try {
+        const userCredential = await signInWithPopup(auth, provider);
+        const user = userCredential.user;
+        // Check if user is new, if so save their profile
+        if (user.metadata.creationTime === user.metadata.lastSignInTime) {
+             await saveProfileServerAction({ name: user.displayName }, user.uid);
+        }
+    } catch (error: any) {
+        throw new Error(error.message);
+    }
+}
+
+export async function sendOtp(phoneNumber: string): Promise<ConfirmationResult> {
+    const appVerifier = window.recaptchaVerifier;
+    try {
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        window.confirmationResult = confirmationResult;
+        return confirmationResult;
+    } catch (error: any) {
+         // This can happen if the phone number is invalid, or if ReCAPTCHA fails.
+         // We need to reset the verifier.
+        if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.render().then((widgetId: any) => {
+                // @ts-ignore
+                grecaptcha.reset(widgetId);
+            });
+        }
+        throw new Error("Failed to send OTP. Please check the number or try again.");
+    }
+}
+
+export async function verifyOtp(otp: string) {
+    if (window.confirmationResult) {
+        try {
+            await window.confirmationResult.confirm(otp);
+        } catch (error: any) {
+            throw new Error("Invalid OTP. Please try again.");
+        }
+    } else {
+        throw new Error("No OTP confirmation result found. Please send OTP first.");
+    }
+}
+
+export async function signUpWithPhoneNumber(name: string, confirmationResult: ConfirmationResult, otp: string) {
+     try {
+        const userCredential = await confirmationResult.confirm(otp);
+        
+        await updateProfile(userCredential.user, {
+            displayName: name
+        });
+        await saveProfileServerAction({ name }, userCredential.user.uid);
+
+     } catch (error: any) {
+        let errorMessage = 'An unexpected error occurred during sign-up.';
+        if (error.code === 'auth/invalid-verification-code') {
+            errorMessage = "Invalid OTP. Please try again.";
+        }
+        throw new Error(errorMessage);
+     }
+}
 
 
 export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
@@ -100,4 +175,12 @@ export async function signInAction(credentials: z.infer<typeof signInSchema>) {
 
 export async function signOutAction() {
     await signOut(auth);
+}
+
+// Extend the Window interface
+declare global {
+  interface Window {
+    recaptchaVerifier: RecaptchaVerifier;
+    confirmationResult: ConfirmationResult;
+  }
 }
