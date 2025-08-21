@@ -274,19 +274,7 @@ export function ProfileManager() {
                             <FormMessage />
                             </FormItem>
                         )}/>
-                        <div className="flex flex-col gap-2">
-                            <Button type="submit" className="w-full">Save Details</Button>
-                             <Button
-                                type="button"
-                                variant="default"
-                                className="w-full"
-                                onClick={() => goalCardRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                                disabled={!profile?.height || !profile?.weight || !profile?.age}
-                            >
-                                <ArrowDown className="mr-2 h-4 w-4"/>
-                                Set Your Goal
-                            </Button>
-                        </div>
+                        <Button type="submit" className="w-full">Save Details</Button>
                     </form>
                     </Form>
                 )}
