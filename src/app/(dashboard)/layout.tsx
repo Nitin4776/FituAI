@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -7,6 +8,7 @@ import {
   Clock,
   HeartPulse,
   LayoutDashboard,
+  LogOut,
   Replace,
   TestTube2,
   User,
@@ -23,10 +25,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarInset,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons/logo';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -74,6 +79,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   return (
     <SidebarProvider>
@@ -103,6 +109,12 @@ export default function DashboardLayout({
               ))}
             </SidebarMenu>
           </SidebarContent>
+          <SidebarFooter>
+            <Button variant="ghost" className="justify-start gap-2" onClick={signOut}>
+                <LogOut className="size-4" />
+                <span>Sign Out</span>
+            </Button>
+          </SidebarFooter>
         </Sidebar>
         <SidebarInset>
           <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
