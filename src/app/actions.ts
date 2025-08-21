@@ -100,35 +100,13 @@ export async function deleteActivityAction(activityId: string): Promise<void> {
 }
 
 export async function generateMealPlanAction(
-    input: Omit<GenerateMealPlanInput, 'goal' | 'calories'>
+    input: GenerateMealPlanInput
 ): Promise<GenerateMealPlanOutput> {
     try {
-        const profile = await getProfile();
-        if (!profile) {
-            throw new Error('User profile not found. Please set up your profile first.');
+        if (!input.calories || input.calories === 0) {
+             throw new Error('User profile with a calorie goal not found. Please set up your profile and goal first.');
         }
-        
-        const heightInMeters = profile.height / 100;
-        const bmr =
-        profile.gender === 'male'
-            ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
-            : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
-
-        const activityMultipliers = {
-            sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9
-        };
-        const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
-        const tdee = bmr * activityMultipliers[profile.activityLevel as keyof typeof activityMultipliers];
-        const dailyGoal = Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]);
-
-        const fullInput: GenerateMealPlanInput = {
-            ...input,
-            goal: profile.goal,
-            calories: dailyGoal,
-        }
-        
-        return await generateMealPlan(fullInput);
-
+        return await generateMealPlan(input);
     } catch (error) {
         console.error(error);
         throw new Error('Failed to generate meal plan.');

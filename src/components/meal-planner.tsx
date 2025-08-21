@@ -271,7 +271,23 @@ export function MealPlanner() {
     setIsGenerating(true);
     setGeneratedPlan(null);
     try {
-        const plan = await generateMealPlanAction(data);
+        const profile = await getProfile();
+        if (!profile || !(profile as any).dailyCalories) {
+            toast({
+                variant: 'destructive',
+                title: 'Goal Not Set',
+                description: 'Please set your physical details and goal in the Profile page first.',
+            });
+            setIsGenerating(false);
+            return;
+        }
+
+        const plan = await generateMealPlanAction({
+            ...data,
+            calories: (profile as any).dailyCalories,
+            goal: (profile as any).goal || 'maintain',
+        });
+
         setGeneratedPlan(plan);
         setIsPlanMealDialogOpen(false);
         planForm.reset();
