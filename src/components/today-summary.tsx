@@ -16,7 +16,7 @@ async function getSummaryData() {
     let dailyGoal = 2000; // Default goal
     let macroGoals = { protein: 150, carbs: 250, fats: 67, fiber: 30 }; // Default macro goals
 
-    if (profile) {
+    if (profile && profile.height && profile.weight && profile.age && profile.activityLevel && profile.goal) {
         const heightInMeters = profile.height / 100;
         const bmr =
         profile.gender === 'male'
@@ -82,7 +82,7 @@ function CaloriesBurned({ burned }: { burned: number }) {
 }
 
 function getCalorieStatusMessage(consumed: number, goal: number): string {
-  if (goal <= 0) {
+  if (goal <= 0 || goal === 2000) {
     return "Set up your profile to get calorie tracking.";
   }
   if (consumed === 0) {
@@ -159,9 +159,28 @@ export function TodaySummarySkeleton() {
           <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
       </CardHeader>
       <CardContent>
-          <div className="flex items-center justify-center h-24">
-             <Skeleton className="h-24 w-full" />
-           </div>
+          <div className="space-y-4">
+              <div>
+                  <div className="flex justify-between items-baseline mb-1">
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-4 w-1/6" />
+                  </div>
+                  <Skeleton className="h-2 w-full" />
+                  <div className="flex justify-between items-center mt-1">
+                     <Skeleton className="h-3 w-1/2" />
+                     <Skeleton className="h-4 w-1/5" />
+                  </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                  {[...Array(5)].map((_, i) => (
+                      <div key={i} className="space-y-1">
+                          <Skeleton className="h-5 w-5 mx-auto" />
+                          <Skeleton className="h-5 w-12 mx-auto" />
+                          <Skeleton className="h-3 w-16 mx-auto" />
+                      </div>
+                  ))}
+              </div>
+          </div>
       </CardContent>
     </Card>
   )
