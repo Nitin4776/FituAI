@@ -17,6 +17,8 @@ import { TodaySummary, TodaySummarySkeleton } from '@/components/today-summary';
 import { DailyAiSuggestion, DailyAiSuggestionSkeleton } from '@/components/daily-ai-suggestion';
 import { Suspense } from 'react';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
