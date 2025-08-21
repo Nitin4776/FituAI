@@ -48,6 +48,7 @@ interface FitnessMetrics {
   bmiCategory: string;
   idealWeight: string;
   bodyFat: number;
+  bmr: number;
 }
 
 interface GoalMetrics {
@@ -170,9 +171,9 @@ export function ProfileManager() {
     const profileData = profileForm.getValues();
     const isDataValid = profileData.height > 0 && profileData.weight > 0 && profileData.age > 0;
 
-    if (!profile && !isDataValid) return null;
+    if (!isDataValid && !profile) return null;
     
-    const data = profile || profileData;
+    const data = isDataValid ? profileData : profile;
     if (!data?.height || !data?.weight || !data?.age) return null;
 
     const heightInMeters = data.height / 100;
@@ -192,24 +193,23 @@ export function ProfileManager() {
         ? 1.2 * bmi + 0.23 * data.age - 16.2
         : 1.2 * bmi + 0.23 * data.age - 5.4;
 
+    const bmr = Math.round(data.gender === 'male'
+        ? 10 * data.weight + 6.25 * data.height - 5 * data.age + 5
+        : 10 * data.weight + 6.25 * data.height - 5 * data.age - 161);
+
     return {
       bmi,
       bmiCategory,
       idealWeight: `${idealWeightMin} kg - ${idealWeightMax} kg`,
       bodyFat: parseFloat(bodyFat.toFixed(1)),
+      bmr,
     };
   }, [profile, profileForm.watch()]);
 
   const goalMetrics: GoalMetrics | null = useMemo(() => {
-    if (!profile || !profile.goal) return null;
+    if (!profile || !profile.goal || !baseMetrics) return null;
     
-    const heightInMeters = profile.height / 100;
-     const bmr =
-      profile.gender === 'male'
-        ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
-        : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
-
-    const tdee = bmr * activityLevelMultipliers[profile.activityLevel];
+    const tdee = baseMetrics.bmr * activityLevelMultipliers[profile.activityLevel];
     const dailyCalories = tdee + goalCalorieAdjustments[profile.goal];
 
     const protein = Math.round((dailyCalories * 0.3) / 4);
@@ -219,7 +219,7 @@ export function ProfileManager() {
 
     return { dailyCalories: Math.round(dailyCalories), protein, carbs, fats, fiber };
 
-  }, [profile]);
+  }, [profile, baseMetrics]);
 
 
   return (
@@ -296,6 +296,7 @@ export function ProfileManager() {
                     <MetricCard icon={Target} label="Body Mass Index (BMI)" value={baseMetrics.bmi.toString()} description={baseMetrics.bmiCategory} />
                     <MetricCard icon={Weight} label="Ideal Weight Range" value={baseMetrics.idealWeight} description="Based on healthy BMI range" />
                     <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${baseMetrics.bodyFat}%`} description="Estimated value" />
+                    <MetricCard icon={Flame} label="Basal Metabolic Rate (BMR)" value={`${baseMetrics.bmr} kcal`} description="Calories burned at rest" />
                     </>
                 ) : (
                     <div className="flex items-center justify-center h-full text-center text-muted-foreground">
@@ -408,3 +409,5 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
+
+    
