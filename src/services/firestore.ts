@@ -24,10 +24,7 @@ function getCurrentUserId() {
     if (user) {
         return user.uid;
     }
-    // This is a fallback for server actions where currentUser is not available.
-    // A more robust solution would involve passing the UID from the client
-    // or decoding the session cookie on the server.
-    return 'test-user'; 
+    return null;
 }
 
 
