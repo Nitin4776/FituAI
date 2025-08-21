@@ -280,7 +280,33 @@ export function ProfileManager() {
                 )}
                 </CardContent>
             </Card>
-            
+
+            <Card>
+                <CardHeader>
+                <CardTitle className="font-headline">Your Body Metrics</CardTitle>
+                <CardDescription>Results based on your physical details.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                {isLoading ? (
+                    <div className="flex items-center justify-center h-40">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : baseMetrics ? (
+                    <>
+                    <MetricCard icon={Target} label="Body Mass Index (BMI)" value={baseMetrics.bmi.toString()} description={baseMetrics.bmiCategory} />
+                    <MetricCard icon={Weight} label="Ideal Weight Range" value={baseMetrics.idealWeight} description="Based on healthy BMI range" />
+                    <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${baseMetrics.bodyFat}%`} description="Estimated value" />
+                    </>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                    <p>Fill out the "Your Details" form to see your metrics.</p>
+                    </div>
+                )}
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="space-y-8">
             {showGoalCard && (
                 <Card ref={goalCardRef}>
                     <CardHeader>
@@ -331,32 +357,6 @@ export function ProfileManager() {
                     </CardContent>
                 </Card>
             )}
-        </div>
-
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                <CardTitle className="font-headline">Your Body Metrics</CardTitle>
-                <CardDescription>Results based on your physical details.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                {isLoading ? (
-                    <div className="flex items-center justify-center h-40">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : baseMetrics ? (
-                    <>
-                    <MetricCard icon={Target} label="Body Mass Index (BMI)" value={baseMetrics.bmi.toString()} description={baseMetrics.bmiCategory} />
-                    <MetricCard icon={Weight} label="Ideal Weight Range" value={baseMetrics.idealWeight} description="Based on healthy BMI range" />
-                    <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${baseMetrics.bodyFat}%`} description="Estimated value" />
-                    </>
-                ) : (
-                    <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                    <p>Fill out the "Your Details" form to see your metrics.</p>
-                    </div>
-                )}
-                </CardContent>
-            </Card>
 
             {profile?.goal && (
                  <Card>
