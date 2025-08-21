@@ -173,19 +173,21 @@ export function MealPlanner() {
       const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
       setMeals(todaysMeals as MealLog[]);
       
-      if (profile) {
-        const heightInMeters = profile.height / 100;
+      if (profile && (profile as any).dailyCalories) {
+        setDailyGoal((profile as any).dailyCalories);
+      } else if (profile) {
+        const heightInMeters = (profile as any).height / 100;
         const bmr =
-        profile.gender === 'male'
-            ? 10 * profile.weight + 6.25 * profile.height - 5 * profile.age + 5
-            : 10 * profile.weight + 6.25 * profile.height - 5 * profile.age - 161;
+        (profile as any).gender === 'male'
+            ? 10 * (profile as any).weight + 6.25 * (profile as any).height - 5 * (profile as any).age + 5
+            : 10 * (profile as any).weight + 6.25 * (profile as any).height - 5 * (profile as any).age - 161;
 
         const activityMultipliers = {
             sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9
         };
         const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
-        const tdee = bmr * activityMultipliers[profile.activityLevel as keyof typeof activityMultipliers];
-        setDailyGoal(Math.round(tdee + goalAdjustments[profile.goal as keyof typeof goalAdjustments]));
+        const tdee = bmr * activityMultipliers[(profile as any).activityLevel as keyof typeof activityMultipliers];
+        setDailyGoal(Math.round(tdee + goalAdjustments[(profile as any).goal as keyof typeof goalAdjustments]));
       }
 
       setIsLoading(false);
@@ -677,6 +679,10 @@ export function MealPlanner() {
                     </DialogHeader>
                     <Form {...planForm}>
                         <form onSubmit={planForm.handleSubmit(onPlanMealSubmit)} className='space-y-4'>
+                            <div className="text-center p-3 mb-2 bg-secondary rounded-lg">
+                                <p className="text-sm text-muted-foreground">The AI will generate a plan for your daily goal of:</p>
+                                <p className="font-bold text-lg text-primary">{dailyGoal} kcal</p>
+                            </div>
                              <FormField control={planForm.control} name="cuisine" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cuisine</FormLabel>
