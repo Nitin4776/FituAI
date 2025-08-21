@@ -17,20 +17,16 @@ import Link from 'next/link';
 import { TodaySummary, TodaySummarySkeleton } from '@/components/today-summary';
 import { DailyAiSuggestion, DailyAiSuggestionSkeleton } from '@/components/daily-ai-suggestion';
 import { Suspense } from 'react';
+import { DashboardHeader, DashboardHeaderSkeleton } from '@/components/dashboard-header';
 
 export const dynamic = 'force-dynamic';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-headline text-3xl md:text-4xl text-primary">
-          Welcome to fitUAI
-        </h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Your personalized AI-powered health and fitness companion.
-        </p>
-      </header>
+      <Suspense fallback={<DashboardHeaderSkeleton />}>
+        <DashboardHeader />
+      </Suspense>
 
       <Suspense fallback={<TodaySummarySkeleton />}>
         <TodaySummary />
