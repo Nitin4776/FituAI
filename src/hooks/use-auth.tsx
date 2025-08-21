@@ -1,11 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onIdTokenChanged, type User } from 'firebase/auth';
+import { getAuth, onIdTokenChanged, type User, getIdToken } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { signOutAction } from '@/app/auth/actions';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { setCookie, deleteCookie } from 'cookies-next';
 
 const auth = getAuth(app);
 
@@ -19,6 +20,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicPages = ['/signin', '/signup'];
 
+async function setSessionCookie(user: User | null) {
+  if (user) {
+    const idToken = await getIdToken(user);
+    setCookie('session', idToken, {
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false, // Must be false for client-side access
+    });
+  } else {
+    deleteCookie('session');
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,8 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, (user) => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setUser(user);
+      await setSessionCookie(user);
       setLoading(false);
     });
 
@@ -37,16 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    // If user is logged in and on a public page (signin/signup), redirect to profile
+    // If user is logged in and on a public page (signin/signup), redirect to dashboard
     if (user && publicPages.includes(pathname)) {
-      router.push('/profile');
+      router.push('/');
     }
 
-    // If user is not logged in and on a protected page, middleware will handle it.
-    // This hook primarily handles the case after a successful login action.
+    // If user is not logged in and on a protected page, the middleware will handle redirection.
 
   }, [user, loading, pathname, router]);
-
 
   const signOut = async () => {
     try {

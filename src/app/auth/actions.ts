@@ -1,10 +1,15 @@
-'use server';
+'use client'; // Changed to a client component for direct SDK usage
 
 import { z } from 'zod';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  updateProfile,
+  signOut
+} from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { cookies } from 'next/headers';
-import { saveProfile } from '@/services/firestore';
+import { saveProfile as saveProfileServerAction } from '@/services/firestore.server';
 
 
 const auth = getAuth(app);
@@ -35,18 +40,8 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
       displayName: validatedCredentials.name
     });
 
-    // Save name to firestore profile
-    await saveProfile({ name: validatedCredentials.name }, userCredential.user.uid);
-
-
-    const idToken = await userCredential.user.getIdToken();
-    
-    cookies().set('session', idToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-        path: '/',
-    });
+    // Save name to firestore profile using a server action
+    await saveProfileServerAction({ name: validatedCredentials.name }, userCredential.user.uid);
 
   } catch (error: any) {
     let errorMessage = 'An unexpected error occurred.';
@@ -75,20 +70,11 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
 export async function signInAction(credentials: z.infer<typeof signInSchema>) {
     try {
         const validatedCredentials = signInSchema.parse(credentials);
-        const userCredential = await signInWithEmailAndPassword(
+        await signInWithEmailAndPassword(
             auth,
             validatedCredentials.email,
             validatedCredentials.password
         );
-        const idToken = await userCredential.user.getIdToken();
-        
-        cookies().set('session', idToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-            path: '/',
-        });
-
     } catch (error: any) {
         let errorMessage = 'An unexpected error occurred.';
         if (error.code) {
@@ -114,5 +100,5 @@ export async function signInAction(credentials: z.infer<typeof signInSchema>) {
 }
 
 export async function signOutAction() {
-    cookies().delete('session');
+    await signOut(auth);
 }

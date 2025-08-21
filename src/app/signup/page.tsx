@@ -18,7 +18,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signUpAction } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
 
@@ -37,7 +36,6 @@ type FormValues = z.infer<typeof formSchema>;
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -48,7 +46,7 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       await signUpAction(data);
-      router.push('/');
+       // The redirect is now handled by the AuthProvider
     } catch (error) {
        toast({
         variant: 'destructive',

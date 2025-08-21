@@ -15,12 +15,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, CheckCircle } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signInAction } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -31,8 +31,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -41,15 +41,10 @@ export default function SignInPage() {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsLoading(true);
-    setIsSuccess(false);
     try {
       await signInAction(data);
-      setIsSuccess(true);
-      toast({
-        title: 'Sign In Successful',
-        description: "Redirecting to your profile...",
-      });
-      // The redirect is now handled by the AuthProvider
+      // The redirect is now handled by the AuthProvider,
+      // so no router.push() is needed here.
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -100,13 +95,9 @@ export default function SignInPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading || isSuccess} className="w-full">
+              <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? (
                   <Loader2 className="animate-spin" />
-                ) : isSuccess ? (
-                  <>
-                    <CheckCircle className="mr-2" /> Success
-                  </>
                 ) : (
                   <>
                     <LogIn className="mr-2" /> Sign In

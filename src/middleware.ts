@@ -2,19 +2,18 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const session = request.cookies.get('session');
+  const session = request.cookies.get('session')?.value;
   const { pathname } = request.nextUrl;
 
+  const isPublicPage = pathname === '/signin' || pathname === '/signup';
+
   // If no session and trying to access a protected route, redirect to signin
-  if (!session) {
-    if (pathname === '/signin' || pathname === '/signup') {
-      return NextResponse.next();
-    }
+  if (!session && !isPublicPage) {
     return NextResponse.redirect(new URL('/signin', request.url));
   }
   
-  // If there is a session and the user is on signin/signup, redirect to dashboard
-  if (session && (pathname === '/signin' || pathname === '/signup')) {
+  // If there is a session and the user is on a public page, redirect to dashboard
+  if (session && isPublicPage) {
       return NextResponse.redirect(new URL('/', request.url));
   }
   
