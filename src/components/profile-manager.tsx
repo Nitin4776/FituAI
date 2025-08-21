@@ -84,9 +84,9 @@ export function ProfileManager() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: { 
-      height: '' as any,
-      weight: '' as any,
-      age: '' as any,
+      height: '',
+      weight: '',
+      age: '',
       gender: 'male', 
       activityLevel: 'sedentary',
     },
@@ -96,7 +96,7 @@ export function ProfileManager() {
     resolver: zodResolver(goalSchema),
     defaultValues: {
         goal: 'maintain',
-        targetWeight: '' as any,
+        targetWeight: '',
     }
   });
 
@@ -105,10 +105,15 @@ export function ProfileManager() {
   useEffect(() => {
     async function loadProfile() {
       setIsLoading(true);
-      const savedProfile = await getProfile();
+      const savedProfile = await getProfile() as FullProfile | null;
       if (savedProfile) {
-        setProfile(savedProfile as FullProfile);
-        profileForm.reset(savedProfile);
+        setProfile(savedProfile);
+        profileForm.reset({
+            ...savedProfile,
+            height: savedProfile.height || '',
+            weight: savedProfile.weight || '',
+            age: savedProfile.age || '',
+        });
         goalForm.reset({
             goal: savedProfile.goal || 'maintain',
             targetWeight: savedProfile.targetWeight || '',
@@ -120,7 +125,7 @@ export function ProfileManager() {
       setIsLoading(false);
     }
     loadProfile();
-  }, []);
+  }, [profileForm, goalForm]);
 
   const onProfileSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
     try {
@@ -412,6 +417,8 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
+
+    
 
     
 
