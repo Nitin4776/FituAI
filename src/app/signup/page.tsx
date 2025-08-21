@@ -36,7 +36,8 @@ const emailSchema = z.object({
 
 const phoneSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters.'),
-    phone: z.string().min(10, 'Please enter a valid phone number with country code.'),
+    countryCode: z.string().min(2, 'Required'),
+    phone: z.string().min(10, 'Please enter a valid phone number.'),
     otp: z.string().optional(),
 });
 
@@ -71,7 +72,7 @@ export default function SignUpPage() {
 
   const phoneForm = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
-    defaultValues: { name: '', phone: '' },
+    defaultValues: { name: '', countryCode: '+91', phone: '' },
   });
 
   const onEmailSubmit: SubmitHandler<EmailFormValues> = async (data) => {
@@ -105,14 +106,16 @@ export default function SignUpPage() {
   }
 
   const handleSendOtp = async () => {
-    const phone = phoneForm.getValues('phone');
-    if (!phone || phone.length < 10) {
-        phoneForm.setError('phone', { type: 'manual', message: 'Please enter a valid phone number.' });
+    const { countryCode, phone } = phoneForm.getValues();
+    if (!countryCode || !phone) {
+        phoneForm.setError('phone', { type: 'manual', message: 'Country code and phone number are required.' });
         return;
     }
+    const fullPhoneNumber = countryCode.startsWith('+') ? `${countryCode}${phone}` : `+${countryCode}${phone}`;
+    
     setIsLoading(true);
     try {
-        const result = await sendOtp(phone);
+        const result = await sendOtp(fullPhoneNumber);
         setConfirmationResult(result);
         setIsOtpSent(true);
         toast({ title: 'OTP Sent', description: 'Check your phone for the verification code.' });
@@ -182,24 +185,37 @@ export default function SignUpPage() {
                                 </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={phoneForm.control}
-                                name="phone"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Phone Number</FormLabel>
-                                    <FormControl>
-                                        <div className='flex gap-2'>
-                                            <Input type="tel" placeholder="+91 1234567890" {...field} disabled={isOtpSent} />
-                                            <Button type="button" onClick={handleSendOtp} disabled={isLoading || isOtpSent}>
-                                                {isLoading ? <Loader2 className="animate-spin" /> : isOtpSent ? 'Sent' : 'Send OTP'}
-                                            </Button>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
+                            <div className='flex gap-2'>
+                                <FormField
+                                    control={phoneForm.control}
+                                    name="countryCode"
+                                    render={({ field }) => (
+                                    <FormItem className='w-1/4'>
+                                        <FormLabel>Code</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="+91" {...field} disabled={isOtpSent} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={phoneForm.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                    <FormItem className='w-3/4'>
+                                        <FormLabel>Phone Number</FormLabel>
+                                        <FormControl>
+                                            <Input type="tel" placeholder="1234567890" {...field} disabled={isOtpSent} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </div>
+                             <Button type="button" onClick={handleSendOtp} disabled={isLoading || isOtpSent}>
+                                {isLoading ? <Loader2 className="animate-spin" /> : isOtpSent ? 'OTP Sent' : 'Send OTP'}
+                            </Button>
                             {isOtpSent && (
                                  <FormField
                                     control={phoneForm.control}
