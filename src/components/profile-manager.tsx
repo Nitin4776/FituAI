@@ -204,7 +204,7 @@ export function ProfileManager() {
       bodyFat: parseFloat(bodyFat.toFixed(1)),
       bmr,
     };
-  }, [profile, profileForm.watch()]);
+  }, [profile, profileForm.watch('height'), profileForm.watch('weight'), profileForm.watch('age'), profileForm.watch('gender')]);
 
   const goalMetrics: GoalMetrics | null = useMemo(() => {
     if (!profile || !profile.goal || !baseMetrics) return null;
@@ -409,5 +409,7 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
+
+    
 
     
