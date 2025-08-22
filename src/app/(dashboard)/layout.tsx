@@ -105,17 +105,15 @@ function BottomNavigation() {
 }
 
 
-export default function DashboardLayout({
+function DashboardLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const { signOut } = useAuth();
-  const { isMobile } = useSidebar();
 
   return (
-    <SidebarProvider>
       <div className="relative flex min-h-screen">
         <Sidebar>
           <SidebarHeader>
@@ -235,6 +233,18 @@ export default function DashboardLayout({
           <BottomNavigation />
         </SidebarInset>
       </div>
-    </SidebarProvider>
   );
+}
+
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+    return (
+        <SidebarProvider>
+            <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </SidebarProvider>
+    )
 }
