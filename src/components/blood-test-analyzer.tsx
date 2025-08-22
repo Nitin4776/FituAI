@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { AnalyzeBloodTestResultsOutput } from '@/ai/flows/blood-test-results-analysis';
+import { analyzeBloodTestResults, type AnalyzeBloodTestResultsOutput } from '@/ai/flows/blood-test-results-analysis';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { getBloodTestAnalyses, saveBloodTestAnalysis } from '@/services/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -153,17 +153,7 @@ export function BloodTestAnalyzer() {
       const file = data.report[0];
       const reportDataUri = await toDataURL(file);
       
-      const response = await fetch('/api/ai/analyze-blood-test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reportDataUri }),
-      });
-
-      if (!response.ok) {
-          throw new Error('Failed to analyze report.');
-      }
-
-      const result = await response.json();
+      const result = await analyzeBloodTestResults({ reportDataUri });
       
       await saveBloodTestAnalysis(result);
 

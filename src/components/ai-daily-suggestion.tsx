@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
 import { Lightbulb, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
+import { getDailySuggestion, type DailySuggestionInput } from '@/ai/flows/daily-suggestion';
+import { getProfile, getBloodTestAnalyses, getTodaysMeals, getTodaysActivities, getSleepLogForToday } from '@/services/firestore';
 
 export function AiDailySuggestion() {
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -14,13 +16,30 @@ export function AiDailySuggestion() {
   const fetchSuggestion = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/ai/daily-suggestion');
-      if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch suggestion.');
+      const [profile, bloodTests, meals, activities, sleep] = await Promise.all([
+          getProfile(),
+          getBloodTestAnalyses(),
+          getTodaysMeals(),
+          getTodaysActivities(),
+          getSleepLogForToday(),
+      ]);
+      
+      if (!profile) {
+          setSuggestion("Set up your profile and goals to receive personalized daily suggestions.");
+          return;
       }
-      const result = await response.json();
-      setSuggestion(result.suggestion);
+
+      const flowInput: DailySuggestionInput = {
+          profile: profile,
+          latestBloodTest: bloodTests?.[0], // Get the most recent one
+          todaysMeals: meals,
+          todaysActivities: activities,
+          todaysSleep: sleep,
+      };
+      
+      const { suggestion } = await getDailySuggestion(flowInput);
+      setSuggestion(suggestion);
+
     } catch (error) {
       setSuggestion((error as Error).message);
     } finally {

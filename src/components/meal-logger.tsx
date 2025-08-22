@@ -29,7 +29,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Camera, Loader2, Trash2, Pencil, Flame, Drumstick, Wheat, Beef, Upload, Video } from 'lucide-react';
 import { getTodaysMeals, addMeal, updateMeal, deleteMeal } from '@/services/firestore';
-import type { AnalyzeMealOutput, AnalyzeMealFromImageOutput } from '@/ai/flows/analyze-meal';
+import { analyzeMeal, type AnalyzeMealOutput } from '@/ai/flows/analyze-meal';
+import { analyzeMealFromImage, type AnalyzeMealFromImageOutput } from '@/ai/flows/analyze-meal-from-image';
 import type { MealLog } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import {
@@ -180,16 +181,7 @@ export function MealLogger() {
     if (!selectedMealType) return;
     setIsSubmitting(true);
     try {
-        const response = await fetch('/api/ai/analyze-meal', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        if (!response.ok) {
-            throw new Error('Failed to analyze meal.');
-        }
-
-        const nutritionalInfo: AnalyzeMealOutput = await response.json();
+        const nutritionalInfo: AnalyzeMealOutput = await analyzeMeal(data);
 
         if (editingMeal) {
             const fullMealData = {
@@ -238,16 +230,7 @@ export function MealLogger() {
   const handleImageAnalysis = async (imageDataUri: string) => {
     setIsAnalyzingImage(true);
     try {
-        const response = await fetch('/api/ai/analyze-meal-from-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageDataUri }),
-        });
-        if (!response.ok) {
-            throw new Error('Failed to analyze image.');
-        }
-
-        const result: AnalyzeMealFromImageOutput = await response.json();
+        const result: AnalyzeMealFromImageOutput = await analyzeMealFromImage({ imageDataUri });
         form.reset({
             mealName: result.mealName,
             quantity: result.quantity,

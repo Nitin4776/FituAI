@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Utensils, ChefHat, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
-import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
+import { generateMealPlan, type GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { getDailySummaryForToday } from '@/services/firestore';
@@ -103,15 +103,7 @@ export function AiMealPlan() {
     setMealPlan(null);
 
     try {
-      const response = await fetch('/api/ai/generate-meal-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, dailyCalorieGoal: dailyGoal }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to generate meal plan');
-      }
-      const result = await response.json();
+      const result = await generateMealPlan({ ...data, dailyCalorieGoal: dailyGoal });
       setMealPlan(result);
       toast({
         title: "Meal Plan Generated!",
@@ -270,7 +262,7 @@ export function AiMealPlan() {
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select your dietary preference" />
-                            </SelectTrigger>
+                            </Trigger>
                         </FormControl>
                         <SelectContent>
                             <SelectItem value="vegetarian">Vegetarian</SelectItem>

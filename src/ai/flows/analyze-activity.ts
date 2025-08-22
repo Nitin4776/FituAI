@@ -12,23 +12,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getProfile } from '@/services/firestore';
-import { auth } from '@/lib/firebase.server';
-
-async function getUserIdFromRequest(req: Request): Promise<string | null> {
-    const authorization = req.headers.get('Authorization');
-    if (authorization?.startsWith('Bearer ')) {
-        const idToken = authorization.split('Bearer ')[1];
-        try {
-            const decodedToken = await auth().verifyIdToken(idToken);
-            return decodedToken.uid;
-        } catch (error) {
-            console.error('Error verifying ID token:', error);
-            return null;
-        }
-    }
-    return null;
-}
-
 
 const AnalyzeActivityInputSchema = z.object({
   activityName: z.string().describe('The name of the activity or workout (e.g., "Running", "Weightlifting", "Yoga").'),
@@ -80,10 +63,8 @@ const analyzeActivityFlow = ai.defineFlow(
     outputSchema: AnalyzeActivityOutputSchema,
   },
   async (input) => {
-    // This flow is now called from an API route, so we can't get the user ID directly.
-    // For now, we'll proceed without the profile. A more robust solution would pass the user ID.
-    // We remove the dependency on a specific request object.
-    const userProfile = null; // No access to user session here.
+    // Since this can be called from the client, we fetch the profile directly.
+    const userProfile = await getProfile();
     const { output } = await prompt({ ...input, userProfile });
     return output!;
   }
