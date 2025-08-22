@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,7 +24,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -33,11 +32,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Utensils, ChefHat } from 'lucide-react';
+import { Loader2, Sparkles, Utensils, ChefHat, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
 import { generateMealPlan } from '@/app/actions';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { getDailySummaryForToday } from '@/services/firestore';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
+import { Target } from 'lucide-react';
+import Link from 'next/link';
 
 const mealTypes = {
   breakfast: 'Breakfast',
@@ -54,6 +57,8 @@ const planFormSchema = z.object({
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
 type MealPlan = GenerateMealPlanOutput;
+type Meal = MealPlan[keyof MealPlan];
+
 
 function MarkdownList({ content }: { content: string }) {
     if (!content) return null;
@@ -71,15 +76,27 @@ export function AiMealPlan() {
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dailyGoal, setDailyGoal] = useState(0);
+  const [isLoadingGoal, setIsLoadingGoal] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<PlanFormValues>({
     resolver: zodResolver(planFormSchema),
     defaultValues: {
-        cuisine: 'Indian',
+        cuisine: 'Any',
         diet: 'vegetarian',
     }
   });
+
+  useEffect(() => {
+    async function fetchGoal() {
+        setIsLoadingGoal(true);
+        const summary = await getDailySummaryForToday();
+        setDailyGoal(summary.dailyGoal);
+        setIsLoadingGoal(false);
+    }
+    fetchGoal();
+  }, [])
 
   const onSubmit: SubmitHandler<PlanFormValues> = async (data) => {
     setIsLoading(true);
@@ -87,7 +104,7 @@ export function AiMealPlan() {
     setMealPlan(null);
 
     try {
-      const result = await generateMealPlan(data);
+      const result = await generateMealPlan({ ...data, dailyCalorieGoal: dailyGoal });
       setMealPlan(result);
       toast({
         title: "Meal Plan Generated!",
@@ -104,19 +121,47 @@ export function AiMealPlan() {
     }
   };
 
-  const MealPlanCard = ({ mealName, recipe }: { mealName: string; recipe: string }) => (
+  const MealPlanCard = ({ meal }: { meal: Meal }) => (
     <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="item-1" className="border-b-0">
              <Card className="bg-secondary/50">
                 <CardHeader className="p-4">
                      <AccordionTrigger className='p-0 hover:no-underline'>
-                        <h4 className="font-semibold">{mealName}</h4>
+                        <div className="flex justify-between w-full items-center pr-2">
+                           <h4 className="font-semibold">{meal.mealName}</h4>
+                           <span className='text-sm text-muted-foreground font-semibold'>{meal.calories.toFixed(0)} kcal</span>
+                        </div>
                     </AccordionTrigger>
                 </CardHeader>
                 <AccordionContent className='px-4'>
-                    <div className='pb-4'>
-                        <h5 className="font-semibold mb-2 flex items-center gap-2"><ChefHat /> Recipe</h5>
-                        <MarkdownList content={recipe} />
+                    <div className='pb-4 space-y-4'>
+                        <div className="grid grid-cols-4 gap-2 text-center pt-2 border-t">
+                            <div className="text-xs">
+                                <Drumstick className="h-4 w-4 mx-auto text-red-500"/>
+                                <p className="font-bold">{meal.protein.toFixed(0)}g</p>
+                                <p className="text-muted-foreground">Protein</p>
+                            </div>
+                            <div className="text-xs">
+                                <Wheat className="h-4 w-4 mx-auto text-yellow-500"/>
+                                <p className="font-bold">{meal.carbs.toFixed(0)}g</p>
+                                <p className="text-muted-foreground">Carbs</p>
+                            </div>
+                            <div className="text-xs">
+                                <Beef className="h-4 w-4 mx-auto text-purple-500"/>
+                                <p className="font-bold">{meal.fats.toFixed(0)}g</p>
+                                <p className="text-muted-foreground">Fat</p>
+                            </div>
+                             <div className="text-xs">
+                                <Flame className="h-4 w-4 mx-auto text-orange-500"/>
+                                <p className="font-bold">{meal.calories.toFixed(0)}</p>
+                                <p className="text-muted-foreground">Kcal</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h5 className="font-semibold mb-2 flex items-center gap-2"><ChefHat /> Recipe</h5>
+                            <MarkdownList content={meal.recipe} />
+                        </div>
                     </div>
                 </AccordionContent>
             </Card>
@@ -127,14 +172,15 @@ export function AiMealPlan() {
   return (
     <>
       <div className="flex justify-end mb-6">
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Sparkles className="mr-2 h-4 w-4" /> Generate a Meal Plan
+        <Button onClick={() => setIsDialogOpen(true)} disabled={isLoadingGoal}>
+          { isLoadingGoal ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" /> }
+          Generate a Meal Plan
         </Button>
       </div>
 
       <div className="space-y-6">
         {isLoading ? (
-             [...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
+             [...Array(5)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)
         ) : mealPlan ? (
             Object.entries(mealTypes).map(([key, name]) => (
             <Card key={key}>
@@ -142,10 +188,7 @@ export function AiMealPlan() {
                     <CardTitle className="font-headline">{name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <MealPlanCard 
-                        mealName={mealPlan[key as keyof MealPlan].mealName} 
-                        recipe={mealPlan[key as keyof MealPlan].recipe} 
-                    />
+                    <MealPlanCard meal={mealPlan[key as keyof MealPlan]} />
                 </CardContent>
             </Card>
             ))
@@ -166,6 +209,23 @@ export function AiMealPlan() {
               Tell the AI what you'd like to eat, and it will generate a one-day plan for you.
             </DialogDescription>
           </DialogHeader>
+           {dailyGoal > 0 ? (
+                <Alert>
+                    <Target className="h-4 w-4" />
+                    <AlertTitle>Heads up!</AlertTitle>
+                    <AlertDescription>
+                        The AI will generate a plan for your daily goal of <strong>{dailyGoal} calories</strong>. You can change this in your <Link href="/profile" className="underline">profile</Link>.
+                    </AlertDescription>
+                </Alert>
+            ) : (
+                 <Alert variant="destructive">
+                    <Target className="h-4 w-4" />
+                    <AlertTitle>Set Your Goal!</AlertTitle>
+                    <AlertDescription>
+                        For best results, first set your calorie goal in your <Link href="/profile" className="underline">profile</Link>.
+                    </AlertDescription>
+                </Alert>
+            )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -174,9 +234,21 @@ export function AiMealPlan() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cuisine</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Italian, Mexican, Indian" {...field} />
-                    </FormControl>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select your cuisine preference" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Any">Any</SelectItem>
+                            <SelectItem value="Indian">Indian</SelectItem>
+                            <SelectItem value="Italian">Italian</SelectItem>
+                            <SelectItem value="Mexican">Mexican</SelectItem>
+                            <SelectItem value="Chinese">Chinese</SelectItem>
+                            <SelectItem value="Mediterranean">Mediterranean</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

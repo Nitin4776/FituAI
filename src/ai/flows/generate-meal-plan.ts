@@ -15,12 +15,17 @@ import { z } from 'genkit';
 const GenerateMealPlanInputSchema = z.object({
   cuisine: z.string().describe('The desired cuisine for the meal plan (e.g., "Italian", "Indian", "Any").'),
   diet: z.enum(['vegetarian', 'non-vegetarian', 'vegan', 'eggetarian', 'jain']).describe('The dietary preference (e.g., "vegetarian", "vegan").'),
+  dailyCalorieGoal: z.number().optional().describe('The target total daily calorie intake for the meal plan.'),
 });
 export type GenerateMealPlanInput = z.infer<typeof GenerateMealPlanInputSchema>;
 
 const MealSchema = z.object({
     mealName: z.string().describe('The name of the suggested meal.'),
     recipe: z.string().describe('A simple recipe for the meal, formatted as markdown bullet points.'),
+    calories: z.number().describe('The estimated calorie count of the meal.'),
+    protein: z.number().describe('The estimated grams of protein in the meal.'),
+    carbs: z.number().describe('The estimated grams of carbohydrates in the meal.'),
+    fats: z.number().describe('The estimated grams of fat in the meal.'),
 });
 
 const GenerateMealPlanOutputSchema = z.object({
@@ -45,6 +50,9 @@ const prompt = ai.definePrompt({
   User Preferences:
   - Cuisine: {{{cuisine}}}
   - Diet: {{{diet}}}
+  {{#if dailyCalorieGoal}}
+  - Target Daily Calories: ~{{{dailyCalorieGoal}}} kcal
+  {{/if}}
 
   Generate a plan for the following meals:
   1.  Breakfast
@@ -53,7 +61,16 @@ const prompt = ai.definePrompt({
   4.  Evening Snack
   5.  Dinner
 
-  For each meal, provide a "mealName" and a simple "recipe" formatted as markdown bullet points. Ensure the meal plan is appropriate for the specified diet.
+  For each meal, provide:
+  - A "mealName"
+  - A simple "recipe" formatted as markdown bullet points
+  - The estimated "calories"
+  - The estimated "protein", "carbs", and "fats" in grams.
+
+  Ensure the meal plan is appropriate for the specified diet.
+  {{#if dailyCalorieGoal}}
+  The total calories for all meals combined should be approximately equal to the user's target daily calories.
+  {{/if}}
   `,
 });
 
