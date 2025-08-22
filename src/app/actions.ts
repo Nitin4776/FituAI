@@ -26,6 +26,11 @@ import {
     type AnalyzeActivityInput,
     type AnalyzeActivityOutput
 } from '@/ai/flows/analyze-activity';
+import {
+    generateMealPlan as generateMealPlanFlow,
+    type GenerateMealPlanInput,
+    type GenerateMealPlanOutput
+} from '@/ai/flows/generate-meal-plan';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 
@@ -82,5 +87,16 @@ export async function analyzeActivity(
     } catch (error) {
         console.error('Failed to analyze activity:', error);
         throw new Error('Could not analyze your activity. Please try again.');
+    }
+}
+
+export async function generateMealPlan(
+    input: GenerateMealPlanInput
+): Promise<GenerateMealPlanOutput> {
+    try {
+        return await generateMealPlanFlow(input);
+    } catch (error) {
+        console.error('Failed to generate meal plan:', error);
+        throw new Error('Could not generate a meal plan. Please try again.');
     }
 }

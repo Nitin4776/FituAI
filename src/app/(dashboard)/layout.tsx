@@ -15,6 +15,7 @@ import {
   PlusCircle,
   Dumbbell,
   Soup,
+  ClipboardCheck,
 } from 'lucide-react';
 
 import {
@@ -45,6 +46,7 @@ const menuItems = [
 const aiMenuItems = [
     { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
     { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
+    { href: '/ai-meal-plan', label: 'AI Meal Plan', icon: ClipboardCheck },
 ];
 
 
