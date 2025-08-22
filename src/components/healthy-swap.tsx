@@ -1,10 +1,10 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getHealthySwap } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -43,7 +43,15 @@ export function HealthySwap() {
     setIsLoading(true);
     setSuggestion(null);
     try {
-      const result = await getHealthySwap(data);
+      const response = await fetch('/api/ai/healthy-swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to get healthy swap suggestion.');
+      }
+      const result = await response.json();
       setSuggestion(result);
     } catch (error) {
       toast({

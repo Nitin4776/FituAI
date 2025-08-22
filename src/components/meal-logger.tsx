@@ -29,7 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Camera, Loader2, Trash2, Pencil, Flame, Drumstick, Wheat, Beef, Upload, Video } from 'lucide-react';
 import { getTodaysMeals, addMeal, updateMeal, deleteMeal } from '@/services/firestore';
-import { analyzeMeal, analyzeMealFromImage } from '@/app/actions';
+import type { AnalyzeMealOutput, AnalyzeMealFromImageOutput } from '@/ai/flows/analyze-meal';
 import type { MealLog } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import {
@@ -102,7 +102,7 @@ export function MealLogger() {
   const fetchMeals = async () => {
     setIsLoading(true);
     const todaysMeals = await getTodaysMeals();
-    const groupedMeals = { breakfast: [], morningSnack: [], lunch: [], eveningSnack: [], dinner: [] };
+    const groupedMeals: Record<MealType, MealLog[]> = { breakfast: [], morningSnack: [], lunch: [], eveningSnack: [], dinner: [] };
     todaysMeals.forEach((meal) => {
       groupedMeals[meal.mealType as MealType].push(meal);
     });
@@ -180,7 +180,16 @@ export function MealLogger() {
     if (!selectedMealType) return;
     setIsSubmitting(true);
     try {
-        const nutritionalInfo = await analyzeMeal(data);
+        const response = await fetch('/api/ai/analyze-meal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to analyze meal.');
+        }
+
+        const nutritionalInfo: AnalyzeMealOutput = await response.json();
 
         if (editingMeal) {
             const fullMealData = {
@@ -229,7 +238,16 @@ export function MealLogger() {
   const handleImageAnalysis = async (imageDataUri: string) => {
     setIsAnalyzingImage(true);
     try {
-        const result = await analyzeMealFromImage({ imageDataUri });
+        const response = await fetch('/api/ai/analyze-meal-from-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageDataUri }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to analyze image.');
+        }
+
+        const result: AnalyzeMealFromImageOutput = await response.json();
         form.reset({
             mealName: result.mealName,
             quantity: result.quantity,

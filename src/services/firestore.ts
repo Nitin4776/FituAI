@@ -44,10 +44,10 @@ export async function saveProfile(profileData: any, uid?: string) {
   await setDoc(userDocRef, profileData, { merge: true });
 }
 
-export async function getProfile() {
-  const userId = getCurrentUserId();
-  if (!userId) return null;
-  const userDocRef = doc(db, 'users', userId);
+export async function getProfile(userId?: string) {
+  const uid = userId || getCurrentUserId();
+  if (!uid) return null;
+  const userDocRef = doc(db, 'users', uid);
   const docSnap = await getDoc(userDocRef);
   return docSnap.exists() ? docSnap.data() : null;
 }
@@ -136,12 +136,12 @@ export async function deleteMeal(meal: MealLog) {
     await batch.commit();
 }
 
-export async function getTodaysMeals(): Promise<MealLog[]> {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
+export async function getTodaysMeals(userId?: string): Promise<MealLog[]> {
+    const uid = userId || getCurrentUserId();
+    if (!uid) return [];
     
     const todayStart = startOfDay(new Date());
-    const mealsColRef = collection(db, 'users', userId, 'meals');
+    const mealsColRef = collection(db, 'users', uid, 'meals');
     const q = query(mealsColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), orderBy('createdAt', 'asc'));
 
     const querySnapshot = await getDocs(q);
@@ -216,12 +216,12 @@ export async function deleteActivity(activity: ActivityLog) {
     await batch.commit();
 }
 
-export async function getTodaysActivities(): Promise<ActivityLog[]> {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
+export async function getTodaysActivities(userId?: string): Promise<ActivityLog[]> {
+    const uid = userId || getCurrentUserId();
+    if (!uid) return [];
     
     const todayStart = startOfDay(new Date());
-    const activitiesColRef = collection(db, 'users', userId, 'activities');
+    const activitiesColRef = collection(db, 'users', uid, 'activities');
     const q = query(activitiesColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), orderBy('createdAt', 'asc'));
 
     const querySnapshot = await getDocs(q);
@@ -242,10 +242,10 @@ export async function saveBloodTestAnalysis(analysisData: any) {
     });
 }
 
-export async function getBloodTestAnalyses() {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
-    const analysisColRef = collection(db, 'users', userId, 'bloodTestAnalyses');
+export async function getBloodTestAnalyses(userId?: string) {
+    const uid = userId || getCurrentUserId();
+    if (!uid) return [];
+    const analysisColRef = collection(db, 'users', uid, 'bloodTestAnalyses');
     const q = query(analysisColRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
@@ -305,12 +305,12 @@ export async function saveSleepLog(sleepData: { quality: SleepLog['quality'] }) 
 }
 
 
-export async function getSleepLogForToday(): Promise<SleepLog | null> {
-  const userId = getCurrentUserId();
-  if (!userId) return null;
+export async function getSleepLogForToday(userId?: string): Promise<SleepLog | null> {
+  const uid = userId || getCurrentUserId();
+  if (!uid) return null;
   
   const todayStart = startOfDay(new Date());
-  const sleepColRef = collection(db, 'users', userId, 'sleepLogs');
+  const sleepColRef = collection(db, 'users', uid, 'sleepLogs');
   const q = query(sleepColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(1));
 
   const querySnapshot = await getDocs(q);

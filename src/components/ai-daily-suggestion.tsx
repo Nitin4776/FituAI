@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
 import { Lightbulb, RefreshCw } from 'lucide-react';
-import { getAiDailySuggestion } from '@/app/actions';
 import { Button } from './ui/button';
 
 export function AiDailySuggestion() {
@@ -15,10 +14,14 @@ export function AiDailySuggestion() {
   const fetchSuggestion = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await getAiDailySuggestion();
-      setSuggestion(result);
+      const response = await fetch('/api/ai/daily-suggestion');
+      if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch suggestion.');
+      }
+      const result = await response.json();
+      setSuggestion(result.suggestion);
     } catch (error) {
-      // The action already returns a user-friendly error message.
       setSuggestion((error as Error).message);
     } finally {
       setIsLoading(false);
@@ -49,7 +52,7 @@ export function AiDailySuggestion() {
             <Skeleton className="h-4 w-5/6" />
           </div>
         ) : (
-          <p className="text-muted-foreground">{suggestion}</p>
+          <p className="text-muted-foreground" dangerouslySetInnerHTML={{ __html: suggestion || '' }} />
         )}
       </CardContent>
     </Card>

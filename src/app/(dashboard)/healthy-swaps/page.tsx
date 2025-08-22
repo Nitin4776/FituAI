@@ -1,3 +1,4 @@
+
 import { HealthySwap } from '@/components/healthy-swap';
 
 export default function HealthySwapsPage() {

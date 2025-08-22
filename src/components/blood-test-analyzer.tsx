@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,6 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload, Loader2, Sparkles, FileText, Activity, ShieldQuestion, AlertTriangle, History, CheckCircle, XCircle, CalendarClock } from 'lucide-react';
-import { analyzeReport } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -151,8 +151,19 @@ export function BloodTestAnalyzer() {
     setAnalyses([]);
     try {
       const file = data.report[0];
-      const dataUri = await toDataURL(file);
-      const result = await analyzeReport({ reportDataUri: dataUri });
+      const reportDataUri = await toDataURL(file);
+      
+      const response = await fetch('/api/ai/analyze-blood-test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reportDataUri }),
+      });
+
+      if (!response.ok) {
+          throw new Error('Failed to analyze report.');
+      }
+
+      const result = await response.json();
       
       await saveBloodTestAnalysis(result);
 
