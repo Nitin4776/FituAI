@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase.server';
@@ -16,12 +17,6 @@ export async function getProfile(userId: string) {
   const userDocRef = db().collection('users').doc(userId);
   const docSnap = await userDocRef.get();
   return docSnap.exists ? docSnap.data() : null;
-}
-
-export async function deleteMeal(userId: string, mealId: string) {
-  if (!userId) throw new Error('User not authenticated');
-  const mealDocRef = db().collection('users').doc(userId).collection('meals').doc(mealId);
-  await mealDocRef.delete();
 }
 
 export async function deleteActivity(userId: string, activityId: string) {

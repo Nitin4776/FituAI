@@ -12,7 +12,6 @@ import {
   Replace,
   TestTube2,
   User,
-  Utensils,
 } from 'lucide-react';
 
 import {
@@ -37,7 +36,6 @@ const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/profile', label: 'Profile & Goal', icon: User },
   { href: '/activity', label: 'Activity Tracker', icon: HeartPulse },
-  { href: '/meals', label: 'Meal Planner', icon: Utensils },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
   { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
   { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },

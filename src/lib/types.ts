@@ -1,3 +1,4 @@
+
 export type MealLog = {
   id: string;
   mealType: 'breakfast' | 'morningSnack' | 'lunch' | 'eveningSnack' | 'dinner';

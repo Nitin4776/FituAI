@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase';
 import {
   collection,
@@ -51,34 +52,9 @@ export async function getProfile() {
 }
 
 // --- Meals ---
-export async function addMeal(mealData: any): Promise<string> {
-  const userId = getCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
-  const mealsColRef = collection(db, `users/${userId}/meals`);
-  const docRef = await addDoc(mealsColRef, {
-    ...mealData,
-    createdAt: Timestamp.now(),
-  });
-  return docRef.id;
-}
-
-export async function updateMeal(mealData: MealLog) {
-    const userId = getCurrentUserId();
-    if (!userId) throw new Error("User not authenticated");
-    const mealDocRef = doc(db, `users/${userId}/meals`, mealData.id);
-    await updateDoc(mealDocRef, { ...mealData });
-}
-
 export async function getTodaysMeals(): Promise<MealLog[]> {
-  const userId = getCurrentUserId();
-  if (!userId) return [];
-  const today = new Date();
-  const start = startOfDay(today);
-  
-  const mealsColRef = collection(db, `users/${userId}/meals`);
-  const q = query(mealsColRef, where('createdAt', '>=', start), orderBy('createdAt', 'desc'));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MealLog));
+  // This function now returns an empty array as meals are removed.
+  return [];
 }
 
 // --- Activities ---
