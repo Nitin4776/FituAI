@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,9 +27,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Camera, Loader2, Trash2, Pencil, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
+import { Plus, Camera, Loader2, Trash2, Pencil, Flame, Drumstick, Wheat, Beef, Upload, Video } from 'lucide-react';
 import { getTodaysMeals, addMeal, updateMeal, deleteMeal } from '@/services/firestore';
-import { analyzeMeal } from '@/app/actions';
+import { analyzeMeal, analyzeMealFromImage } from '@/app/actions';
 import type { MealLog } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import {
@@ -43,6 +43,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const mealTypes = {
   breakfast: 'Breakfast',
@@ -62,6 +63,14 @@ const mealFormSchema = z.object({
 
 type MealFormValues = z.infer<typeof mealFormSchema>;
 
+const toDataURL = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+  });
+
 export function MealLogger() {
   const [meals, setMeals] = useState<Record<MealType, MealLog[]>>({
     breakfast: [],
@@ -73,9 +82,18 @@ export function MealLogger() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
+  const [cameraMode, setCameraMode] = useState<'capture' | 'upload' | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
   const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
   const { toast } = useToast();
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<MealFormValues>({
     resolver: zodResolver(mealFormSchema),
@@ -95,6 +113,37 @@ export function MealLogger() {
   useEffect(() => {
     fetchMeals();
   }, []);
+
+  // Effect to request camera permission when capture mode is selected
+  useEffect(() => {
+    if (cameraMode === 'capture') {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings.',
+          });
+        }
+      };
+      getCameraPermission();
+    } else {
+       // Stop camera stream when not in capture mode
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [cameraMode, toast]);
 
   const handleAddClick = (mealType: MealType) => {
     setEditingMeal(null);
@@ -171,12 +220,64 @@ export function MealLogger() {
     }
   };
 
+  const handleCameraClick = (mealType: MealType) => {
+    setSelectedMealType(mealType);
+    setIsCameraDialogOpen(true);
+    setCameraMode(null); // Reset mode when opening
+  };
+
+  const handleImageAnalysis = async (imageDataUri: string) => {
+    setIsAnalyzingImage(true);
+    try {
+        const result = await analyzeMealFromImage({ imageDataUri });
+        form.reset({
+            mealName: result.mealName,
+            quantity: result.quantity,
+            description: '',
+        });
+        setIsCameraDialogOpen(false);
+        setCameraMode(null);
+        setIsDialogOpen(true); // Open the manual log dialog with pre-filled data
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Image Analysis Failed",
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if(context) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUri = canvas.toDataURL('image/jpeg');
+            handleImageAnalysis(dataUri);
+        }
+    }
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const dataUri = await toDataURL(file);
+        handleImageAnalysis(dataUri);
+    }
+  }
+
   const MealCard = ({ meal }: { meal: MealLog }) => (
     <Card className="bg-secondary/50">
         <CardContent className="p-4">
             <div className="flex justify-between items-start">
                 <div>
-                    <h4 className="font-semibold">{meal.mealName}</h4>
+                    <h4 className="font-semibold">{meal.mealName} <span className='text-xs font-normal text-muted-foreground'>({meal.calories.toFixed(0)} kcal)</span></h4>
                     <p className="text-sm text-muted-foreground">{meal.quantity}</p>
                     {meal.description && <p className="text-xs text-muted-foreground mt-1 italic">"{meal.description}"</p>}
                 </div>
@@ -249,7 +350,7 @@ export function MealLogger() {
                     <Button variant="outline" size="icon" className="text-amber-600 hover:text-amber-700" onClick={() => handleAddClick(key as MealType)}>
                         <Plus />
                     </Button>
-                    <Button variant="outline" size="icon" className="text-amber-600 hover:text-amber-700" onClick={() => toast({ title: "Coming Soon!", description: "Logging meals via camera is under development."})}>
+                    <Button variant="outline" size="icon" className="text-amber-600 hover:text-amber-700" onClick={() => handleCameraClick(key as MealType)}>
                         <Camera />
                     </Button>
                     </div>
@@ -329,6 +430,82 @@ export function MealLogger() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+       <Dialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Log with Camera</DialogTitle>
+            <DialogDescription>
+              Capture or upload a photo of your meal. The AI will identify it for you.
+            </DialogDescription>
+          </DialogHeader>
+          {isAnalyzingImage ? (
+             <div className="flex flex-col items-center justify-center h-64 text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">The AI is analyzing your meal...<br/>This may take a moment.</p>
+            </div>
+          ) : (
+            <>
+                {!cameraMode && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-8">
+                    <Button variant="outline" className="h-24 text-lg" onClick={() => setCameraMode('capture')}>
+                        <Video className="mr-2" /> Capture Photo
+                    </Button>
+                    <Button variant="outline" className="h-24 text-lg" onClick={() => setCameraMode('upload')}>
+                        <Upload className="mr-2" /> Upload Photo
+                    </Button>
+                </div>
+                )}
+                
+                {cameraMode === 'upload' && (
+                     <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg">
+                        <Upload className="h-12 w-12 text-muted-foreground" />
+                        <p className="mt-2 text-muted-foreground">Click the button to select an image file.</p>
+                        <Button className="mt-4" onClick={() => fileInputRef.current?.click()}>
+                           Select from computer
+                        </Button>
+                        <Input 
+                            ref={fileInputRef} 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleFileChange}
+                        />
+                    </div>
+                )}
+                
+                {cameraMode === 'capture' && (
+                    <div className="space-y-4">
+                        <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+                         {hasCameraPermission === false && (
+                            <Alert variant="destructive">
+                                <AlertTitle>Camera Access Required</AlertTitle>
+                                <AlertDescription>
+                                    Please allow camera access in your browser to use this feature.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <canvas ref={canvasRef} className="hidden" />
+                        <Button className="w-full" onClick={handleCapture} disabled={!hasCameraPermission}>
+                            <Camera className="mr-2" /> Capture and Analyze
+                        </Button>
+                    </div>
+                )}
+            </>
+          )}
+
+          <DialogFooter>
+             {cameraMode && (
+                <Button variant="ghost" onClick={() => setCameraMode(null)}>Back</Button>
+             )}
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancel
+              </Button>
+            </DialogClose>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

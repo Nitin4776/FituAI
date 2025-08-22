@@ -21,25 +21,14 @@ import {
     type AnalyzeMealInput,
     type AnalyzeMealOutput,
 } from '@/ai/flows/analyze-meal';
-import { saveSleepLog, addMeal, deleteMeal, updateMeal } from '@/services/firestore';
-import { auth } from '@/lib/firebase.server';
-import { cookies } from 'next/headers';
-import type { MealLog } from '@/lib/types';
-
-
-async function getCurrentUserIdFromSession() {
-    const sessionCookie = cookies().get('session')?.value;
-    if (!sessionCookie) {
-        return null;
-    }
-    try {
-        const decodedClaims = await auth().verifySessionCookie(sessionCookie, true);
-        return decodedClaims.uid;
-    } catch (error) {
-        console.error('Session cookie verification failed:', error);
-        return null;
-    }
-}
+import {
+    analyzeMealFromImage as analyzeMealFromImageFlow,
+    type AnalyzeMealFromImageInput,
+    type AnalyzeMealFromImageOutput,
+} from '@/ai/flows/analyze-meal-from-image';
+import { getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+import { saveSleepLog } from '@/services/firestore';
 
 
 export async function getHealthySwap(
@@ -86,15 +75,27 @@ export async function analyzeMeal(
     }
 }
 
-export async function saveSleepLogAction(quality: string) {
+export async function analyzeMealFromImage(
+    input: AnalyzeMealFromImageInput
+): Promise<AnalyzeMealFromImageOutput> {
     try {
-        const userId = await getCurrentUserIdFromSession();
-        if (!userId) {
-            throw new Error('User not authenticated.');
-        }
-        await saveSleepLog({ quality, userId });
+        return await analyzeMealFromImageFlow(input);
+    } catch (error) {
+        console.error('Failed to analyze meal from image:', error);
+        throw new Error('Could not analyze your meal from the image. Please try again.');
+    }
+}
+
+export async function saveSleepLogAction(quality: string) {
+    const auth = getAuth(app);
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('User not authenticated');
+    }
+    try {
+        await saveSleepLog({ quality, userId: user.uid });
     } catch (error) {
         console.error('Failed to save sleep log:', error);
-        throw new Error('Could not save your sleep quality. Please try again.');
+        throw new Error('Could not save your sleep log. Please try again.');
     }
 }
