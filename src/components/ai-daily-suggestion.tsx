@@ -24,24 +24,27 @@ export function AiDailySuggestion() {
           getSleepLogForToday(),
       ]);
       
-      if (!profile) {
+      if (!profile || !profile.goal) {
           setSuggestion("Set up your profile and goals to receive personalized daily suggestions.");
+          setIsLoading(false);
           return;
       }
 
-      const flowInput: DailySuggestionInput = {
+      // Convert complex Firestore objects to plain JSON-serializable objects
+      const flowInput: DailySuggestionInput = JSON.parse(JSON.stringify({
           profile: profile,
           latestBloodTest: bloodTests?.[0], // Get the most recent one
           todaysMeals: meals,
           todaysActivities: activities,
           todaysSleep: sleep,
-      };
+      }));
       
       const { suggestion } = await getDailySuggestion(flowInput);
       setSuggestion(suggestion);
 
     } catch (error) {
-      setSuggestion((error as Error).message);
+      console.error("Error fetching daily suggestion:", error);
+      setSuggestion("Sorry, I couldn't fetch a suggestion right now. Please try again.");
     } finally {
       setIsLoading(false);
     }
