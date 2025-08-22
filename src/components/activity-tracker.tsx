@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, Flame, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { PlusCircle, Flame, Loader2, Sparkles, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogClose,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -47,8 +48,10 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getActivityCalories, deleteActivityAction } from '@/app/actions';
-import { addActivity, getActivities, updateDailySummaryOnActivityChange } from '@/services/firestore';
+import { addActivity, getTodaysActivities, updateActivity, updateDailySummaryOnActivityChange } from '@/services/firestore';
 import { Textarea } from './ui/textarea';
+import type { ActivityLog } from '@/lib/types';
+
 
 const activitySchema = z.object({
   activity: z.string().min(1, 'Activity name is required'),
@@ -58,31 +61,13 @@ const activitySchema = z.object({
 
 type ActivityFormValues = z.infer<typeof activitySchema>;
 
-type ActivityLog = {
-  id: string;
-  date: string;
-  activity: string;
-  duration: number;
-  caloriesBurned: number;
-  description?: string;
-  createdAt: { seconds: number, nanoseconds: number };
-};
-
-const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
-    if (!timestamp) return false;
-    const date = new Date(timestamp.seconds * 1000);
-    const today = new Date();
-    return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
-};
-
-
 export function ActivityTracker() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
+
   const { toast } = useToast();
 
   const form = useForm<ActivityFormValues>({
@@ -97,52 +82,75 @@ export function ActivityTracker() {
   useEffect(() => {
     async function loadActivities() {
       setIsLoading(true);
-      const savedActivities = await getActivities();
-      const todaysActivities = (savedActivities as any[])
-        .filter(act => isToday(act.createdAt))
-        .map(act => ({
-          ...act,
-          date: new Date(act.createdAt.seconds * 1000).toLocaleDateString()
-        }));
+      const todaysActivities = await getTodaysActivities();
       setActivities(todaysActivities);
       setIsLoading(false);
     }
     loadActivities();
   }, []);
+  
+  useEffect(() => {
+    if (isDialogOpen && editingActivity) {
+      form.reset({
+        activity: editingActivity.activity,
+        duration: editingActivity.duration,
+        description: editingActivity.description || '',
+      });
+    } else if (!isDialogOpen) {
+      setEditingActivity(null);
+      form.reset({ activity: '', duration: 0, description: '' });
+    }
+  }, [isDialogOpen, editingActivity, form]);
 
 
   const onSubmit: SubmitHandler<ActivityFormValues> = async (data) => {
-    setIsCalculating(true);
+    setIsSubmitting(true);
     try {
       const { caloriesBurned } = await getActivityCalories(data);
       const calories = Math.round(caloriesBurned);
       
-      const newActivityData = {
+      const activityData = {
         ...data,
         caloriesBurned: calories,
       };
-      
-      const docId = await addActivity(newActivityData);
-      await updateDailySummaryOnActivityChange(calories);
-      
-      const newActivityForState: ActivityLog = {
-        ...newActivityData,
-        id: docId,
-        date: new Date().toLocaleDateString(),
-        createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
-      };
-      setActivities((prev) => [newActivityForState, ...prev]);
 
-      form.reset();
+      if (editingActivity) {
+        // Update existing activity
+        const updatedActivity = { ...editingActivity, ...activityData };
+        await updateActivity(updatedActivity);
+        
+        // Update summary: subtract old calories, add new calories
+        const calorieDifference = calories - editingActivity.caloriesBurned;
+        await updateDailySummaryOnActivityChange(calorieDifference);
+        
+        setActivities((prev) => 
+            prev.map(act => act.id === editingActivity.id ? updatedActivity : act)
+        );
+        toast({ title: "Activity Updated", description: "Your activity has been successfully updated." });
+      } else {
+        // Add new activity
+        const docId = await addActivity(activityData);
+        await updateDailySummaryOnActivityChange(calories);
+        
+        const newActivityForState: ActivityLog = {
+          ...activityData,
+          id: docId,
+          date: new Date().toLocaleDateString(),
+          createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
+        };
+        setActivities((prev) => [newActivityForState, ...prev]);
+        toast({ title: "Activity Added", description: "Your activity has been successfully logged." });
+      }
+
       setIsDialogOpen(false);
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Action Failed',
-        description: 'Could not log activity. Please try again.',
+        description: `Could not ${editingActivity ? 'update' : 'log'} activity. Please try again.`,
       });
     } finally {
-      setIsCalculating(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -164,6 +172,11 @@ export function ActivityTracker() {
     }
   }
 
+  const handleEditClick = (activity: ActivityLog) => {
+    setEditingActivity(activity);
+    setIsDialogOpen(true);
+  }
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -176,7 +189,10 @@ export function ActivityTracker() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="font-headline">Log New Activity</DialogTitle>
+                <DialogTitle className="font-headline">{editingActivity ? 'Edit Activity' : 'Log New Activity'}</DialogTitle>
+                <DialogDescription>
+                    {editingActivity ? 'Update the details of your activity below.' : 'Add a new activity to your daily log.'}
+                </DialogDescription>
               </DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -223,16 +239,16 @@ export function ActivityTracker() {
                     <DialogClose asChild>
                       <Button type="button" variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button type="submit" disabled={isCalculating}>
-                      {isCalculating ? (
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Calculating...
+                          {editingActivity ? 'Updating...' : 'Calculating...'}
                         </>
                       ) : (
                         <>
                           <Sparkles className="mr-2 h-4 w-4" />
-                          Log Activity
+                          {editingActivity ? 'Update Activity' : 'Log Activity'}
                         </>
                       )}
                     </Button>
@@ -248,7 +264,6 @@ export function ActivityTracker() {
             <TableCaption>A list of your recent activities.</TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
                 <TableHead>Activity</TableHead>
                 <TableHead className="text-right">Duration (min)</TableHead>
                 <TableHead className="text-right">Calories Burned</TableHead>
@@ -258,14 +273,13 @@ export function ActivityTracker() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
               ) : activities.length > 0 ? (
                 activities.map((act) => (
                   <TableRow key={act.id}>
-                    <TableCell>{act.date}</TableCell>
                     <TableCell className="font-medium">
                       <div>{act.activity}</div>
                       {act.description && <div className="text-xs text-muted-foreground">{act.description}</div>}
@@ -273,9 +287,12 @@ export function ActivityTracker() {
                     <TableCell className="text-right">{act.duration}</TableCell>
                     <TableCell className="text-right flex items-center justify-end gap-1"><Flame className="h-4 w-4 text-orange-500" />{act.caloriesBurned} kcal</TableCell>
                     <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(act)}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
                        <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600">
+                                <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600 h-8 w-8">
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </AlertDialogTrigger>
@@ -297,7 +314,7 @@ export function ActivityTracker() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     No activities logged for today yet.
                   </TableCell>
                 </TableRow>

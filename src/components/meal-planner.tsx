@@ -41,11 +41,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMealMacros, deleteMealAction, generateMealPlanAction, analyzeMealImageAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import { addMeal, getMeals, getProfile, updateDailySummaryOnMealChange } from '@/services/firestore';
+import { addMeal, getTodaysMeals, getProfile, updateDailySummaryOnMealChange, updateMeal } from '@/services/firestore';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import { Textarea } from './ui/textarea';
 import { Progress } from './ui/progress';
+import type { MealLog } from '@/lib/types';
+
 
 const mealSchema = z.object({
   mealType: z.enum(['breakfast', 'morningSnack', 'lunch', 'eveningSnack', 'dinner']),
@@ -64,21 +66,6 @@ type PlanFormValues = z.infer<typeof planSchema>;
 type DialogStep = 'choice' | 'manual' | 'analyze';
 
 
-type MealLog = {
-  id: string;
-  mealType: MealFormValues['mealType'];
-  mealName: string;
-  quantity: string;
-  description?: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  fiber: number;
-  recipe?: string;
-  createdAt: { seconds: number, nanoseconds: number };
-};
-
 const mealTypes: {name: string, value: MealFormValues['mealType']}[] = [
     { name: 'Breakfast', value: 'breakfast'},
     { name: 'Morning Snack', value: 'morningSnack'},
@@ -89,23 +76,6 @@ const mealTypes: {name: string, value: MealFormValues['mealType']}[] = [
 
 const cuisineTypes = ['Indian', 'Subcontinental', 'Italian', 'Mexican', 'Chinese', 'Mediterranean'];
 const dietTypes: PlanFormValues['diet'][] = ['vegetarian', 'non-vegetarian', 'eggetarian', 'vegan'];
-
-const isToday = (timestamp: { seconds: number; nanoseconds: number }) => {
-    if (!timestamp) return false;
-    const date = new Date(timestamp.seconds * 1000);
-    const today = new Date();
-    return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
-};
-
-const toDataURL = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-  });
 
 const calorieDistribution = {
     breakfast: 0.25,
@@ -131,7 +101,7 @@ export function MealPlanner() {
   const [isLogMealDialogOpen, setIsLogMealDialogOpen] = useState(false);
   const [logMealDialogStep, setLogMealDialogStep] = useState<DialogStep>('choice');
   const [isPlanMealDialogOpen, setIsPlanMealDialogOpen] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,6 +111,7 @@ export function MealPlanner() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<{name: string, recipe: string} | null>(null);
+  const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
@@ -169,32 +140,30 @@ export function MealPlanner() {
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
-      const [savedMeals, profile] = await Promise.all([getMeals(), getProfile()]);
-      const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
-      setMeals(todaysMeals as MealLog[]);
+      const [savedMeals, profile] = await Promise.all([getTodaysMeals(), getProfile()]);
+      setMeals(savedMeals);
       
       if (profile && (profile as any).dailyCalories) {
         setDailyGoal((profile as any).dailyCalories);
-      } else if (profile) {
-        const heightInMeters = (profile as any).height / 100;
-        const bmr =
-        (profile as any).gender === 'male'
-            ? 10 * (profile as any).weight + 6.25 * (profile as any).height - 5 * (profile as any).age + 5
-            : 10 * (profile as any).weight + 6.25 * (profile as any).height - 5 * (profile as any).age - 161;
-
-        const activityMultipliers = {
-            sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9
-        };
-        const goalAdjustments = { lose: -500, maintain: 0, gain: 500 };
-        const tdee = bmr * activityMultipliers[(profile as any).activityLevel as keyof typeof activityMultipliers];
-        setDailyGoal(Math.round(tdee + goalAdjustments[(profile as any).goal as keyof typeof goalAdjustments]));
       }
-
       setIsLoading(false);
     }
     loadData();
   }, []);
   
+  useEffect(() => {
+    if (isLogMealDialogOpen && editingMeal) {
+      form.reset(editingMeal);
+      setLogMealDialogStep('manual');
+    } else if (!isLogMealDialogOpen) {
+      setEditingMeal(null);
+      setLogMealDialogStep('choice');
+      setImagePreview(null);
+      setHasCameraPermission(null);
+      form.reset({ mealType: 'breakfast', mealName: '', quantity: '', description: '' });
+    }
+  }, [isLogMealDialogOpen, editingMeal, form]);
+
   useEffect(() => {
     if (isLogMealDialogOpen && logMealDialogStep === 'analyze') {
         const getCameraPermission = async () => {
@@ -233,37 +202,51 @@ export function MealPlanner() {
   }, [mealNameInput, uniqueMealNames]);
 
   const onAddMealSubmit: SubmitHandler<MealFormValues> = async (data) => {
-    setIsCalculating(true);
+    setIsSubmitting(true);
     try {
       const macros = await getMealMacros(data);
-      const newMealData = {
-        mealType: data.mealType,
-        mealName: data.mealName,
-        quantity: data.quantity,
-        description: data.description,
-        ...macros,
-      };
+      const newMealData = { ...data, ...macros };
 
-      const docId = await addMeal(newMealData);
-      await updateDailySummaryOnMealChange(macros);
-      
-      const newMealForState = {
-        ...newMealData,
-        id: docId,
-        createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
+      if (editingMeal) {
+        // Update Meal
+        const updatedMeal = { ...editingMeal, ...newMealData };
+        await updateMeal(updatedMeal);
+        
+        // Adjust daily summary by subtracting old values and adding new ones
+        const macroDifference = {
+            calories: updatedMeal.calories - editingMeal.calories,
+            protein: updatedMeal.protein - editingMeal.protein,
+            carbs: updatedMeal.carbs - editingMeal.carbs,
+            fats: updatedMeal.fats - editingMeal.fats,
+            fiber: updatedMeal.fiber - editingMeal.fiber,
+        };
+        await updateDailySummaryOnMealChange(macroDifference);
+
+        setMeals(prev => prev.map(m => m.id === editingMeal.id ? updatedMeal : m));
+        toast({ title: "Meal Updated", description: "Your meal has been successfully updated." });
+      } else {
+        // Add New Meal
+        const docId = await addMeal(newMealData);
+        await updateDailySummaryOnMealChange(macros);
+        
+        const newMealForState: MealLog = {
+          ...newMealData,
+          id: docId,
+          createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 }
+        };
+        setMeals((prev) => [newMealForState, ...prev]);
+        toast({ title: "Meal Added", description: "Your meal has been successfully logged." });
       }
-      setMeals((prev) => [newMealForState, ...prev]);
 
-      form.reset();
       setIsLogMealDialogOpen(false);
     } catch (error) {
        toast({
         variant: 'destructive',
         title: 'Action Failed',
-        description: 'Could not log meal. Please try again.',
+        description: `Could not ${editingMeal ? 'update' : 'log'} meal. Please try again.`,
       });
     } finally {
-      setIsCalculating(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -366,7 +349,6 @@ export function MealPlanner() {
         } else {
             form.setValue('mealName', result.mealName);
             form.setValue('quantity', result.quantity);
-            // Pre-fill the form for user confirmation.
             setLogMealDialogStep('manual');
         }
 
@@ -380,6 +362,11 @@ export function MealPlanner() {
         setIsAnalyzing(false);
         setImagePreview(null);
     }
+  }
+
+  const handleEditClick = (meal: MealLog) => {
+    setEditingMeal(meal);
+    setIsLogMealDialogOpen(true);
   }
 
   const renderMealCards = (mealTypeValue: MealFormValues['mealType']) => {
@@ -423,25 +410,30 @@ export function MealPlanner() {
                                 <p className="text-sm text-muted-foreground">{meal.quantity}</p>
                                 {meal.description && <p className="text-xs text-muted-foreground pt-1 italic">"{meal.description}"</p>}
                             </div>
-                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600 h-8 w-8 flex-shrink-0">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete this meal from your log.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteMeal(meal)}>Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <div>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(meal)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-red-500 hover:bg-red-50 hover:text-red-600 h-8 w-8 flex-shrink-0">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete this meal from your log.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteMeal(meal)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                           </div>
                         </CardHeader>
                         <CardContent className="grid grid-cols-5 gap-2 pt-2">
@@ -624,17 +616,17 @@ export function MealPlanner() {
                             )}
                         />
                         <DialogFooter>
-                        <Button type="button" variant="link" onClick={() => setLogMealDialogStep('choice')}>Back to options</Button>
-                        <Button type="submit" disabled={isCalculating}>
-                            {isCalculating ? (
+                        {!editingMeal && <Button type="button" variant="link" onClick={() => setLogMealDialogStep('choice')}>Back to options</Button>}
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Calculating...
+                                {editingMeal ? 'Updating...' : 'Calculating...'}
                             </>
                             ) : (
                             <>
                                 <Sparkles className="mr-2 h-4 w-4" />
-                                Log Meal with AI
+                                {editingMeal ? 'Update Meal' : 'Log Meal with AI'}
                             </>
                             )}
                         </Button>
@@ -660,6 +652,7 @@ export function MealPlanner() {
   }
   
   const getDialogTitle = () => {
+    if (editingMeal) return 'Edit Meal';
     switch (logMealDialogStep) {
         case 'manual': return 'Log a New Meal';
         case 'analyze': return 'Analyze Meal from Image';
@@ -669,6 +662,7 @@ export function MealPlanner() {
   }
 
   const getDialogDescription = () => {
+     if (editingMeal) return 'Update the details of your meal below.';
     switch (logMealDialogStep) {
         case 'manual': return 'Fill in the details of your meal below.';
         case 'analyze': return 'Upload a photo or use your camera to get an AI analysis.';
@@ -743,16 +737,7 @@ export function MealPlanner() {
                     </Form>
                 </DialogContent>
             </Dialog>
-            <Dialog open={isLogMealDialogOpen} onOpenChange={(isOpen) => {
-                setIsLogMealDialogOpen(isOpen);
-                 if (!isOpen) {
-                    // Reset state when closing
-                    setLogMealDialogStep('choice');
-                    setImagePreview(null);
-                    setHasCameraPermission(null);
-                    form.reset();
-                }
-            }}>
+            <Dialog open={isLogMealDialogOpen} onOpenChange={setIsLogMealDialogOpen}>
                 <DialogTrigger asChild>
                     <Button>
                         <PlusCircle className="mr-2 h-4 w-4" /> Log Meal

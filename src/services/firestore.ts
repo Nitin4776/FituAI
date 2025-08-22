@@ -1,4 +1,4 @@
-import { db, auth as firebaseAuth } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import {
   collection,
   doc,
@@ -12,11 +12,12 @@ import {
   limit,
   deleteDoc,
   where,
-  startOfDay,
-  endOfDay,
   increment,
+  updateDoc,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import type { ActivityLog, MealLog } from '@/lib/types';
+import { startOfDay } from 'date-fns';
 
 
 function getCurrentUserId() {
@@ -53,7 +54,7 @@ export async function getProfile() {
 export async function addMeal(mealData: any): Promise<string> {
   const userId = getCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
-  const mealsColRef = collection(db, 'users', userId, 'meals');
+  const mealsColRef = collection(db, `users/${userId}/meals`);
   const docRef = await addDoc(mealsColRef, {
     ...mealData,
     createdAt: Timestamp.now(),
@@ -61,20 +62,30 @@ export async function addMeal(mealData: any): Promise<string> {
   return docRef.id;
 }
 
-export async function getMeals() {
+export async function updateMeal(mealData: MealLog) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const mealDocRef = doc(db, `users/${userId}/meals`, mealData.id);
+    await updateDoc(mealDocRef, { ...mealData });
+}
+
+export async function getTodaysMeals(): Promise<MealLog[]> {
   const userId = getCurrentUserId();
   if (!userId) return [];
-  const mealsColRef = collection(db, 'users', userId, 'meals');
-  const q = query(mealsColRef, orderBy('createdAt', 'desc'));
+  const today = new Date();
+  const start = startOfDay(today);
+  
+  const mealsColRef = collection(db, `users/${userId}/meals`);
+  const q = query(mealsColRef, where('createdAt', '>=', start), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MealLog));
 }
 
 // --- Activities ---
 export async function addActivity(activityData: any): Promise<string> {
   const userId = getCurrentUserId();
   if (!userId) throw new Error("User not authenticated");
-  const activitiesColRef = collection(db, 'users', userId, 'activities');
+  const activitiesColRef = collection(db, `users/${userId}/activities`);
   const docRef = await addDoc(activitiesColRef, {
     ...activityData,
     createdAt: Timestamp.now(),
@@ -82,19 +93,23 @@ export async function addActivity(activityData: any): Promise<string> {
   return docRef.id;
 }
 
-export async function getActivities() {
+export async function updateActivity(activityData: ActivityLog) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const activityDocRef = doc(db, `users/${userId}/activities`, activityData.id);
+    await updateDoc(activityDocRef, { ...activityData });
+}
+
+export async function getTodaysActivities(): Promise<ActivityLog[]> {
     const userId = getCurrentUserId();
     if (!userId) return [];
-    const activitiesColRef = collection(db, 'users', userId, 'activities');
-    const q = query(activitiesColRef, orderBy('createdAt', 'desc'));
+    const today = new Date();
+    const start = startOfDay(today);
+
+    const activitiesColRef = collection(db, `users/${userId}/activities`);
+    const q = query(activitiesColRef, where('createdAt', '>=', start), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-            id: doc.id, 
-            ...data,
-        };
-    });
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLog));
 }
 
 // --- Blood Test Analysis ---

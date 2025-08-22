@@ -1,7 +1,7 @@
 
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getMeals, getActivities, getBloodTestAnalyses, getSleepLogForToday } from '@/services/firestore';
+import { getTodaysMeals, getTodaysActivities, getBloodTestAnalyses, getSleepLogForToday } from '@/services/firestore';
 import { getDailySuggestion } from '@/app/actions';
 import { isToday } from '@/lib/utils';
 import { Bot, Lightbulb } from 'lucide-react';
@@ -9,8 +9,8 @@ import { Skeleton } from './ui/skeleton';
 
 async function getSuggestionData() {
     const [savedMeals, savedActivities, savedAnalyses, savedSleep] = await Promise.all([
-        getMeals(),
-        getActivities(),
+        getTodaysMeals(),
+        getTodaysActivities(),
         getBloodTestAnalyses(),
         getSleepLogForToday()
     ]);

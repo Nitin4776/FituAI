@@ -3,11 +3,13 @@ export type MealLog = {
   mealType: 'breakfast' | 'morningSnack' | 'lunch' | 'eveningSnack' | 'dinner';
   mealName: string;
   quantity: string;
+  description?: string;
   calories: number;
   protein: number;
   carbs: number;
   fats: number;
   fiber: number;
+  recipe?: string;
   createdAt: { seconds: number; nanoseconds: number };
 };
 
@@ -16,6 +18,8 @@ export type ActivityLog = {
   activity: string;
   duration: number;
   caloriesBurned: number;
+  description?: string;
+  date?: string;
   createdAt: { seconds: number; nanoseconds: number };
 };
 
