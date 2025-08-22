@@ -1,7 +1,6 @@
 import {NextResponse} from 'next/server';
 import type {NextRequest} from 'next/server';
-import {initFirebaseAdminApp} from '@/lib/firebase.server';
-import {getAuth} from 'firebase-admin/auth';
+import {initFirebaseAdminApp, auth} from '@/lib/firebase.server';
 import {cookies} from 'next/headers';
 
 // This is the endpoint that will be called by the client to set the session cookie.
@@ -12,7 +11,7 @@ export async function POST(request: NextRequest) {
   const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
 
   try {
-    const sessionCookie = await getAuth().createSessionCookie(idToken, {
+    const sessionCookie = await auth().createSessionCookie(idToken, {
       expiresIn,
     });
     cookies().set('session', sessionCookie, {

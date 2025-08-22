@@ -37,18 +37,16 @@ import {
 } from '@/ai/flows/generate-daily-suggestion';
 import { saveSleepLog } from '@/services/firestore';
 import { deleteActivity, deleteMeal, getProfile } from '@/services/firestore.server';
-import { getAuth } from 'firebase-admin/auth';
+import { auth } from '@/lib/firebase.server';
 import { cookies } from 'next/headers';
-import { initFirebaseAdminApp } from '@/lib/firebase.server';
 
 async function getCurrentUserIdFromSession() {
-    initFirebaseAdminApp();
     const sessionCookie = cookies().get('session')?.value;
     if (!sessionCookie) {
         return null;
     }
     try {
-        const decodedClaims = await getAuth().verifySessionCookie(sessionCookie, true);
+        const decodedClaims = await auth().verifySessionCookie(sessionCookie, true);
         return decodedClaims.uid;
     } catch (error) {
         console.error('Session cookie verification failed:', error);

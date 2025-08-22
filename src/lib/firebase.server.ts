@@ -23,9 +23,13 @@ export function initFirebaseAdminApp() {
   }
 }
 
-// Initialize on module load
-initFirebaseAdminApp();
-
 // These are now getters to ensure the app is initialized before they are used.
-export const db = () => getFirestore();
-export const auth = () => getAuth();
+export const db = () => {
+    initFirebaseAdminApp();
+    return getFirestore();
+}
+
+export const auth = () => {
+    initFirebaseAdminApp();
+    return getAuth();
+}
