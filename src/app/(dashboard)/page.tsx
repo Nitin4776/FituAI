@@ -11,6 +11,7 @@ import {
   Clock,
   TestTube2,
   Replace,
+  Bot,
 } from 'lucide-react';
 import Link from 'next/link';
 import { TodaySummary } from '@/components/today-summary';
@@ -34,7 +35,7 @@ export default function DashboardPage() {
           <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Profile & Goal
+                Profile
               </CardTitle>
               <Target className="h-4 w-4 text-primary" />
             </CardHeader>
@@ -60,32 +61,17 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/healthy-swaps">
+        <Link href="/ai">
           <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Healthy Swaps
+                AI Features
               </CardTitle>
-              <Replace className="h-4 w-4 text-primary" />
+              <Bot className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                Get AI-powered food swap suggestions.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/blood-test">
-          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Blood Test Analysis
-              </CardTitle>
-              <TestTube2 className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Upload your report for an AI analysis.
+                Explore AI-powered health insights.
               </p>
             </CardContent>
           </Card>

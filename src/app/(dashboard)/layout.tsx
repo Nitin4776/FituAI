@@ -6,11 +6,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Clock,
-  LayoutDashboard,
+  Home,
   LogOut,
-  Replace,
-  TestTube2,
   User,
+  Bot,
 } from 'lucide-react';
 
 import {
@@ -32,11 +31,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
 const menuItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/profile', label: 'Profile & Goal', icon: User },
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/profile', label: 'Profile', icon: User },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
-  { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
-  { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
+  { href: '/ai', label: 'AI', icon: Bot },
 ];
 
 function BottomNavigation() {
