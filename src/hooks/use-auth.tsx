@@ -40,11 +40,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const sessionCookie = getCookie('session');
     const isPublicPage = publicPages.includes(pathname);
+    const isDashboard = pathname === '/';
 
-    if (user && sessionCookie && isPublicPage) {
-      router.push('/');
+    if (user && sessionCookie) {
+        // If user is logged in...
+        if(isPublicPage) {
+            // and on a public page, go to dashboard.
+            router.push('/');
+        } else if (!isDashboard) {
+            // and not on the dashboard, go to the dashboard.
+            router.push('/');
+        }
     } else if (!user && !sessionCookie && !isPublicPage) {
-      router.push('/signin');
+        // If user is not logged in and not on a public page, go to signin.
+        router.push('/signin');
     }
   }, [user, loading, pathname, router]);
 
