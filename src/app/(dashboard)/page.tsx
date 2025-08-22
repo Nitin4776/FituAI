@@ -15,8 +15,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { TodaySummary } from '@/components/today-summary';
-import { DailyAiSuggestion, DailyAiSuggestionSkeleton } from '@/components/daily-ai-suggestion';
-import { Suspense } from 'react';
 import { DashboardHeader } from '@/components/dashboard-header';
 
 export default function DashboardPage() {
@@ -25,10 +23,6 @@ export default function DashboardPage() {
       <DashboardHeader />
 
       <TodaySummary />
-
-      <Suspense fallback={<DailyAiSuggestionSkeleton />}>
-        <DailyAiSuggestion />
-      </Suspense>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Link href="/profile">

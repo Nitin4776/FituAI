@@ -12,11 +12,6 @@ import {
   type HealthySwapSuggestionsOutput,
 } from '@/ai/flows/healthy-swap-suggestions';
 import {
-    generateDailySuggestion,
-    type GenerateDailySuggestionInput,
-    type GenerateDailySuggestionOutput,
-} from '@/ai/flows/generate-daily-suggestion';
-import {
     analyzeMeal as analyzeMealFlow,
     type AnalyzeMealInput,
     type AnalyzeMealOutput,
@@ -54,17 +49,6 @@ export async function analyzeReport(
   } catch (error) {
     console.error(error);
     throw new Error('Failed to analyze blood test report.');
-  }
-}
-
-export async function getDailySuggestion(
-  input: GenerateDailySuggestionInput
-): Promise<GenerateDailySuggestionOutput> {
-  try {
-    return await generateDailySuggestion(input);
-  } catch (error) {
-    console.error(error);
-    throw new Error('Failed to generate daily suggestion.');
   }
 }
 
