@@ -75,6 +75,37 @@ function BottomNavigation() {
           </div>
         </Link>
       ))}
+       <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div
+            className={cn(
+              'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
+              ['/log-meal', '/log-activity'].includes(pathname)
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground'
+            )}
+          >
+            <PlusCircle className="size-5" />
+            <span className="text-xs mt-1">Log</span>
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="center" className="mb-2">
+            <DropdownMenuLabel>What would you like to log?</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+                <Link href="/log-meal" className="flex items-center gap-2">
+                    <Soup className="size-4" />
+                    <span>Log Meal/Food</span>
+                </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+                    <Link href="/log-activity" className="flex items-center gap-2">
+                    <Dumbbell className="size-4" />
+                    <span>Log Activity/Workout</span>
+                </Link>
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <DropdownMenu>
          <DropdownMenuTrigger asChild>
              <div
