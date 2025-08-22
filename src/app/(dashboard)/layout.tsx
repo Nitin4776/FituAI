@@ -11,7 +11,10 @@ import {
   User,
   Bot,
   TestTube2,
-  Replace
+  Replace,
+  PlusCircle,
+  Dumbbell,
+  Soup,
 } from 'lucide-react';
 
 import {
@@ -31,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -134,6 +137,38 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuItem>
               ))}
+
+              <DropdownMenu>
+                <SidebarMenuItem>
+                    <DropdownMenuTrigger asChild>
+                       <SidebarMenuButton
+                        isActive={['/log-meal', '/log-activity'].includes(pathname)}
+                        tooltip="Log Data"
+                        className="w-full justify-start"
+                        >
+                            <PlusCircle className="size-4 text-accent" />
+                            <span className="text-accent">Log Data</span>
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                </SidebarMenuItem>
+                <DropdownMenuContent side="right" align="start" sideOffset={8}>
+                    <DropdownMenuLabel>What would you like to log?</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/log-meal" className="flex items-center gap-2">
+                            <Soup className="size-4" />
+                            <span>Log Meal/Food</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                         <Link href="/log-activity" className="flex items-center gap-2">
+                            <Dumbbell className="size-4" />
+                            <span>Log Activity/Workout</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <DropdownMenu>
                 <SidebarMenuItem>
                     <DropdownMenuTrigger asChild>
