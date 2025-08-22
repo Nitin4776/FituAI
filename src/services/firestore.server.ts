@@ -18,9 +18,3 @@ export async function getProfile(userId: string) {
   const docSnap = await userDocRef.get();
   return docSnap.exists ? docSnap.data() : null;
 }
-
-export async function deleteActivity(userId: string, activityId: string) {
-  if (!userId) throw new Error('User not authenticated');
-  const activityDocRef = db().collection('users').doc(userId).collection('activities').doc(activityId);
-  await activityDocRef.delete();
-}

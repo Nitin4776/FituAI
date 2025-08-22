@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow that generates a daily health suggestion based on recent user data.
@@ -9,13 +10,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import type { MealLog, ActivityLog, AnalysisRecord, SleepLog } from '@/lib/types';
+import type { MealLog, AnalysisRecord, SleepLog } from '@/lib/types';
 
 
 const GenerateDailySuggestionInputSchema = z.object({
   latestBloodTest: z.any().optional().describe('The summary and critical markers from the user\'s most recent blood test analysis.'),
   todaysMeals: z.any().describe('A list of meals the user has logged today, including macronutrient information.'),
-  todaysActivities: z.any().describe('A list of physical activities the user has logged today, including calories burned.'),
   todaysSleep: z.any().optional().describe("The user's logged sleep quality for today (e.g., 'excellent', 'good', 'moderate', 'low')."),
 });
 export type GenerateDailySuggestionInput = z.infer<typeof GenerateDailySuggestionInputSchema>;
@@ -61,15 +61,6 @@ Today's Meals:
 {{/each}}
 {{else}}
 No meals logged yet today.
-{{/if}}
-
-Today's Activities:
-{{#if todaysActivities.length}}
-{{#each todaysActivities}}
-- {{{this.activity}}} for {{{this.duration}}} minutes ({{this.caloriesBurned}} kcal burned)
-{{/each}}
-{{else}}
-No activities logged yet today.
 {{/if}}
 
 Based on all of this information, provide one single, encouraging, and actionable health tip for today. For example, if meals are high in carbs and there's no activity, suggest a short walk. If a blood marker is low, suggest a food that could help. If sleep quality was low, suggest a relaxing activity or an early bedtime. If they have logged a good workout, praise them. If no data is present, provide a general wellness tip.

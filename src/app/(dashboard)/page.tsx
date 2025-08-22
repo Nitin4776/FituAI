@@ -8,8 +8,6 @@ import {
 } from '@/components/ui/card';
 import {
   Target,
-  HeartPulse,
-  Utensils,
   Clock,
   TestTube2,
   Replace,
@@ -43,21 +41,6 @@ export default function DashboardPage() {
             <CardContent>
               <p className="text-xs text-muted-foreground">
                 Set up your profile to calculate your fitness metrics.
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/activity">
-          <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Activity Tracker
-              </CardTitle>
-              <HeartPulse className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Keep track of your activities and workouts.
               </p>
             </CardContent>
           </Card>

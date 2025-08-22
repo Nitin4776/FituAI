@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -123,14 +124,6 @@ export function TodaySummary() {
               <div>
                   <div className="flex justify-between items-baseline mb-1">
                       <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
-                      <Link
-                        href="/meals"
-                        className="flex items-center gap-1 text-xs text-accent font-bold hover:brightness-110 transition-all hover:scale-105"
-                        style={{ textShadow: '0 0 8px hsl(var(--accent) / 0.5)' }}
-                      >
-                          <BarChart className="h-3 w-3" />
-                          Insights
-                      </Link>
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
                   <div className="flex justify-between items-center mt-1">

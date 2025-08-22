@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Clock,
-  HeartPulse,
   LayoutDashboard,
   LogOut,
   Replace,
@@ -35,7 +34,6 @@ import { Button } from '@/components/ui/button';
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/profile', label: 'Profile & Goal', icon: User },
-  { href: '/activity', label: 'Activity Tracker', icon: HeartPulse },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
   { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
   { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },

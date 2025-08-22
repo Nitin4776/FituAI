@@ -17,7 +17,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import type { ActivityLog, MealLog } from '@/lib/types';
+import type { MealLog } from '@/lib/types';
 import { startOfDay } from 'date-fns';
 
 
@@ -58,34 +58,8 @@ export async function getTodaysMeals(): Promise<MealLog[]> {
 }
 
 // --- Activities ---
-export async function addActivity(activityData: any): Promise<string> {
-  const userId = getCurrentUserId();
-  if (!userId) throw new Error("User not authenticated");
-  const activitiesColRef = collection(db, `users/${userId}/activities`);
-  const docRef = await addDoc(activitiesColRef, {
-    ...activityData,
-    createdAt: Timestamp.now(),
-  });
-  return docRef.id;
-}
-
-export async function updateActivity(activityData: ActivityLog) {
-    const userId = getCurrentUserId();
-    if (!userId) throw new Error("User not authenticated");
-    const activityDocRef = doc(db, `users/${userId}/activities`, activityData.id);
-    await updateDoc(activityDocRef, { ...activityData });
-}
-
-export async function getTodaysActivities(): Promise<ActivityLog[]> {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
-    const today = new Date();
-    const start = startOfDay(today);
-
-    const activitiesColRef = collection(db, `users/${userId}/activities`);
-    const q = query(activitiesColRef, where('createdAt', '>=', start), orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLog));
+export async function getTodaysActivities() {
+    return [];
 }
 
 // --- Blood Test Analysis ---
@@ -241,22 +215,5 @@ export async function updateDailySummaryOnMealChange(macros: { calories: number,
         carbs: increment(macros.carbs),
         fats: increment(macros.fats),
         fiber: increment(macros.fiber),
-    }, { merge: true });
-}
-
-export async function updateDailySummaryOnActivityChange(caloriesBurned: number) {
-    const userId = getCurrentUserId();
-    if (!userId) return;
-    const todayId = getTodayDocId();
-    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
-    
-    // Ensure the document exists before trying to increment
-    const docSnap = await getDoc(summaryDocRef);
-    if (!docSnap.exists()) {
-        await getDailySummaryForToday();
-    }
-
-    await setDoc(summaryDocRef, {
-        caloriesBurned: increment(caloriesBurned),
     }, { merge: true });
 }

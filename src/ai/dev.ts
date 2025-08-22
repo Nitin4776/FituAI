@@ -4,5 +4,4 @@ config();
 
 import '@/ai/flows/blood-test-results-analysis.ts';
 import '@/ai/flows/healthy-swap-suggestions.ts';
-import '@/ai/flows/calculate-activity-calories.ts';
 import '@/ai/flows/generate-daily-suggestion.ts';

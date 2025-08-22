@@ -12,17 +12,11 @@ import {
   type HealthySwapSuggestionsOutput,
 } from '@/ai/flows/healthy-swap-suggestions';
 import {
-  calculateActivityCalories,
-  type CalculateActivityCaloriesInput,
-  type CalculateActivityCaloriesOutput,
-} from '@/ai/flows/calculate-activity-calories';
-import {
     generateDailySuggestion,
     type GenerateDailySuggestionInput,
     type GenerateDailySuggestionOutput,
 } from '@/ai/flows/generate-daily-suggestion';
 import { saveSleepLog } from '@/services/firestore';
-import { deleteActivity } from '@/services/firestore.server';
 import { auth } from '@/lib/firebase.server';
 import { cookies } from 'next/headers';
 
@@ -61,30 +55,6 @@ export async function analyzeReport(
     console.error(error);
     throw new Error('Failed to analyze blood test report.');
   }
-}
-
-export async function getActivityCalories(
-  input: CalculateActivityCaloriesInput
-): Promise<CalculateActivityCaloriesOutput> {
-  try {
-    return await calculateActivityCalories(input);
-  } catch (error) {
-    console.error(error);
-    throw new Error('Failed to calculate activity calories.');
-  }
-}
-
-export async function deleteActivityAction(activityId: string): Promise<void> {
-    try {
-        const userId = await getCurrentUserIdFromSession();
-        if (!userId) {
-            throw new Error("User not authenticated");
-        }
-        await deleteActivity(userId, activityId);
-    } catch (error) {
-        console.error(error);
-        throw new Error('Failed to delete activity.');
-    }
 }
 
 export async function getDailySuggestion(

@@ -14,16 +14,6 @@ export type MealLog = {
   createdAt: { seconds: number; nanoseconds: number };
 };
 
-export type ActivityLog = {
-  id: string;
-  activity: string;
-  duration: number;
-  caloriesBurned: number;
-  description?: string;
-  date?: string;
-  createdAt: { seconds: number; nanoseconds: number };
-};
-
 export type AnalysisRecord = {
     id: string;
     summary: string;
