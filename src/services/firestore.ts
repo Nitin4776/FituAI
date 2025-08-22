@@ -139,13 +139,13 @@ export async function getFastingState() {
 
 
 // --- Sleep ---
-export async function saveSleepLog(sleepData: { quality: string }) {
-  const userId = getCurrentUserId();
+export async function saveSleepLog(sleepData: { quality: string, userId: string }) {
+  const { quality, userId } = sleepData;
   if (!userId) throw new Error("User not authenticated");
   // Save sleep quality directly to the daily summary document.
   const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
   await setDoc(summaryDocRef, {
-    sleepQuality: sleepData.quality,
+    sleepQuality: quality,
   }, { merge: true }); // Using merge:true will create the doc if it doesn't exist.
 }
 

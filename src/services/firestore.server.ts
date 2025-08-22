@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/firebase.server';
-import { doc, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
 // This is a dedicated server action for saving the profile.
 // It's separate from the client-side firestore functions.
@@ -21,12 +21,12 @@ export async function getProfile(userId: string) {
 
 export async function deleteMeal(userId: string, mealId: string) {
   if (!userId) throw new Error('User not authenticated');
-  const mealDocRef = doc(db(), 'users', userId, 'meals', mealId);
+  const mealDocRef = doc(db(), `users/${userId}/meals/${mealId}`);
   await deleteDoc(mealDocRef);
 }
 
 export async function deleteActivity(userId: string, activityId: string) {
   if (!userId) throw new Error('User not authenticated');
-  const activityDocRef = doc(db(), 'users', userId, 'activities', activityId);
+  const activityDocRef = doc(db(), `users/${userId}/activities/${activityId}`);
   await deleteDoc(activityDocRef);
 }
