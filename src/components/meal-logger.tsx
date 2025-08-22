@@ -211,12 +211,12 @@ export function MealLogger() {
                 <div className="text-xs">
                     <Drumstick className="h-4 w-4 mx-auto text-red-500"/>
                     <p className="font-bold">{meal.protein.toFixed(0)}g</p>
-                    <p className="text-muted-foreground">Prot</p>
+                    <p className="text-muted-foreground">Protein</p>
                 </div>
                 <div className="text-xs">
                     <Wheat className="h-4 w-4 mx-auto text-yellow-500"/>
                     <p className="font-bold">{meal.carbs.toFixed(0)}g</p>
-                    <p className="text-muted-foreground">Carb</p>
+                    <p className="text-muted-foreground">Carbs</p>
                 </div>
                  <div className="text-xs">
                     <Beef className="h-4 w-4 mx-auto text-purple-500"/>
@@ -226,7 +226,7 @@ export function MealLogger() {
                  <div className="text-xs">
                     <Wheat className="h-4 w-4 mx-auto text-green-500"/>
                     <p className="font-bold">{meal.fiber.toFixed(0)}g</p>
-                    <p className="text-muted-foreground">Fibr</p>
+                    <p className="text-muted-foreground">Fiber</p>
                 </div>
             </div>
         </CardContent>
