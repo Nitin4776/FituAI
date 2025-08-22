@@ -15,8 +15,8 @@ import { z } from 'genkit';
 // Use 'any' for complex nested objects from Firestore to simplify the schema
 const ProfileSchema = z.any().describe("User's profile data, including height, weight, age, gender, activity level, and goals.");
 const BloodTestSchema = z.any().optional().describe('The most recent blood test analysis.');
-const MealLogSchema = z.array(z.any()).describe("A list of all meals the user has logged today.");
-const ActivityLogSchema = z.array(z.any()).describe("A list of all activities/workouts the user has logged today.");
+const MealLogSchema = z.any().optional().describe("A list of all meals the user has logged today.");
+const ActivityLogSchema = z.any().optional().describe("A list of all activities/workouts the user has logged today.");
 const SleepLogSchema = z.any().optional().describe("The user's sleep quality log for the previous night.");
 
 
