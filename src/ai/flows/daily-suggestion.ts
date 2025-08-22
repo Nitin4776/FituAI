@@ -20,7 +20,7 @@ const ActivityLogSchema = z.array(z.any()).describe("A list of all activities/wo
 const SleepLogSchema = z.any().optional().describe("The user's sleep quality log for the previous night.");
 
 
-export const DailySuggestionInputSchema = z.object({
+const DailySuggestionInputSchema = z.object({
   profile: ProfileSchema,
   latestBloodTest: BloodTestSchema,
   todaysMeals: MealLogSchema,
