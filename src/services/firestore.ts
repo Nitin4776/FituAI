@@ -18,7 +18,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import type { MealLog, ActivityLog } from '@/lib/types';
+import type { MealLog, ActivityLog, SleepLog } from '@/lib/types';
 import { startOfDay } from 'date-fns';
 
 
@@ -53,7 +53,7 @@ export async function getProfile() {
 }
 
 // --- Meals ---
-export async function addMeal(mealData: Omit<MealLog, 'id' | 'createdAt'>) {
+export async function addMeal(mealData: Omit<MealLog, 'id' | 'createdAt' | 'mealType'> & { mealType: string }) {
     const userId = getCurrentUserId();
     if (!userId) throw new Error("User not authenticated");
 
@@ -273,26 +273,50 @@ export async function getFastingState() {
 
 
 // --- Sleep ---
-export async function saveSleepLog(sleepData: { quality: string, userId: string }) {
-  const { quality, userId } = sleepData;
-  if (!userId) throw new Error("User not authenticated");
-  // Save sleep quality directly to the daily summary document.
-  const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
-  await setDoc(summaryDocRef, {
-    sleepQuality: quality,
-  }, { merge: true }); // Using merge:true will create the doc if it doesn't exist.
+export async function saveSleepLog(sleepData: { quality: SleepLog['quality'] }) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+
+    const batch = writeBatch(db);
+    const todayStart = startOfDay(new Date());
+
+    // Query for existing sleep log for today
+    const sleepColRef = collection(db, 'users', userId, 'sleepLogs');
+    const q = query(sleepColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(1));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+        // No log today, create a new one
+        const newSleepLogRef = doc(sleepColRef);
+        batch.set(newSleepLogRef, { ...sleepData, createdAt: Timestamp.now() });
+    } else {
+        // Log exists, update it
+        const existingLogRef = querySnapshot.docs[0].ref;
+        batch.update(existingLogRef, { ...sleepData });
+    }
+    
+    // Update the daily summary
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        sleepQuality: sleepData.quality,
+    }, { merge: true });
+
+    await batch.commit();
 }
 
-export async function getSleepLogForToday() {
+
+export async function getSleepLogForToday(): Promise<SleepLog | null> {
   const userId = getCurrentUserId();
   if (!userId) return null;
-  // Read sleep quality from the daily summary document.
-  const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
-  const docSnap = await getDoc(summaryDocRef);
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    // Return the sleep data if it exists on the summary
-    return data.sleepQuality ? { quality: data.sleepQuality } : null;
+  
+  const todayStart = startOfDay(new Date());
+  const sleepColRef = collection(db, 'users', userId, 'sleepLogs');
+  const q = query(sleepColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), limit(1));
+
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as SleepLog;
   }
   return null;
 }

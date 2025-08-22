@@ -16,7 +16,9 @@ async function getSuggestionData() {
 
     const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
     const latestBloodTest = savedAnalyses?.[0] || null;
-    const todaysSleep = savedSleep || null;
+    
+    // The new getSleepLogForToday returns the full log object or null
+    const todaysSleep = savedSleep || null; 
 
     const suggestionInput = {
         todaysMeals,

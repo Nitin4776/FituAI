@@ -1,7 +1,7 @@
 
 export type MealLog = {
   id: string;
-  mealType: 'breakfast' | 'morningSnack' | 'lunch' | 'eveningSnack' | 'dinner';
+  mealType: string;
   mealName: string;
   quantity: string;
   description?: string;
@@ -32,6 +32,7 @@ export type AnalysisRecord = {
 }
 
 export type SleepLog = {
+  id: string;
   quality: 'excellent' | 'good' | 'moderate' | 'low';
   createdAt: { seconds: number; nanoseconds: number };
 };

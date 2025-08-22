@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { saveSleepLogAction } from '@/app/actions';
+import { saveSleepLog } from '@/services/firestore';
 import { getSleepLogForToday } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from './ui/button';
@@ -28,9 +28,9 @@ export function SleepTracker() {
     useEffect(() => {
         async function loadSleepLog() {
             setIsLoading(true);
-            const sleepLog = await getSleepLogForToday() as SleepLog | null;
+            const sleepLog = await getSleepLogForToday();
             if (sleepLog) {
-                setSelectedSleep(sleepLog.quality as SleepQuality);
+                setSelectedSleep(sleepLog.quality);
             }
             setIsLoading(false);
         }
@@ -42,7 +42,7 @@ export function SleepTracker() {
         const originalState = selectedSleep;
         setSelectedSleep(quality); // Optimistic update
         try {
-            await saveSleepLogAction(quality);
+            await saveSleepLog({ quality });
             toast({
                 title: 'Sleep Logged',
                 description: `You've logged your sleep as "${quality}".`,

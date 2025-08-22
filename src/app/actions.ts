@@ -33,7 +33,6 @@ import {
 } from '@/ai/flows/analyze-activity';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { saveSleepLog } from '@/services/firestore';
 
 
 export async function getHealthySwap(
@@ -99,20 +98,5 @@ export async function analyzeActivity(
     } catch (error) {
         console.error('Failed to analyze activity:', error);
         throw new Error('Could not analyze your activity. Please try again.');
-    }
-}
-
-
-export async function saveSleepLogAction(quality: string) {
-    const auth = getAuth(app);
-    const user = auth.currentUser;
-    if (!user) {
-        throw new Error('User not authenticated');
-    }
-    try {
-        await saveSleepLog({ quality, userId: user.uid });
-    } catch (error) {
-        console.error('Failed to save sleep log:', error);
-        throw new Error('Could not save your sleep log. Please try again.');
     }
 }
