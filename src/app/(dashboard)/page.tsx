@@ -1,4 +1,7 @@
 
+'use client';
+
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -16,11 +19,20 @@ import {
 import Link from 'next/link';
 import { TodaySummary } from '@/components/today-summary';
 import { DashboardHeader } from '@/components/dashboard-header';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogTrigger,
+    DialogDescription
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AiDailySuggestion } from '@/components/ai-daily-suggestion';
 
 export default function DashboardPage() {
+    const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
+
   return (
     <div className="space-y-8">
       <DashboardHeader />
@@ -60,8 +72,8 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+         <Dialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen}>
+            <DialogTrigger asChild>
                  <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10 cursor-pointer">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
@@ -75,24 +87,36 @@ export default function DashboardPage() {
                     </p>
                     </CardContent>
                 </Card>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="center">
-                <DropdownMenuLabel>What would you like to log?</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                    <Link href="/log-meal" className="flex items-center gap-2 cursor-pointer">
-                        <Soup className="size-4" />
-                        <span>Log Meal/Food</span>
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                        <Link href="/log-activity" className="flex items-center gap-2 cursor-pointer">
-                        <Dumbbell className="size-4" />
-                        <span>Log Activity/Workout</span>
-                    </Link>
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>What would you like to log?</DialogTitle>
+                    <DialogDescription>
+                        Choose whether you want to log a meal you've eaten or an activity you've completed.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-1 gap-4 pt-4">
+                     <Link href="/log-meal" onClick={() => setIsLogDialogOpen(false)}>
+                        <Button variant="outline" className="w-full h-16 justify-start text-left">
+                           <Soup className="mr-4 text-primary" />
+                           <div>
+                                <p className="font-semibold">Log Meal / Food</p>
+                                <p className="text-xs text-muted-foreground">Calculate nutritional info for your meals.</p>
+                           </div>
+                        </Button>
+                     </Link>
+                     <Link href="/log-activity" onClick={() => setIsLogDialogOpen(false)}>
+                        <Button variant="outline" className="w-full h-16 justify-start text-left">
+                           <Dumbbell className="mr-4 text-primary" />
+                            <div>
+                                <p className="font-semibold">Log Activity / Workout</p>
+                                <p className="text-xs text-muted-foreground">Estimate calories burned from your workouts.</p>
+                           </div>
+                        </Button>
+                     </Link>
+                </div>
+            </DialogContent>
+        </Dialog>
         <Link href="/ai">
           <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
