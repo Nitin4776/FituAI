@@ -1,7 +1,6 @@
 'use server';
 
 import { db } from '@/lib/firebase.server';
-import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 
 // This is a dedicated server action for saving the profile.
 // It's separate from the client-side firestore functions.
