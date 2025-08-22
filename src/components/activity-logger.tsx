@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Loader2, Trash2, Pencil, Flame, Dumbbell } from 'lucide-react';
+import { Plus, Loader2, Trash2, Pencil, Flame, Dumbbell, Bike, PersonStanding, Weight, HeartPulse, Brain, Waves, Run, Sword } from 'lucide-react';
 import { getTodaysActivities, addActivity, updateActivity, deleteActivity } from '@/services/firestore';
 import { analyzeActivity } from '@/app/actions';
 import type { ActivityLog } from '@/lib/types';
@@ -51,6 +51,20 @@ const activityFormSchema = z.object({
 });
 
 type ActivityFormValues = z.infer<typeof activityFormSchema>;
+
+// Helper to get an icon for an activity
+const getActivityIcon = (activityName: string): React.ElementType => {
+    const lowerCaseName = activityName.toLowerCase();
+    if (lowerCaseName.includes('run') || lowerCaseName.includes('jog')) return Run;
+    if (lowerCaseName.includes('walk')) return PersonStanding;
+    if (lowerCaseName.includes('cycl') || lowerCaseName.includes('bik')) return Bike;
+    if (lowerCaseName.includes('weight') || lowerCaseName.includes('lift')) return Weight;
+    if (lowerCaseName.includes('yoga') || lowerCaseName.includes('meditat')) return Brain;
+    if (lowerCaseName.includes('cardio') || lowerCaseName.includes('hiit')) return HeartPulse;
+    if (lowerCaseName.includes('swim')) return Waves;
+    if (lowerCaseName.includes('sport') || lowerCaseName.includes('martial art')) return Sword;
+    return Dumbbell;
+}
 
 export function ActivityLogger() {
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -150,45 +164,51 @@ export function ActivityLogger() {
     }
   };
 
-  const ActivityCard = ({ activity }: { activity: ActivityLog }) => (
-    <Card className="bg-secondary/50">
-        <CardContent className="p-4">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h4 className="font-semibold">{activity.activityName}</h4>
-                    <p className="text-sm text-muted-foreground">{activity.duration}</p>
-                    {activity.description && <p className="text-xs text-muted-foreground mt-1 italic">"{activity.description}"</p>}
+  const ActivityCard = ({ activity }: { activity: ActivityLog }) => {
+    const Icon = getActivityIcon(activity.activityName);
+    return (
+        <Card className="bg-secondary/50">
+            <CardContent className="p-4">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-4">
+                        <Icon className="h-8 w-8 text-primary mt-1" />
+                        <div>
+                            <h4 className="font-semibold">{activity.activityName}</h4>
+                            <p className="text-sm text-muted-foreground">{activity.duration}</p>
+                            {activity.description && <p className="text-xs text-muted-foreground mt-1 italic">"{activity.description}"</p>}
+                        </div>
+                    </div>
+                    <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(activity)}><Pencil className="h-4 w-4" /></Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete your activity entry
+                                    and remove its data from your daily summary.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(activity)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 </div>
-                <div className="flex gap-1">
-                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditClick(activity)}><Pencil className="h-4 w-4" /></Button>
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your activity entry
-                                and remove its data from your daily summary.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(activity)}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                <div className="flex items-center gap-2 text-center mt-3 pt-3 border-t">
+                    <Flame className="h-5 w-5 text-orange-500"/>
+                    <p className="font-semibold">{activity.caloriesBurned.toFixed(0)}</p>
+                    <p className="text-muted-foreground text-sm">Calories Burned (est.)</p>
                 </div>
-            </div>
-            <div className="flex items-center gap-2 text-center mt-3 pt-3 border-t">
-                <Flame className="h-5 w-5 text-orange-500"/>
-                <p className="font-semibold">{activity.caloriesBurned.toFixed(0)}</p>
-                <p className="text-muted-foreground text-sm">Calories Burned (est.)</p>
-            </div>
-        </CardContent>
-    </Card>
-  )
+            </CardContent>
+        </Card>
+    )
+  }
 
   return (
     <>
