@@ -123,20 +123,30 @@ export default function DashboardLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <Link href={item.href}>
-                    <SidebarMenuButton
-                      isActive={pathname === item.href}
-                      tooltip={item.label}
+              <SidebarMenuItem>
+                  <Link href="/">
+                      <SidebarMenuButton
+                      isActive={pathname === '/'}
+                      tooltip="Home"
                       className="w-full justify-start"
-                    >
-                      <item.icon className="size-4" />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
+                      >
+                      <Home className="size-4" />
+                      <span>Home</span>
+                      </SidebarMenuButton>
                   </Link>
-                </SidebarMenuItem>
-              ))}
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <Link href="/profile">
+                      <SidebarMenuButton
+                      isActive={pathname === '/profile'}
+                      tooltip="Profile"
+                      className="w-full justify-start"
+                      >
+                      <User className="size-4" />
+                      <span>Profile</span>
+                      </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
 
               <DropdownMenu>
                 <SidebarMenuItem>
@@ -146,8 +156,8 @@ export default function DashboardLayout({
                         tooltip="Log Data"
                         className="w-full justify-start"
                         >
-                            <PlusCircle className="size-4 text-accent" />
-                            <span className="text-accent">Log Data</span>
+                            <PlusCircle className="size-4" />
+                            <span>Log</span>
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                 </SidebarMenuItem>
@@ -168,6 +178,19 @@ export default function DashboardLayout({
                     </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+               <SidebarMenuItem>
+                  <Link href="/fasting">
+                      <SidebarMenuButton
+                      isActive={pathname === '/fasting'}
+                      tooltip="Intermittent Fasting"
+                      className="w-full justify-start"
+                      >
+                      <Clock className="size-4" />
+                      <span>Intermittent Fasting</span>
+                      </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
 
               <DropdownMenu>
                 <SidebarMenuItem>
