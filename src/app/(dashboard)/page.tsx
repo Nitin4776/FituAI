@@ -18,6 +18,7 @@ import { TodaySummary } from '@/components/today-summary';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { AiDailySuggestion } from '@/components/ai-daily-suggestion';
 
 export default function DashboardPage() {
   return (
@@ -26,7 +27,9 @@ export default function DashboardPage() {
 
       <TodaySummary />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+      <AiDailySuggestion />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
         <Link href="/profile">
           <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

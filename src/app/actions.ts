@@ -31,8 +31,13 @@ import {
     type GenerateMealPlanInput,
     type GenerateMealPlanOutput
 } from '@/ai/flows/generate-meal-plan';
+import {
+    getDailySuggestion as getDailySuggestionFlow,
+    type DailySuggestionInput
+} from '@/ai/flows/daily-suggestion';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
+import { getProfile, getBloodTestAnalyses, getTodaysMeals, getTodaysActivities, getSleepLogForToday } from '@/services/firestore';
 
 
 export async function getHealthySwap(
@@ -98,5 +103,36 @@ export async function generateMealPlan(
     } catch (error) {
         console.error('Failed to generate meal plan:', error);
         throw new Error('Could not generate a meal plan. Please try again.');
+    }
+}
+
+export async function getAiDailySuggestion(): Promise<string> {
+    try {
+        const [profile, bloodTests, meals, activities, sleep] = await Promise.all([
+            getProfile(),
+            getBloodTestAnalyses(),
+            getTodaysMeals(),
+            getTodaysActivities(),
+            getSleepLogForToday(),
+        ]);
+        
+        if (!profile || !profile.goal) {
+            return "Set up your profile and goals to receive personalized daily suggestions.";
+        }
+
+        const flowInput: DailySuggestionInput = {
+            profile: profile,
+            latestBloodTest: bloodTests?.[0], // Get the most recent one
+            todaysMeals: meals,
+            todaysActivities: activities,
+            todaysSleep: sleep,
+        };
+        
+        const { suggestion } = await getDailySuggestionFlow(flowInput);
+        return suggestion;
+
+    } catch (error) {
+        console.error('Failed to get AI daily suggestion:', error);
+        return 'Could not generate a suggestion at this time. Please try again later.';
     }
 }
