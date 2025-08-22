@@ -10,6 +10,7 @@ import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { getAuth } from 'firebase/auth';
 
 type SummaryData = {
     dailyTotals: {
