@@ -52,10 +52,46 @@ export async function getProfile() {
 }
 
 // --- Meals ---
-export async function getTodaysMeals(): Promise<MealLog[]> {
-  // This function now returns an empty array as meals are removed.
-  return [];
+export async function addMeal(mealData: Omit<MealLog, 'id' | 'createdAt'>): Promise<string> {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const mealsColRef = collection(db, 'users', userId, 'meals');
+    const docRef = await addDoc(mealsColRef, {
+        ...mealData,
+        createdAt: Timestamp.now(),
+    });
+    return docRef.id;
 }
+
+export async function updateMeal(mealId: string, mealData: Partial<MealLog>) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const mealDocRef = doc(db, 'users', userId, 'meals', mealId);
+    await updateDoc(mealDocRef, mealData);
+}
+
+export async function deleteMeal(mealId: string) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const mealDocRef = doc(db, 'users', userId, 'meals', mealId);
+    await deleteDoc(mealDocRef);
+}
+
+export async function getTodaysMeals(): Promise<MealLog[]> {
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+    
+    const todayStart = startOfDay(new Date());
+    const mealsColRef = collection(db, 'users', userId, 'meals');
+    const q = query(mealsColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), orderBy('createdAt', 'asc'));
+
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MealLog));
+    }
+    return [];
+}
+
 
 // --- Activities ---
 export async function getTodaysActivities() {

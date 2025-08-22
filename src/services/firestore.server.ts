@@ -18,3 +18,9 @@ export async function getProfile(userId: string) {
   const docSnap = await userDocRef.get();
   return docSnap.exists ? docSnap.data() : null;
 }
+
+export async function deleteMeal(userId: string, mealId: string) {
+    if (!userId || !mealId) throw new Error("User and meal ID are required.");
+    const mealDocRef = db().collection('users').doc(userId).collection('meals').doc(mealId);
+    await mealDocRef.delete();
+}

@@ -10,7 +10,6 @@ export type MealLog = {
   carbs: number;
   fats: number;
   fiber: number;
-  recipe?: string;
   createdAt: { seconds: number; nanoseconds: number };
 };
 
