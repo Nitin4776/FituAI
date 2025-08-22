@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { getDailySummaryForToday } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
-import { Flame, Drumstick, Wheat, Beef, BarChart } from 'lucide-react';
+import { Flame, Drumstick, Wheat, Beef, BarChart, Camera } from 'lucide-react';
 import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 type SummaryData = {
     dailyTotals: {
@@ -124,6 +125,16 @@ export function TodaySummary() {
               <div>
                   <div className="flex justify-between items-baseline mb-1">
                       <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
+                        <Link href="/log-meal" className={cn("flex items-center gap-1 text-xs text-primary hover:underline", dailyTotals.calories > 0 ? "" : "animate-pulse")}>
+                           {dailyTotals.calories > 0 ? (
+                                <>
+                                    <BarChart className="h-3 w-3"/>
+                                    <span>Insights</span>
+                                </>
+                           ) : (
+                                <Camera className="h-4 w-4"/>
+                           )}
+                        </Link>
                   </div>
                   <Progress value={calorieProgress} className="h-2"/>
                   <div className="flex justify-between items-center mt-1">
