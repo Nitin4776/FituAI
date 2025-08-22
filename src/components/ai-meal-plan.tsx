@@ -262,7 +262,7 @@ export function AiMealPlan() {
                         <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select your dietary preference" />
-                            </Trigger>
+                            </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                             <SelectItem value="vegetarian">Vegetarian</SelectItem>
