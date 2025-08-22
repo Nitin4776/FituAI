@@ -18,7 +18,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import type { MealLog } from '@/lib/types';
+import type { MealLog, ActivityLog } from '@/lib/types';
 import { startOfDay } from 'date-fns';
 
 
@@ -153,7 +153,81 @@ export async function getTodaysMeals(): Promise<MealLog[]> {
 
 
 // --- Activities ---
-export async function getTodaysActivities() {
+export async function addActivity(activityData: Omit<ActivityLog, 'id' | 'createdAt'>) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+
+    const batch = writeBatch(db);
+
+    const activitiesColRef = collection(db, 'users', userId, 'activities');
+    const newActivityRef = doc(activitiesColRef);
+    batch.set(newActivityRef, {
+        ...activityData,
+        createdAt: Timestamp.now(),
+    });
+
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        caloriesBurned: increment(activityData.caloriesBurned),
+    }, { merge: true });
+
+    await batch.commit();
+}
+
+export async function updateActivity(activityData: ActivityLog) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    
+    const batch = writeBatch(db);
+
+    const activityDocRef = doc(db, 'users', userId, 'activities', activityData.id);
+    const originalActivitySnap = await getDoc(activityDocRef);
+    if (!originalActivitySnap.exists()) {
+        throw new Error("Original activity not found for update.");
+    }
+    const originalActivityData = originalActivitySnap.data() as ActivityLog;
+
+    batch.update(activityDocRef, { ...activityData });
+
+    const calorieDiff = activityData.caloriesBurned - originalActivityData.caloriesBurned;
+
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        caloriesBurned: increment(calorieDiff),
+    }, { merge: true });
+
+    await batch.commit();
+}
+
+export async function deleteActivity(activity: ActivityLog) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+
+    const batch = writeBatch(db);
+
+    const activityDocRef = doc(db, 'users', userId, 'activities', activity.id);
+    batch.delete(activityDocRef);
+
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        caloriesBurned: increment(-activity.caloriesBurned),
+    }, { merge: true });
+    
+    await batch.commit();
+}
+
+export async function getTodaysActivities(): Promise<ActivityLog[]> {
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+    
+    const todayStart = startOfDay(new Date());
+    const activitiesColRef = collection(db, 'users', userId, 'activities');
+    const q = query(activitiesColRef, where('createdAt', '>=', Timestamp.fromDate(todayStart)), orderBy('createdAt', 'asc'));
+
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ActivityLog));
+    }
     return [];
 }
 

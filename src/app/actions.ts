@@ -26,6 +26,11 @@ import {
     type AnalyzeMealFromImageInput,
     type AnalyzeMealFromImageOutput,
 } from '@/ai/flows/analyze-meal-from-image';
+import {
+    analyzeActivity as analyzeActivityFlow,
+    type AnalyzeActivityInput,
+    type AnalyzeActivityOutput
+} from '@/ai/flows/analyze-activity';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { saveSleepLog } from '@/services/firestore';
@@ -85,6 +90,18 @@ export async function analyzeMealFromImage(
         throw new Error('Could not analyze your meal from the image. Please try again.');
     }
 }
+
+export async function analyzeActivity(
+    input: AnalyzeActivityInput
+): Promise<AnalyzeActivityOutput> {
+    try {
+        return await analyzeActivityFlow(input);
+    } catch (error) {
+        console.error('Failed to analyze activity:', error);
+        throw new Error('Could not analyze your activity. Please try again.');
+    }
+}
+
 
 export async function saveSleepLogAction(quality: string) {
     const auth = getAuth(app);
