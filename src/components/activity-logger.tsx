@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Loader2, Trash2, Pencil, Flame, Dumbbell, Bike, PersonStanding, Weight, HeartPulse, Brain, Waves, Run, Sword } from 'lucide-react';
+import { Plus, Loader2, Trash2, Pencil, Flame, Dumbbell, Bike, PersonStanding, Weight, HeartPulse, Brain, Waves, Footprints, Sword } from 'lucide-react';
 import { getTodaysActivities, addActivity, updateActivity, deleteActivity } from '@/services/firestore';
 import { analyzeActivity } from '@/app/actions';
 import type { ActivityLog } from '@/lib/types';
@@ -55,7 +55,7 @@ type ActivityFormValues = z.infer<typeof activityFormSchema>;
 // Helper to get an icon for an activity
 const getActivityIcon = (activityName: string): React.ElementType => {
     const lowerCaseName = activityName.toLowerCase();
-    if (lowerCaseName.includes('run') || lowerCaseName.includes('jog')) return Run;
+    if (lowerCaseName.includes('run') || lowerCaseName.includes('jog')) return Footprints;
     if (lowerCaseName.includes('walk')) return PersonStanding;
     if (lowerCaseName.includes('cycl') || lowerCaseName.includes('bik')) return Bike;
     if (lowerCaseName.includes('weight') || lowerCaseName.includes('lift')) return Weight;
