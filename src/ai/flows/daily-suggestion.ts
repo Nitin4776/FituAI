@@ -51,7 +51,18 @@ Analyze all the information provided: the user's profile, their goals, their mos
 Based on this complete picture, generate one specific, positive, and easy-to-follow suggestion.
 
 Here is the user's data:
-- Profile & Goals: {{{json profile}}}
+- User Profile:
+  - Age: {{profile.age}}
+  - Gender: {{profile.gender}}
+  - Height: {{profile.height}} cm
+  - Weight: {{profile.weight}} kg
+  - Activity Level: {{profile.activityLevel}}
+  - Main Goal: {{profile.goal}}
+  {{#if profile.targetWeight}}
+  - Target Weight: {{profile.targetWeight}} kg
+  {{/if}}
+  - Daily Calorie Goal: {{profile.dailyCalories}} kcal
+
 - Today's Meals: {{{json todaysMeals}}}
 - Today's Activities: {{{json todaysActivities}}}
 {{#if todaysSleep}}
