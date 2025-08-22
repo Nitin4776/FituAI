@@ -10,6 +10,8 @@ import {
   LogOut,
   User,
   Bot,
+  TestTube2,
+  Replace
 } from 'lucide-react';
 
 import {
@@ -29,13 +31,19 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
-  { href: '/ai', label: 'AI', icon: Bot },
 ];
+
+const aiMenuItems = [
+    { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
+    { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
+];
+
 
 function BottomNavigation() {
   const pathname = usePathname();
@@ -47,7 +55,7 @@ function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around bg-background border-t p-2">
-      {menuItems.slice(0, 5).map((item) => (
+      {menuItems.map((item) => (
         <Link href={item.href} key={item.href} className="flex-1">
           <div
             className={cn(
@@ -62,6 +70,31 @@ function BottomNavigation() {
           </div>
         </Link>
       ))}
+      <DropdownMenu>
+         <DropdownMenuTrigger asChild>
+             <div
+                className={cn(
+                'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
+                aiMenuItems.some(item => pathname === item.href)
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground'
+                )}
+            >
+                <Bot className="size-5" />
+                <span className="text-xs mt-1">AI</span>
+            </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="center" className="mb-2">
+            {aiMenuItems.map(item => (
+                 <DropdownMenuItem key={item.href} asChild>
+                    <Link href={item.href} className="flex items-center gap-2">
+                       <item.icon className="size-4" />
+                       <span>{item.label}</span>
+                    </Link>
+                </DropdownMenuItem>
+            ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </nav>
   );
 }
@@ -101,6 +134,30 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuItem>
               ))}
+              <DropdownMenu>
+                <SidebarMenuItem>
+                    <DropdownMenuTrigger asChild>
+                       <SidebarMenuButton
+                        isActive={aiMenuItems.some(item => pathname === item.href)}
+                        tooltip="AI Tools"
+                        className="w-full justify-start"
+                        >
+                            <Bot className="size-4" />
+                            <span>AI</span>
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                </SidebarMenuItem>
+                <DropdownMenuContent side="right" align="start" sideOffset={8}>
+                    {aiMenuItems.map(item => (
+                        <DropdownMenuItem key={item.href} asChild>
+                            <Link href={item.href} className="flex items-center gap-2">
+                                <item.icon className="size-4" />
+                                <span>{item.label}</span>
+                            </Link>
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
