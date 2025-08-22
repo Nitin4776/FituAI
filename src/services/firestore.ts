@@ -15,6 +15,7 @@ import {
   where,
   increment,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import type { MealLog } from '@/lib/types';
@@ -52,29 +53,87 @@ export async function getProfile() {
 }
 
 // --- Meals ---
-export async function addMeal(mealData: Omit<MealLog, 'id' | 'createdAt'>): Promise<string> {
+export async function addMeal(mealData: Omit<MealLog, 'id' | 'createdAt'>) {
     const userId = getCurrentUserId();
     if (!userId) throw new Error("User not authenticated");
+
+    const batch = writeBatch(db);
+
     const mealsColRef = collection(db, 'users', userId, 'meals');
-    const docRef = await addDoc(mealsColRef, {
+    const newMealRef = doc(mealsColRef); // Create a reference with a new ID
+    batch.set(newMealRef, {
         ...mealData,
         createdAt: Timestamp.now(),
     });
-    return docRef.id;
+
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        consumedCalories: increment(mealData.calories),
+        protein: increment(mealData.protein),
+        carbs: increment(mealData.carbs),
+        fats: increment(mealData.fats),
+        fiber: increment(mealData.fiber),
+    }, { merge: true });
+    
+    await batch.commit();
 }
 
-export async function updateMeal(mealId: string, mealData: Partial<MealLog>) {
+export async function updateMeal(mealData: MealLog) {
     const userId = getCurrentUserId();
     if (!userId) throw new Error("User not authenticated");
-    const mealDocRef = doc(db, 'users', userId, 'meals', mealId);
-    await updateDoc(mealDocRef, mealData);
+
+    const batch = writeBatch(db);
+
+    const mealDocRef = doc(db, 'users', userId, 'meals', mealData.id);
+    const originalMealSnap = await getDoc(mealDocRef);
+    if (!originalMealSnap.exists()) {
+        throw new Error("Original meal not found for update.");
+    }
+    const originalMealData = originalMealSnap.data() as MealLog;
+
+    // Update the meal document itself
+    batch.update(mealDocRef, { ...mealData });
+
+    // Calculate the difference in macros to update the summary
+    const macroDiff = {
+        calories: mealData.calories - originalMealData.calories,
+        protein: mealData.protein - originalMealData.protein,
+        carbs: mealData.carbs - originalMealData.carbs,
+        fats: mealData.fats - originalMealData.fats,
+        fiber: mealData.fiber - originalMealData.fiber,
+    };
+    
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        consumedCalories: increment(macroDiff.calories),
+        protein: increment(macroDiff.protein),
+        carbs: increment(macroDiff.carbs),
+        fats: increment(macroDiff.fats),
+        fiber: increment(macroDiff.fiber),
+    }, { merge: true });
+
+    await batch.commit();
 }
 
-export async function deleteMeal(mealId: string) {
+export async function deleteMeal(meal: MealLog) {
     const userId = getCurrentUserId();
     if (!userId) throw new Error("User not authenticated");
-    const mealDocRef = doc(db, 'users', userId, 'meals', mealId);
-    await deleteDoc(mealDocRef);
+
+    const batch = writeBatch(db);
+
+    const mealDocRef = doc(db, 'users', userId, 'meals', meal.id);
+    batch.delete(mealDocRef);
+
+    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', getTodayDocId());
+    batch.set(summaryDocRef, {
+        consumedCalories: increment(-meal.calories),
+        protein: increment(-meal.protein),
+        carbs: increment(-meal.carbs),
+        fats: increment(-meal.fats),
+        fiber: increment(-meal.fiber),
+    }, { merge: true });
+
+    await batch.commit();
 }
 
 export async function getTodaysMeals(): Promise<MealLog[]> {
@@ -230,26 +289,5 @@ export async function updateDailySummaryWithNewGoals(goals: { dailyGoal: number,
     await setDoc(summaryDocRef, {
         dailyGoal: goals.dailyGoal,
         macroGoals: goals.macroGoals,
-    }, { merge: true });
-}
-
-export async function updateDailySummaryOnMealChange(macros: { calories: number, protein: number, carbs: number, fats: number, fiber: number }) {
-    const userId = getCurrentUserId();
-    if (!userId) return;
-    const todayId = getTodayDocId();
-    const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
-    
-    // Ensure the document exists before trying to increment
-    const docSnap = await getDoc(summaryDocRef);
-    if (!docSnap.exists()) {
-        await getDailySummaryForToday(); // This will create the doc with default/profile values
-    }
-
-    await setDoc(summaryDocRef, {
-        consumedCalories: increment(macros.calories),
-        protein: increment(macros.protein),
-        carbs: increment(macros.carbs),
-        fats: increment(macros.fats),
-        fiber: increment(macros.fiber),
     }, { merge: true });
 }

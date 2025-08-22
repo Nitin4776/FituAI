@@ -28,8 +28,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Camera, Loader2, Trash2, Pencil, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
-import { getTodaysMeals } from '@/services/firestore';
-import { analyzeAndAddMeal, deleteMealAction, updateMealAction } from '@/app/actions';
+import { getTodaysMeals, addMeal, updateMeal, deleteMeal } from '@/services/firestore';
+import { analyzeMeal } from '@/app/actions';
 import type { MealLog } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import {
@@ -112,7 +112,7 @@ export function MealLogger() {
 
   const handleDelete = async (meal: MealLog) => {
     try {
-        await deleteMealAction(meal);
+        await deleteMeal(meal);
         toast({
             title: "Meal Deleted",
             description: `${meal.mealName} has been removed from your log.`,
@@ -131,21 +131,26 @@ export function MealLogger() {
     if (!selectedMealType) return;
     setIsSubmitting(true);
     try {
+        const nutritionalInfo = await analyzeMeal(data);
+
         if (editingMeal) {
-            const oldMacros = {
-                calories: editingMeal.calories,
-                protein: editingMeal.protein,
-                carbs: editingMeal.carbs,
-                fats: editingMeal.fats,
-                fiber: editingMeal.fiber
-            }
-            await updateMealAction(editingMeal.id, oldMacros, { ...data, mealType: selectedMealType });
+            const fullMealData = {
+                ...editingMeal,
+                ...data,
+                ...nutritionalInfo,
+            };
+            await updateMeal(fullMealData);
             toast({
                 title: "Meal Updated",
                 description: `${data.mealName} has been successfully updated.`,
             });
         } else {
-             await analyzeAndAddMeal({ ...data, mealType: selectedMealType });
+            const fullMealData = {
+                ...data,
+                ...nutritionalInfo,
+                mealType: selectedMealType,
+            };
+             await addMeal(fullMealData);
              toast({
                 title: "Meal Added",
                 description: `Our AI has analyzed and logged ${data.mealName}.`,
