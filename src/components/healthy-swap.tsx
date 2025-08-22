@@ -18,7 +18,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Utensils, Wheat } from 'lucide-react';
-import { healthySwapSuggestions } from '@/ai/flows/healthy-swap-suggestions';
 
 const formSchema = z.object({
   foodItem: z.string().min(2, 'Please enter a food item.'),
@@ -44,7 +43,17 @@ export function HealthySwap() {
     setIsLoading(true);
     setSuggestion(null);
     try {
-      const result = await healthySwapSuggestions(data);
+      const response = await fetch('/api/healthy-swaps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get suggestion');
+      }
+
+      const result = await response.json();
       setSuggestion(result);
     } catch (error) {
       toast({

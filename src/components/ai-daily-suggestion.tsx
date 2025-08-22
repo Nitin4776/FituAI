@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
 import { Lightbulb, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
-import { getDailySuggestion, type DailySuggestionInput } from '@/ai/flows/daily-suggestion';
 import { getProfile, getBloodTestAnalyses, getTodaysMeals, getTodaysActivities, getSleepLogForToday } from '@/services/firestore';
+import type { DailySuggestionInput } from '@/ai/flows/daily-suggestion';
 
 export function AiDailySuggestion() {
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -39,8 +39,18 @@ export function AiDailySuggestion() {
           todaysSleep: sleep,
       }));
       
-      const { suggestion } = await getDailySuggestion(flowInput);
-      setSuggestion(suggestion);
+      const response = await fetch('/api/daily-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(flowInput),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch suggestion');
+      }
+
+      const { suggestion: result } = await response.json();
+      setSuggestion(result);
 
     } catch (error) {
       console.error("Error fetching daily suggestion:", error);

@@ -1,6 +1,4 @@
 
-'use server';
-
 /**
  * @fileOverview A flow that analyzes an image of a meal and returns its name and quantity.
  *

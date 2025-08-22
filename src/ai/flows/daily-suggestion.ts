@@ -1,6 +1,4 @@
 
-'use server';
-
 /**
  * @fileOverview A flow that generates a personalized daily suggestion for the user.
  *

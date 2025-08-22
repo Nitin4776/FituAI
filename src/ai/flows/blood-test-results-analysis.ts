@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Analyzes blood test results and provides a summary,
  * do's and don'ts, lifestyle recommendations, and highlights critical markers.

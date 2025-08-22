@@ -28,8 +28,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Loader2, Trash2, Pencil, Flame, Dumbbell, Bike, PersonStanding, Weight, HeartPulse, Brain, Waves, Footprints, Sword } from 'lucide-react';
-import { getTodaysActivities, addActivity, updateActivity, deleteActivity } from '@/services/firestore';
-import { analyzeActivity, type AnalyzeActivityOutput } from '@/ai/flows/analyze-activity';
+import { getTodaysActivities, addActivity, updateActivity, deleteActivity, getProfile } from '@/services/firestore';
+import type { AnalyzeActivityOutput } from '@/ai/flows/analyze-activity';
 import type { ActivityLog } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import {
@@ -125,7 +125,18 @@ export function ActivityLogger() {
   const onSubmit: SubmitHandler<ActivityFormValues> = async (data) => {
     setIsSubmitting(true);
     try {
-        const { caloriesBurned }: AnalyzeActivityOutput = await analyzeActivity(data);
+        const userProfile = await getProfile();
+        const response = await fetch('/api/analyze-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, userProfile }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to analyze activity');
+        }
+
+        const { caloriesBurned }: AnalyzeActivityOutput = await response.json();
 
         if (editingActivity) {
             const fullActivityData = {

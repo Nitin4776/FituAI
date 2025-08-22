@@ -1,5 +1,3 @@
-'use server';
-
 /**
  * @fileOverview A flow that suggests healthy food swaps based on user's dietary choices.
  *

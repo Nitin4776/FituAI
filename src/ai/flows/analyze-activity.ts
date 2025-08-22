@@ -1,6 +1,4 @@
 
-'use server';
-
 /**
  * @fileOverview A flow that analyzes a workout/activity and estimates calories burned.
  *
@@ -11,12 +9,12 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getProfile } from '@/services/firestore';
 
 const AnalyzeActivityInputSchema = z.object({
   activityName: z.string().describe('The name of the activity or workout (e.g., "Running", "Weightlifting", "Yoga").'),
   duration: z.string().describe('The duration of the activity (e.g., "30 minutes", "1 hour").'),
   description: z.string().optional().describe('An optional, more detailed description of the activity.'),
+  userProfile: z.any().optional().describe("The user's profile information (age, gender, weight).")
 });
 export type AnalyzeActivityInput = z.infer<typeof AnalyzeActivityInputSchema>;
 
@@ -32,7 +30,7 @@ export async function analyzeActivity(input: AnalyzeActivityInput): Promise<Anal
 
 const prompt = ai.definePrompt({
   name: 'analyzeActivityPrompt',
-  input: { schema: AnalyzeActivityInputSchema.extend({ userProfile: z.any().optional() }) },
+  input: { schema: AnalyzeActivityInputSchema },
   output: { schema: AnalyzeActivityOutputSchema },
   prompt: `You are a fitness expert. Analyze the activity details provided by the user and estimate the number of calories burned.
 
@@ -63,9 +61,7 @@ const analyzeActivityFlow = ai.defineFlow(
     outputSchema: AnalyzeActivityOutputSchema,
   },
   async (input) => {
-    // Since this can be called from the client, we fetch the profile directly.
-    const userProfile = await getProfile();
-    const { output } = await prompt({ ...input, userProfile });
+    const { output } = await prompt(input);
     return output!;
   }
 );

@@ -1,6 +1,4 @@
 
-'use server';
-
 /**
  * @fileOverview A flow that analyzes a meal description and returns its nutritional information.
  *

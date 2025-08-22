@@ -1,6 +1,4 @@
 
-'use server';
-
 /**
  * @fileOverview A flow that generates a daily meal plan based on user preferences.
  *
