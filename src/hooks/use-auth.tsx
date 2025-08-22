@@ -20,6 +20,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicPages = ['/signin', '/signup'];
 
+async function setSessionCookie(user: User | null) {
+  if (user) {
+    const idToken = await user.getIdToken();
+    await fetch('/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+  } else {
+    await fetch('/api/auth/session', { method: 'DELETE' });
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,8 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, (user) => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setUser(user);
+      await setSessionCookie(user);
       setLoading(false);
     });
 
@@ -38,20 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    const sessionCookie = getCookie('session');
     const isPublicPage = publicPages.includes(pathname);
-    const isDashboard = pathname === '/';
-
-    if (user && sessionCookie) {
-        // If user is logged in...
-        if(isPublicPage) {
-            // and on a public page, go to dashboard.
-            router.push('/');
-        } else if (!isDashboard) {
-            // and not on the dashboard, go to the dashboard.
-            router.push('/');
-        }
-    } else if (!user && !sessionCookie && !isPublicPage) {
+    
+    if (user && isPublicPage) {
+        // If user is logged in and on a public page, go to dashboard.
+        router.push('/');
+    } else if (!user && !isPublicPage) {
         // If user is not logged in and not on a public page, go to signin.
         router.push('/signin');
     }

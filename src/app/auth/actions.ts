@@ -181,6 +181,8 @@ export async function signInAction(credentials: z.infer<typeof signInSchema>) {
 
 export async function signOutAction() {
     await signOut(auth);
+    // Request the browser to clear the session cookie
+    await fetch('/api/auth/session', { method: 'DELETE' });
 }
 
 // Extend the Window interface
