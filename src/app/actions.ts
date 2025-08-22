@@ -116,7 +116,8 @@ export async function getAiDailySuggestion(): Promise<string> {
             getSleepLogForToday(),
         ]);
         
-        if (!profile || !profile.goal) {
+        // The AI is capable of handling a missing profile, so we pass it directly.
+        if (!profile) {
             return "Set up your profile and goals to receive personalized daily suggestions.";
         }
 
