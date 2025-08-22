@@ -196,7 +196,7 @@ export function ActivityLogger() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="font-headline">Logged Activities</CardTitle>
-            <Button variant="outline" onClick={handleAddClick}>
+            <Button onClick={handleAddClick}>
               <Plus className="mr-2 h-4 w-4" /> Log Activity
             </Button>
           </div>
