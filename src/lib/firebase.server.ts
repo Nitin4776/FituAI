@@ -1,8 +1,10 @@
-import { getApps, initializeApp, getApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 
-let serviceAccount;
+export const runtime = 'nodejs';
+
+let serviceAccount: any;
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
@@ -13,20 +15,17 @@ try {
   console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON:', e);
 }
 
-
-const app = !getApps().length
-  ? initializeApp({
-      credential: cert(serviceAccount!),
-    })
-  : getApp();
-
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-function initFirebaseAdminApp() {
-    // This function is just to ensure the module is loaded and initialized.
-    // The initialization happens when the module is first imported.
+export function initFirebaseAdminApp() {
+  if (getApps().length === 0 && serviceAccount) {
+    initializeApp({
+      credential: cert(serviceAccount),
+    });
+  }
 }
 
+// Initialize on module load
+initFirebaseAdminApp();
 
-export { app, db, auth, initFirebaseAdminApp };
+// These are now getters to ensure the app is initialized before they are used.
+export const db = () => getFirestore();
+export const auth = () => getAuth();

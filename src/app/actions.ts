@@ -35,8 +35,8 @@ import {
     type GenerateDailySuggestionInput,
     type GenerateDailySuggestionOutput,
 } from '@/ai/flows/generate-daily-suggestion';
-import { getProfile, saveSleepLog } from '@/services/firestore';
-import { deleteActivity, deleteMeal } from '@/services/firestore.server';
+import { saveSleepLog } from '@/services/firestore';
+import { deleteActivity, deleteMeal, getProfile } from '@/services/firestore.server';
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
 import { initFirebaseAdminApp } from '@/lib/firebase.server';
@@ -131,7 +131,21 @@ export async function generateMealPlanAction(
     input: GenerateMealPlanInput
 ): Promise<GenerateMealPlanOutput> {
     try {
-        return await generateMealPlan(input);
+        const userId = await getCurrentUserIdFromSession();
+        if (!userId) {
+            throw new Error('User not authenticated.');
+        }
+
+        const profile = await getProfile(userId);
+        if (!profile || !profile.dailyCalories) {
+            throw new Error('User profile with a calorie goal not found. Please set up your profile and goal first.');
+        }
+
+        return await generateMealPlan({
+            ...input,
+            calories: profile.dailyCalories,
+            goal: profile.goal || 'maintain',
+        });
     } catch (error) {
         console.error(error);
         throw new Error((error as Error).message || 'Failed to generate meal plan.');
@@ -162,7 +176,11 @@ export async function getDailySuggestion(
 
 export async function saveSleepLogAction(quality: string) {
     try {
-        await saveSleepLog({ quality });
+        const userId = await getCurrentUserIdFromSession();
+        if (!userId) {
+            throw new Error('User not authenticated.');
+        }
+        await saveSleepLog({ quality, userId });
     } catch (error) {
         console.error('Failed to save sleep log:', error);
         throw new Error('Could not save your sleep quality. Please try again.');
