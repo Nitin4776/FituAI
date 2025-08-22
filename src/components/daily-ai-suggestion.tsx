@@ -10,24 +10,26 @@ import { Skeleton } from './ui/skeleton';
 async function getSuggestionData() {
     const [
         savedMeals,
+        savedActivities,
         savedAnalyses,
         savedSleep,
-        savedActivities,
         summary,
         fastingState
     ] = await Promise.all([
         getTodaysMeals(),
+        getTodaysActivities(),
         getBloodTestAnalyses(),
         getSleepLogForToday(),
-        getTodaysActivities(),
         getDailySummaryForToday(),
         getFastingState()
     ]);
 
-    const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
+    // Ensure we are only using today's data for meals and activities
+    const todaysMeals = (savedMeals as any[]).filter(meal => meal.createdAt && isToday(meal.createdAt));
+    const todaysActivities = (savedActivities as any[]).filter(activity => activity.createdAt && isToday(activity.createdAt));
+    
     const latestBloodTest = savedAnalyses?.[0] || null;
     const todaysSleep = savedSleep || null;
-    const todaysActivities = savedActivities;
     const dailySummary = summary;
     
     const suggestionInput = {
