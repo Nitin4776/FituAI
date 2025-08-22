@@ -6,6 +6,7 @@ import { app } from '@/lib/firebase';
 import { signOutAction } from '@/app/auth/actions';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { getCookie } from 'cookies-next';
 
 const auth = getAuth(app);
 
@@ -37,11 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
+    const sessionCookie = getCookie('session');
     const isPublicPage = publicPages.includes(pathname);
 
-    if (user && isPublicPage) {
+    if (user && sessionCookie && isPublicPage) {
       router.push('/');
-    } else if (!user && !isPublicPage) {
+    } else if (!user && !sessionCookie && !isPublicPage) {
       router.push('/signin');
     }
   }, [user, loading, pathname, router]);

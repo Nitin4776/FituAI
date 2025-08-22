@@ -70,14 +70,6 @@ export async function getMeals() {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-export async function deleteMeal(mealId: string) {
-    const userId = getCurrentUserId();
-    if (!userId) throw new Error("User not authenticated");
-    const mealDocRef = doc(db, 'users', userId, 'meals', mealId);
-    await deleteDoc(mealDocRef);
-}
-
-
 // --- Activities ---
 export async function addActivity(activityData: any): Promise<string> {
   const userId = getCurrentUserId();
@@ -103,13 +95,6 @@ export async function getActivities() {
             ...data,
         };
     });
-}
-
-export async function deleteActivity(activityId: string) {
-    const userId = getCurrentUserId();
-    if (!userId) throw new Error("User not authenticated");
-    const activityDocRef = doc(db, 'users', userId, 'activities', activityId);
-    await deleteDoc(activityDocRef);
 }
 
 // --- Blood Test Analysis ---

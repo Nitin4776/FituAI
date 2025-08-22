@@ -35,7 +35,27 @@ import {
     type GenerateDailySuggestionInput,
     type GenerateDailySuggestionOutput,
 } from '@/ai/flows/generate-daily-suggestion';
-import { deleteActivity, deleteMeal, getProfile, saveSleepLog } from '@/services/firestore';
+import { getProfile, saveSleepLog } from '@/services/firestore';
+import { deleteActivity, deleteMeal } from '@/services/firestore.server';
+import { getAuth } from 'firebase-admin/auth';
+import { cookies } from 'next/headers';
+import { initFirebaseAdminApp } from '@/lib/firebase.server';
+
+async function getCurrentUserIdFromSession() {
+    initFirebaseAdminApp();
+    const sessionCookie = cookies().get('session')?.value;
+    if (!sessionCookie) {
+        return null;
+    }
+    try {
+        const decodedClaims = await getAuth().verifySessionCookie(sessionCookie, true);
+        return decodedClaims.uid;
+    } catch (error) {
+        console.error('Session cookie verification failed:', error);
+        return null;
+    }
+}
+
 
 export async function getHealthySwap(
   input: HealthySwapSuggestionsInput
@@ -83,7 +103,11 @@ export async function getActivityCalories(
 
 export async function deleteMealAction(mealId: string): Promise<void> {
     try {
-        await deleteMeal(mealId);
+        const userId = await getCurrentUserIdFromSession();
+        if (!userId) {
+            throw new Error("User not authenticated");
+        }
+        await deleteMeal(userId, mealId);
     } catch (error) {
         console.error(error);
         throw new Error('Failed to delete meal.');
@@ -92,7 +116,11 @@ export async function deleteMealAction(mealId: string): Promise<void> {
 
 export async function deleteActivityAction(activityId: string): Promise<void> {
     try {
-        await deleteActivity(activityId);
+        const userId = await getCurrentUserIdFromSession();
+        if (!userId) {
+            throw new Error("User not authenticated");
+        }
+        await deleteActivity(userId, activityId);
     } catch (error) {
         console.error(error);
         throw new Error('Failed to delete activity.');
@@ -103,15 +131,7 @@ export async function generateMealPlanAction(
     input: GenerateMealPlanInput
 ): Promise<GenerateMealPlanOutput> {
     try {
-        const profile = await getProfile();
-        if (!profile || !(profile as any).dailyCalories) {
-             throw new Error('User profile with a calorie goal not found. Please set up your profile and goal first.');
-        }
-        return await generateMealPlan({
-            ...input,
-            calories: (profile as any).dailyCalories,
-            goal: (profile as any).goal || 'maintain',
-        });
+        return await generateMealPlan(input);
     } catch (error) {
         console.error(error);
         throw new Error((error as Error).message || 'Failed to generate meal plan.');
