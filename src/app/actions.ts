@@ -103,13 +103,18 @@ export async function generateMealPlanAction(
     input: GenerateMealPlanInput
 ): Promise<GenerateMealPlanOutput> {
     try {
-        if (!input.calories || input.calories === 0) {
+        const profile = await getProfile();
+        if (!profile || !(profile as any).dailyCalories) {
              throw new Error('User profile with a calorie goal not found. Please set up your profile and goal first.');
         }
-        return await generateMealPlan(input);
+        return await generateMealPlan({
+            ...input,
+            calories: (profile as any).dailyCalories,
+            goal: (profile as any).goal || 'maintain',
+        });
     } catch (error) {
         console.error(error);
-        throw new Error('Failed to generate meal plan.');
+        throw new Error((error as Error).message || 'Failed to generate meal plan.');
     }
 }
 
