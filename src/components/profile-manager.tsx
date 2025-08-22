@@ -12,11 +12,13 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, Wheat, Drumstick, Beef, ArrowDown } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, Wheat, Drumstick, Beef, ArrowDown, User } from 'lucide-react';
 import { getProfile, saveProfile, updateDailySummaryWithNewGoals } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 const profileSchema = z.object({
+  name: z.string().optional(), // Name is from auth, not submitted here
   height: z.coerce.number().positive('Height must be positive'),
   weight: z.coerce.number().positive('Weight must be positive'),
   age: z.coerce.number().int().min(1, 'Age must be positive'),
@@ -85,12 +87,14 @@ export function ProfileManager() {
   const [profile, setProfile] = useState<FullProfile | null>(null);
   const [showGoalCard, setShowGoalCard] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
   const { toast } = useToast();
   const goalCardRef = useRef<HTMLDivElement>(null);
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: { 
+      name: '',
       height: '' as any,
       weight: '' as any,
       age: '' as any,
@@ -117,6 +121,7 @@ export function ProfileManager() {
         setProfile(savedProfile);
         profileForm.reset({
             ...savedProfile,
+            name: user?.displayName || '',
             height: savedProfile.height || '',
             weight: savedProfile.weight || '',
             age: savedProfile.age || '',
@@ -128,15 +133,18 @@ export function ProfileManager() {
         if (savedProfile.height && savedProfile.weight && savedProfile.age) {
             setShowGoalCard(true);
         }
+      } else if (user) {
+        profileForm.reset({ name: user.displayName || '' });
       }
       setIsLoading(false);
     }
     loadProfile();
-  }, [profileForm, goalForm]);
+  }, [profileForm, goalForm, user]);
 
   const onProfileSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
     try {
-      const currentFullProfile = { ...profile, ...data };
+      const { name, ...profileData } = data;
+      const currentFullProfile = { ...profile, ...profileData };
       await saveProfile(currentFullProfile);
       setProfile(currentFullProfile);
       setShowGoalCard(true);
@@ -170,8 +178,9 @@ export function ProfileManager() {
         const metrics = calculateBaseMetrics(currentProfile);
         const goalMetrics = calculateGoalMetrics(metrics, currentProfile.activityLevel, data.goal);
 
+        const { name, ...profileData } = currentProfile;
         const fullProfileData: FullProfile = {
-            ...currentProfile,
+            ...profileData,
             ...data,
             ...goalMetrics,
         };
@@ -271,6 +280,9 @@ export function ProfileManager() {
                 ) : (
                     <Form {...profileForm}>
                     <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                        <FormField control={profileForm.control} name="name" render={({ field }) => (
+                            <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Your name" {...field} readOnly className="text-muted-foreground" /></FormControl><FormMessage /></FormItem>
+                        )}/>
                         <div className="grid sm:grid-cols-2 gap-4">
                         <FormField control={profileForm.control} name="height" render={({ field }) => (
                             <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" placeholder="180" {...field} /></FormControl><FormMessage /></FormItem>
@@ -441,5 +453,3 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
-
-    
