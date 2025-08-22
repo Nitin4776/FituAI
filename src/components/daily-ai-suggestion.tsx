@@ -1,30 +1,42 @@
 
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getTodaysMeals, getTodaysActivities, getBloodTestAnalyses, getSleepLogForToday } from '@/services/firestore';
+import { getTodaysMeals, getTodaysActivities, getBloodTestAnalyses, getSleepLogForToday, getDailySummaryForToday, getFastingState } from '@/services/firestore';
 import { getDailySuggestion } from '@/app/actions';
 import { isToday } from '@/lib/utils';
 import { Bot, Lightbulb } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 async function getSuggestionData() {
-    const [savedMeals, savedAnalyses, savedSleep] = await Promise.all([
+    const [
+        savedMeals,
+        savedAnalyses,
+        savedSleep,
+        savedActivities,
+        summary,
+        fastingState
+    ] = await Promise.all([
         getTodaysMeals(),
         getBloodTestAnalyses(),
-        getSleepLogForToday()
+        getSleepLogForToday(),
+        getTodaysActivities(),
+        getDailySummaryForToday(),
+        getFastingState()
     ]);
 
     const todaysMeals = (savedMeals as any[]).filter(meal => isToday(meal.createdAt));
     const latestBloodTest = savedAnalyses?.[0] || null;
+    const todaysSleep = savedSleep || null;
+    const todaysActivities = savedActivities;
+    const dailySummary = summary;
     
-    // The new getSleepLogForToday returns the full log object or null
-    const todaysSleep = savedSleep || null; 
-
     const suggestionInput = {
         todaysMeals,
-        todaysActivities: [],
+        todaysActivities,
         latestBloodTest,
         todaysSleep,
+        dailySummary,
+        fastingState,
     };
     
     try {
