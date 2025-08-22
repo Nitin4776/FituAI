@@ -57,80 +57,100 @@ function BottomNavigation() {
   if (!isMobile) {
     return null;
   }
+  
+  const bottomNavItems = [
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/profile', label: 'Profile', icon: User },
+    { type: 'log' },
+    { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
+    { type: 'ai' },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around bg-background border-t p-2">
-      {menuItems.map((item) => (
-        <Link href={item.href} key={item.href} className="flex-1">
-          <div
-            className={cn(
-              'flex flex-col items-center justify-center p-2 rounded-md transition-colors',
-              pathname === item.href
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground'
-            )}
-          >
-            <item.icon className="size-5" />
-            <span className="text-xs mt-1">{item.label}</span>
-          </div>
-        </Link>
-      ))}
-       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <div
-            className={cn(
-              'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
-              ['/log-meal', '/log-activity'].includes(pathname)
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground'
-            )}
-          >
-            <PlusCircle className="size-5" />
-            <span className="text-xs mt-1">Log</span>
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="center" className="mb-2">
-            <DropdownMenuLabel>What would you like to log?</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link href="/log-meal" className="flex items-center gap-2">
-                    <Soup className="size-4" />
-                    <span>Log Meal/Food</span>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-                    <Link href="/log-activity" className="flex items-center gap-2">
-                    <Dumbbell className="size-4" />
-                    <span>Log Activity/Workout</span>
-                </Link>
-            </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <DropdownMenu>
-         <DropdownMenuTrigger asChild>
-             <div
-                className={cn(
-                'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
-                aiMenuItems.some(item => pathname === item.href)
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground'
-                )}
-            >
-                <Bot className="size-5" />
-                <span className="text-xs mt-1">AI</span>
-            </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="center" className="mb-2">
-            {aiMenuItems.map(item => (
-                 <DropdownMenuItem key={item.href} asChild>
-                    <Link href={item.href} className="flex items-center gap-2">
-                       <item.icon className="size-4" />
-                       <span>{item.label}</span>
-                    </Link>
-                </DropdownMenuItem>
-            ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {bottomNavItems.map((navItem, index) => {
+        if (navItem.type === 'log') {
+          return (
+             <DropdownMenu key="log-menu">
+                <DropdownMenuTrigger asChild>
+                  <div
+                    className={cn(
+                      'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
+                      ['/log-meal', '/log-activity'].includes(pathname)
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    <PlusCircle className="size-5" />
+                    <span className="text-xs mt-1">Log</span>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="center" className="mb-2">
+                    <DropdownMenuLabel>What would you like to log?</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                        <Link href="/log-meal" className="flex items-center gap-2">
+                            <Soup className="size-4" />
+                            <span>Log Meal/Food</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                            <Link href="/log-activity" className="flex items-center gap-2">
+                            <Dumbbell className="size-4" />
+                            <span>Log Activity/Workout</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+          )
+        }
+        if (navItem.type === 'ai') {
+            return (
+                 <DropdownMenu key="ai-menu">
+                    <DropdownMenuTrigger asChild>
+                        <div
+                            className={cn(
+                            'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
+                            aiMenuItems.some(item => pathname === item.href)
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground'
+                            )}
+                        >
+                            <Bot className="size-5" />
+                            <span className="text-xs mt-1">AI</span>
+                        </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="top" align="center" className="mb-2">
+                        {aiMenuItems.map(item => (
+                            <DropdownMenuItem key={item.href} asChild>
+                                <Link href={item.href} className="flex items-center gap-2">
+                                <item.icon className="size-4" />
+                                <span>{item.label}</span>
+                                </Link>
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )
+        }
+
+        const item = navItem as { href: string; label: string; icon: React.ElementType };
+        return (
+            <Link href={item.href} key={item.href} className="flex-1">
+                <div
+                    className={cn(
+                    'flex flex-col items-center justify-center p-2 rounded-md transition-colors',
+                    pathname === item.href
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground'
+                    )}
+                >
+                    <item.icon className="size-5" />
+                    <span className="text-xs mt-1">{item.label}</span>
+                </div>
+            </Link>
+        )
+      })}
     </nav>
   );
 }
