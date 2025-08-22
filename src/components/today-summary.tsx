@@ -31,12 +31,12 @@ type SummaryData = {
 };
 
 
-function MacroProgress({ label, consumed, goal, icon: Icon }: { label: string; consumed: number; goal: number; icon: React.ElementType; }) {
+function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { label: string; consumed: number; goal: number; icon: React.ElementType; iconClassName?: string; }) {
     const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
     return (
         <div>
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
-                <Icon className="h-4 w-4" />
+                <Icon className={cn("h-4 w-4", iconClassName)} />
                 <span>{label}</span>
             </div>
             <p className="font-bold text-lg">{Math.round(consumed)}g</p>
@@ -98,7 +98,16 @@ export function TodaySummary() {
         });
         setIsLoading(false);
     }
-    getSummaryData();
+    const unsubscribe = getAuth().onAuthStateChanged(user => {
+      if (user) {
+        getSummaryData();
+      } else {
+        setIsLoading(false);
+        setSummaryData(null);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   if (isLoading || !summaryData) {
@@ -143,10 +152,10 @@ export function TodaySummary() {
                   </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                  <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} icon={Drumstick} />
-                  <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} icon={Wheat} />
-                  <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} icon={Beef} />
-                  <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} icon={Wheat} />
+                  <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} icon={Drumstick} iconClassName="text-red-500" />
+                  <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} icon={Wheat} iconClassName="text-yellow-500" />
+                  <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} icon={Beef} iconClassName="text-purple-500" />
+                  <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} icon={Wheat} iconClassName="text-green-500" />
                   <CaloriesBurned burned={caloriesBurned} />
               </div>
           </div>
