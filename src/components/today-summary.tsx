@@ -125,7 +125,7 @@ export function TodaySummary() {
               <div>
                   <div className="flex justify-between items-baseline mb-1">
                       <span className="text-sm font-medium text-muted-foreground">Calories Consumed</span>
-                        <Link href="/log-meal" className={cn("flex items-center gap-1 text-xs text-primary hover:underline", dailyTotals.calories > 0 ? "" : "animate-pulse")}>
+                        <Link href="/log-meal" className={cn("flex items-center gap-1 text-xs text-accent hover:underline", dailyTotals.calories > 0 ? "" : "animate-pulse")}>
                            {dailyTotals.calories > 0 ? (
                                 <>
                                     <BarChart className="h-3 w-3"/>
