@@ -20,6 +20,17 @@ import { saveProfile } from '@/services/firestore';
 
 const auth = getAuth(app);
 
+async function setSessionCookie(user: any) {
+  if (user) {
+    const idToken = await user.getIdToken();
+    await fetch('/api/auth/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+  }
+}
+
 export function initializeRecaptchaVerifier() {
     if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -45,6 +56,8 @@ export async function signInWithGoogle() {
     try {
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
+        await setSessionCookie(user);
+
         // Check if user is new, if so save their profile
         if (user.metadata.creationTime === user.metadata.lastSignInTime) {
              await saveProfile({ name: user.displayName }, user.uid);
@@ -76,7 +89,8 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
 export async function verifyOtp(otp: string) {
     if (window.confirmationResult) {
         try {
-            await window.confirmationResult.confirm(otp);
+            const userCredential = await window.confirmationResult.confirm(otp);
+            await setSessionCookie(userCredential.user);
         } catch (error: any) {
             throw new Error("Invalid OTP. Please try again.");
         }
@@ -96,6 +110,7 @@ export async function signUpWithPhoneNumber(name: string, otp: string) {
             displayName: name
         });
         await saveProfile({ name }, userCredential.user.uid);
+        await setSessionCookie(userCredential.user);
 
      } catch (error: any) {
         let errorMessage = 'An unexpected error occurred during sign-up.';
@@ -120,7 +135,9 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
       displayName: validatedCredentials.name
     });
 
-    await saveProfileServerAction({ name: validatedCredentials.name }, userCredential.user.uid);
+    await saveProfile({ name: validatedCredentials.name }, userCredential.user.uid);
+    await setSessionCookie(userCredential.user);
+
 
   } catch (error: any) {
     let errorMessage = 'An unexpected error occurred.';
@@ -149,11 +166,12 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
 export async function signInAction(credentials: z.infer<typeof signInSchema>) {
     try {
         const validatedCredentials = signInSchema.parse(credentials);
-        await signInWithEmailAndPassword(
+        const userCredential = await signInWithEmailAndPassword(
             auth,
             validatedCredentials.email,
             validatedCredentials.password
         );
+         await setSessionCookie(userCredential.user);
     } catch (error: any)
 {
         let errorMessage = 'An unexpected error occurred.';

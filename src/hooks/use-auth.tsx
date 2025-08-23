@@ -20,18 +20,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const publicPages = ['/signin', '/signup'];
 
-async function setSessionCookie(user: User | null) {
-  if (user) {
-    const idToken = await user.getIdToken();
-    await fetch('/api/auth/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    });
-  } else {
-    await fetch('/api/auth/session', { method: 'DELETE' });
-  }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -42,7 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setUser(user);
-      await setSessionCookie(user);
       setLoading(false);
     });
 
