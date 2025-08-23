@@ -6,6 +6,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 export const metadata: Metadata = {
   title: "fitUAI",
   description: "Your personalized AI-powered health and fitness companion.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

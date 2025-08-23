@@ -1,0 +1,21 @@
+{
+  "name": "FitLife AI",
+  "short_name": "FitLife",
+  "description": "Your personalized AI-powered health and fitness companion.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#43A047",
+  "icons": [
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/crickseries.firebasestorage.app/o/ChatGPT%20Image%20Aug%2022%2C%202025%2C%2004_53_05%20PM.png?alt=media&token=f683841c-65cc-4887-8590-72f080da56f3",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://firebasestorage.googleapis.com/v0/b/crickseries.firebasestorage.app/o/ChatGPT%20Image%20Aug%2022%2C%202025%2C%2004_53_05%20PM.png?alt=media&token=f683841c-65cc-4887-8590-72f080da56f3",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
