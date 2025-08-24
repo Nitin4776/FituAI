@@ -122,6 +122,17 @@ export async function signInWithPhoneNumber(otp: string) {
             throw new Error("Please request an OTP first.");
         }
         const userCredential = await window.confirmationResult.confirm(otp);
+        const user = userCredential.user;
+
+        // Check if the user is signing in for the first time.
+        // If so, create a profile stub so they're redirected to the profile page.
+        if (user.metadata.creationTime === user.metadata.lastSignInTime) {
+            await saveProfile({ 
+                name: 'New User', // Placeholder name
+                phoneNumber: user.phoneNumber 
+            }, user.uid);
+        }
+
         await setSessionCookie(userCredential.user);
      } catch (error: any) {
         let errorMessage = 'An unexpected error occurred during sign-in.';
