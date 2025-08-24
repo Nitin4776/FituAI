@@ -1,3 +1,4 @@
+
 'use client'; 
 
 import { z } from 'zod';
@@ -101,6 +102,24 @@ export async function signUpWithPhoneNumber(name: string, otp: string) {
         let errorMessage = 'An unexpected error occurred during sign-up.';
         if (error.code === 'auth/invalid-verification-code') {
             errorMessage = "Invalid OTP. Please try again.";
+        }
+        throw new Error(errorMessage);
+     }
+}
+
+export async function signInWithPhoneNumber(otp: string) {
+     try {
+        if (!window.confirmationResult) {
+            throw new Error("Please request an OTP first.");
+        }
+        const userCredential = await window.confirmationResult.confirm(otp);
+        await setSessionCookie(userCredential.user);
+     } catch (error: any) {
+        let errorMessage = 'An unexpected error occurred during sign-in.';
+        if (error.code === 'auth/invalid-verification-code') {
+            errorMessage = "Invalid OTP. Please try again.";
+        } else if (error.code === 'auth/user-not-found') {
+            errorMessage = "No user found with this phone number. Please sign up first.";
         }
         throw new Error(errorMessage);
      }

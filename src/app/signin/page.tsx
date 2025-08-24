@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,8 +19,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, Mail, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
-import { signInAction, signInWithGoogle } from '../auth/actions';
+import { signInAction, signInWithGoogle, sendOtp, signInWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
+import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'
 import { cn } from '@/lib/utils';
 
@@ -30,6 +32,15 @@ const emailSchema = z.object({
 });
 type EmailFormValues = z.infer<typeof emailSchema>;
 
+const phoneSchema = z.object({
+    phoneNumber: z.string().min(10, 'Please enter a valid phone number.'),
+});
+type PhoneFormValues = z.infer<typeof phoneSchema>;
+
+const otpSchema = z.object({
+    otp: z.string().length(6, 'OTP must be 6 digits.'),
+});
+type OtpFormValues = z.infer<typeof otpSchema>;
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -43,11 +54,28 @@ const GoogleIcon = () => (
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [signinMethod, setSigninMethod] = useState<'phone' | 'email'>('phone');
+  const [step, setStep] = useState<'input' | 'otp'>('input');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    initializeRecaptchaVerifier();
+  }, []);
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: '', password: '' },
+  });
+
+  const phoneForm = useForm<PhoneFormValues>({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { phoneNumber: '' },
+  });
+
+  const otpForm = useForm<OtpFormValues>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: '' }
   });
   
   const onEmailSubmit: SubmitHandler<EmailFormValues> = async (data) => {
@@ -64,6 +92,42 @@ export default function SignInPage() {
       setIsLoading(false);
     }
   };
+
+  const onPhoneSubmit: SubmitHandler<PhoneFormValues> = async (data) => {
+    setIsLoading(true);
+    try {
+        await sendOtp(data.phoneNumber);
+        setPhoneNumber(data.phoneNumber);
+        setStep('otp');
+         toast({
+            title: 'OTP Sent',
+            description: 'Please check your phone for the verification code.',
+        });
+    } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Failed to Send OTP',
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  const onOtpSubmit: SubmitHandler<OtpFormValues> = async (data) => {
+    setIsLoading(true);
+    try {
+        await signInWithPhoneNumber(data.otp);
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Verification Failed',
+            description: (error as Error).message,
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
   
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -79,6 +143,71 @@ export default function SignInPage() {
         setIsLoading(false);
     }
   }
+
+  const PhoneSignInForm = () => (
+    <Form {...phoneForm}>
+        <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
+            <Controller
+                name="phoneNumber"
+                control={phoneForm.control}
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                             <PhoneInput
+                                country={'in'}
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClass={cn(
+                                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm !pl-12 !w-full"
+                                )}
+                                buttonClass="rounded-l-md"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? <Loader2 className="animate-spin" /> : <> Continue </>}
+            </Button>
+        </form>
+    </Form>
+  );
+
+  const OtpVerificationForm = () => (
+     <Form {...otpForm}>
+        <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
+             <div className="text-center">
+                <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to:</p>
+                <p className="font-semibold">{phoneNumber}</p>
+            </div>
+            <FormField
+                control={otpForm.control}
+                name="otp"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Verification Code</FormLabel>
+                    <FormControl>
+                        <Input 
+                            placeholder="_ _ _ _ _ _" 
+                            {...field}
+                            className="text-center tracking-[0.5em]"
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? <Loader2 className="animate-spin" /> : <> Verify & Sign In</> }
+            </Button>
+            <Button variant="link" size="sm" onClick={() => setStep('input')} className="w-full">
+                Back to sign in
+            </Button>
+        </form>
+    </Form>
+  );
 
   const EmailSignInForm = () => (
      <Form {...emailForm}>
@@ -129,22 +258,37 @@ export default function SignInPage() {
           <CardDescription>Sign in to continue your fitness journey.</CardDescription>
         </CardHeader>
         <CardContent>
-            
-            <EmailSignInForm/>
-            
-            <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-            </div>
+            {step === 'otp' ? (
+                <OtpVerificationForm />
+            ) : (
+                <>
+                    { signinMethod === 'phone' ? <PhoneSignInForm /> : <EmailSignInForm /> }
 
-            <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full mt-4">
-                {isLoading ? <Loader2 className="animate-spin" /> : <><GoogleIcon /> Google</>}
-            </Button>
+                    <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">Or</span>
+                        </div>
+                    </div>
 
+                    { signinMethod === 'phone' ? (
+                        <Button variant="outline" onClick={() => setSigninMethod('email')} disabled={isLoading} className="w-full">
+                            <Mail className="mr-2" /> Continue with Email
+                        </Button>
+                    ) : (
+                        <Button variant="outline" onClick={() => setSigninMethod('phone')} disabled={isLoading} className="w-full">
+                            <MessageSquare className="mr-2" /> Continue with Phone
+                        </Button>
+                    )}
+
+                    <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full mt-4">
+                        {isLoading ? <Loader2 className="animate-spin" /> : <><GoogleIcon /> Google</>}
+                    </Button>
+                </>
+            )}
+            
             <p className="mt-6 text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
                 <Link href="/signup" className="font-semibold text-primary hover:underline">
