@@ -78,7 +78,9 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
             // @ts-ignore
             window.recaptchaVerifier.render().then((widgetId) => {
                 // @ts-ignore
-                grecaptcha.reset(widgetId);
+                if (window.grecaptcha) {
+                    window.grecaptcha.reset(widgetId);
+                }
             });
         }
         throw new Error("Failed to send OTP. Please check the number or try again.");
@@ -213,5 +215,6 @@ declare global {
   interface Window {
     recaptchaVerifier: RecaptchaVerifier;
     confirmationResult: ConfirmationResult;
+    grecaptcha: any;
   }
 }
