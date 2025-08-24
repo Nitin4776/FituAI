@@ -12,10 +12,11 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Target, Weight, Ruler, TrendingUp, Loader2, Flame } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, ArrowRight } from 'lucide-react';
 import { getProfile, saveProfile } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useRouter } from 'next/navigation';
 
 const profileSchema = z.object({
   name: z.string().optional(),
@@ -38,8 +39,10 @@ interface FitnessMetrics {
 
 export function ProfileForm() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -53,6 +56,8 @@ export function ProfileForm() {
     },
   });
 
+  const [isNewUser, setIsNewUser] = useState(false);
+
   useEffect(() => {
     async function loadProfile() {
       setIsLoading(true);
@@ -65,8 +70,12 @@ export function ProfileForm() {
             weight: savedProfile.weight || '',
             age: savedProfile.age || '',
         });
+        if (!savedProfile.height) {
+            setIsNewUser(true);
+        }
       } else if (user) {
         profileForm.reset({ name: user.displayName || '' });
+        setIsNewUser(true);
       }
       setIsLoading(false);
     }
@@ -74,7 +83,9 @@ export function ProfileForm() {
   }, [profileForm, user]);
 
   const onProfileSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
+    setIsSubmitting(true);
     try {
+      const wasNewUser = isNewUser;
       await saveProfile(data);
       toast({
         title: 'Details Saved',
@@ -82,12 +93,25 @@ export function ProfileForm() {
       });
       // Force re-render to update metrics
       profileForm.trigger();
+      setIsNewUser(false); // No longer a new user after saving
+
+      if (wasNewUser) {
+        toast({
+            title: 'Great! Next, set your goal.',
+            description: 'You will now be redirected to the Goal page.',
+            action: <Button onClick={() => router.push('/goal')}>Go to Goal <ArrowRight /></Button>
+        });
+        router.push('/goal');
+      }
+
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Save Failed',
         description: 'Could not save your details. Please try again.',
       });
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -119,8 +143,9 @@ export function ProfileForm() {
   const baseMetrics = useMemo(() => {
     const profileData = profileForm.getValues();
     if (!profileData.height || !profileData.weight || !profileData.age || !profileData.gender) return null;
+    if (Object.values(profileData).some(v => v === '')) return null;
     return calculateBaseMetrics(profileData);
-  }, [profileForm.watch('height'), profileForm.watch('weight'), profileForm.watch('age'), profileForm.watch('gender')]);
+  }, [profileForm.watch()]);
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -143,14 +168,14 @@ export function ProfileForm() {
                       )}/>
                       <div className="grid sm:grid-cols-2 gap-4">
                       <FormField control={profileForm.control} name="height" render={({ field }) => (
-                          <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" placeholder="180" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" placeholder="180" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                           )}/>
                       <FormField control={profileForm.control} name="weight" render={({ field }) => (
-                          <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                           )}/>
                       </div>
                       <FormField control={profileForm.control} name="age" render={({ field }) => (
-                          <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                       )}/>
                       <FormField control={profileForm.control} name="gender" render={({ field }) => (
                           <FormItem className="space-y-3"><FormLabel>Gender</FormLabel><FormControl>
@@ -176,7 +201,10 @@ export function ProfileForm() {
                           <FormMessage />
                           </FormItem>
                       )}/>
-                      <Button type="submit" className="w-full">Save Details</Button>
+                      <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="animate-spin" />}
+                        Save Details
+                      </Button>
                   </form>
                   </Form>
               )}

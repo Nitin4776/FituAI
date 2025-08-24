@@ -50,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
             // Check if profile is complete. If not, redirect to profile page.
             getProfile(user.uid).then(profile => {
-                const isProfileComplete = profile && profile.goal;
+                // A profile is considered incomplete if the user hasn't set their height yet.
+                const isProfileComplete = profile && profile.height;
                 if (!isProfileComplete && pathname !== '/profile') {
                     router.push('/profile');
                 }
