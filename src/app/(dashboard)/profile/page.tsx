@@ -5,6 +5,8 @@ import { ProfileForm } from '@/components/profile-form';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 export default function ProfilePage() {
   const { signOut } = useAuth();
@@ -23,6 +25,13 @@ export default function ProfilePage() {
                 <span className="hidden md:inline">Sign Out</span>
             </Button>
         </div>
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>Welcome to FitLife AI!</AlertTitle>
+        <AlertDescription>
+          Please complete your profile details below. This information is essential for us to create your personalized fitness and health plan.
+        </AlertDescription>
+      </Alert>
       <ProfileForm />
     </div>
   );

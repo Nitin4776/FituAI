@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -6,7 +7,7 @@ import { app } from '@/lib/firebase';
 import { signOutAction } from '@/app/auth/actions';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { getCookie } from 'cookies-next';
+import { getProfile } from '@/services/firestore';
 
 const auth = getAuth(app);
 
@@ -41,9 +42,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const isPublicPage = publicPages.includes(pathname);
     
-    if (user && isPublicPage) {
-        // If user is logged in and on a public page, go to dashboard.
-        router.push('/');
+    if (user) {
+        // User is logged in
+        if (isPublicPage) {
+             // If user is logged in and on a public page, go to dashboard.
+             router.push('/');
+        } else {
+            // Check if profile is complete. If not, redirect to profile page.
+            getProfile(user.uid).then(profile => {
+                const isProfileComplete = profile && profile.goal;
+                if (!isProfileComplete && pathname !== '/profile') {
+                    router.push('/profile');
+                }
+            });
+        }
     } else if (!user && !isPublicPage) {
         // If user is not logged in and not on a public page, go to signin.
         router.push('/signin');
@@ -59,9 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isPublicPage = publicPages.includes(pathname);
+  const isAuthPage = publicPages.includes(pathname);
   
-  if (loading || (!user && !isPublicPage)) {
+  if (loading || (!user && !isAuthPage)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

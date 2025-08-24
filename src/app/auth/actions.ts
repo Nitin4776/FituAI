@@ -59,7 +59,11 @@ export async function signInWithGoogle() {
 
         // Check if user is new, if so save their profile
         if (user.metadata.creationTime === user.metadata.lastSignInTime) {
-             await saveProfile({ name: user.displayName }, user.uid);
+             await saveProfile({ 
+                name: user.displayName, 
+                email: user.email, 
+                photoURL: user.photoURL 
+            }, user.uid);
         }
     } catch (error: any) {
         throw new Error(error.message);
@@ -97,7 +101,10 @@ export async function signUpWithPhoneNumber(name: string, otp: string) {
         await updateProfile(userCredential.user, {
             displayName: name
         });
-        await saveProfile({ name }, userCredential.user.uid);
+        await saveProfile({ 
+            name: name, 
+            phoneNumber: userCredential.user.phoneNumber 
+        }, userCredential.user.uid);
         await setSessionCookie(userCredential.user);
 
      } catch (error: any) {
@@ -141,7 +148,10 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
       displayName: validatedCredentials.name
     });
 
-    await saveProfile({ name: validatedCredentials.name }, userCredential.user.uid);
+    await saveProfile({ 
+        name: validatedCredentials.name,
+        email: validatedCredentials.email,
+     }, userCredential.user.uid);
     await setSessionCookie(userCredential.user);
 
 
