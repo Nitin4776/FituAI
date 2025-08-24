@@ -20,10 +20,18 @@ import { saveProfile } from '@/services/firestore';
 
 const auth = getAuth(app);
 
-export function initializeRecaptchaVerifier() {
-    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+export function initializeRecaptchaVerifier(callback: () => void) {
+    if (typeof window !== 'undefined') {
+        // Unmount the previous verifier if it exists
+        if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.clear();
+        }
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             'size': 'invisible',
+            'callback': () => {
+                // reCAPTCHA solved, allow signInWithPhoneNumber.
+                callback();
+            }
         });
     }
 }
@@ -71,13 +79,13 @@ export async function signInWithGoogle() {
 }
 
 export async function sendOtp(phoneNumber: string): Promise<void> {
-    const appVerifier = window.recaptchaVerifier;
     try {
+        const appVerifier = window.recaptchaVerifier;
         const confirmationResult = await firebaseSignInWithPhoneNumber(auth, `+${phoneNumber}`, appVerifier);
         window.confirmationResult = confirmationResult;
     } catch (error: any) {
-         // This can happen if the phone number is invalid, or if ReCAPTCHA fails.
-         // We need to reset the verifier to allow retries.
+        let errorMessage = "Failed to send OTP. Please check the number and try again.";
+        // Reset the verifier to allow retries
         if (window.recaptchaVerifier) {
             // @ts-ignore
             window.recaptchaVerifier.render().then((widgetId) => {
@@ -87,7 +95,7 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
                 }
             });
         }
-        throw new Error("Failed to send OTP. Please check the number or try again.");
+        throw new Error(errorMessage);
     }
 }
 
