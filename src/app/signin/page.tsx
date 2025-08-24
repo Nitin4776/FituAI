@@ -14,26 +14,19 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, MessageSquare, Mail } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { signInAction, signInWithGoogle, sendOtp, verifyOtp, initializeRecaptchaVerifier } from '../auth/actions';
+import { useState } from 'react';
+import { signInAction, signInWithGoogle } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
 
 const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
   password: z.string().min(1, 'Password is required.'),
 });
-const phoneSchema = z.object({
-  countryCode: z.string().min(2, 'Required'),
-  phone: z.string().min(10, 'Please enter a valid phone number.'),
-  otp: z.string().optional(),
-});
 
 type EmailFormValues = z.infer<typeof emailSchema>;
-type PhoneFormValues = z.infer<typeof phoneSchema>;
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
@@ -47,21 +40,11 @@ const GoogleIcon = () => (
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    initializeRecaptchaVerifier();
-  }, []);
 
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: '', password: '' },
-  });
-
-  const phoneForm = useForm<PhoneFormValues>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { countryCode: '+91', phone: '' },
   });
 
   const onEmailSubmit: SubmitHandler<EmailFormValues> = async (data) => {
@@ -94,54 +77,8 @@ export default function SignInPage() {
     }
   }
 
-  const handleSendOtp = async () => {
-    const { countryCode, phone } = phoneForm.getValues();
-     if (!countryCode || !phone) {
-        phoneForm.setError('phone', { type: 'manual', message: 'Country code and phone number are required.' });
-        return;
-    }
-
-    const fullPhoneNumber = countryCode.startsWith('+') ? `${countryCode}${phone}` : `+${countryCode}${phone}`;
-    
-    setIsLoading(true);
-    try {
-        await sendOtp(fullPhoneNumber);
-        setIsOtpSent(true);
-        toast({ title: 'OTP Sent', description: 'Check your phone for the verification code.' });
-    } catch(error) {
-         toast({
-            variant: 'destructive',
-            title: 'Failed to Send OTP',
-            description: (error as Error).message,
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  }
-  
-  const onPhoneSubmit: SubmitHandler<PhoneFormValues> = async (data) => {
-    if (!data.otp) {
-        phoneForm.setError('otp', { type: 'manual', message: 'Please enter the OTP.' });
-        return;
-    }
-    setIsLoading(true);
-    try {
-      await verifyOtp(data.otp);
-    } catch (error) {
-       toast({
-        variant: 'destructive',
-        title: 'Sign In Failed',
-        description: (error as Error).message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div id="recaptcha-container"></div>
        <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className='flex justify-center mb-4'>
@@ -151,103 +88,39 @@ export default function SignInPage() {
           <CardDescription>Sign in to continue your fitness journey.</CardDescription>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="mobile" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="mobile"><MessageSquare className="mr-2" /> Mobile</TabsTrigger>
-                    <TabsTrigger value="email"><Mail className="mr-2" /> Email</TabsTrigger>
-                </TabsList>
-                <TabsContent value="mobile">
-                    <Form {...phoneForm}>
-                        <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-6 pt-4">
-                             <div className='flex gap-2'>
-                                <FormField
-                                    control={phoneForm.control}
-                                    name="countryCode"
-                                    render={({ field }) => (
-                                    <FormItem className='w-1/4'>
-                                        <FormLabel>Code</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="+91" {...field} disabled={isOtpSent} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={phoneForm.control}
-                                    name="phone"
-                                    render={({ field }) => (
-                                    <FormItem className='w-3/4'>
-                                        <FormLabel>Phone Number</FormLabel>
-                                        <FormControl>
-                                            <Input type="tel" placeholder="1234567890" {...field} disabled={isOtpSent} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <Button type="button" onClick={handleSendOtp} disabled={isLoading || isOtpSent} className="w-full">
-                                {isLoading ? <Loader2 className="animate-spin" /> : isOtpSent ? 'OTP Sent' : 'Send OTP'}
-                            </Button>
-
-                            {isOtpSent && (
-                                 <FormField
-                                    control={phoneForm.control}
-                                    name="otp"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>One-Time Password</FormLabel>
-                                        <FormControl>
-                                            <Input type="text" placeholder="123456" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                            )}
-                            <Button type="submit" disabled={isLoading || !isOtpSent} className="w-full">
-                                {isLoading ? ( <Loader2 className="animate-spin" /> ) : ( <> <LogIn className="mr-2" /> Sign In with OTP </> )}
-                            </Button>
-                        </form>
-                    </Form>
-                </TabsContent>
-                <TabsContent value="email">
-                     <Form {...emailForm}>
-                        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6 pt-4">
-                        <FormField
-                            control={emailForm.control}
-                            name="email"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Email</FormLabel>
-                                <FormControl>
-                                <Input type="email" placeholder="you@example.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={emailForm.control}
-                            name="password"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Password</FormLabel>
-                                <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <Button type="submit" disabled={isLoading} className="w-full">
-                            {isLoading ? ( <Loader2 className="animate-spin" /> ) : ( <> <LogIn className="mr-2" /> Sign In </> )}
-                        </Button>
-                        </form>
-                    </Form>
-                </TabsContent>
-            </Tabs>
+            <Form {...emailForm}>
+                <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6 pt-4">
+                <FormField
+                    control={emailForm.control}
+                    name="email"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                        <Input type="email" placeholder="you@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={emailForm.control}
+                    name="password"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading ? ( <Loader2 className="animate-spin" /> ) : ( <> <LogIn className="mr-2" /> Sign In </> )}
+                </Button>
+                </form>
+            </Form>
           
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
