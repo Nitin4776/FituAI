@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from './ui/dialog';
 import Image from 'next/image';
-import { Alert, AlertTitle } from './ui/alert';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const profileSchema = z.object({
   height: z.coerce.number().positive('Height must be positive'),
@@ -185,6 +185,7 @@ const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
     const [frontPhoto, setFrontPhoto] = useState<File | null>(null);
     const [backPhoto, setBackPhoto] = useState<File | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [showAiDisclaimer, setShowAiDisclaimer] = useState(false);
     const { toast } = useToast();
 
     const handleAnalyze = async () => {
@@ -193,6 +194,7 @@ const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
             return;
         }
         setIsAnalyzing(true);
+        setShowAiDisclaimer(false);
         try {
             const [frontPhotoDataUri, backPhotoDataUri] = await Promise.all([
                 toDataURL(frontPhoto),
@@ -214,6 +216,7 @@ const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
             form.setValue('age', Math.round(result.age));
             
             toast({ title: 'Analysis Complete!', description: 'Your estimated details have been filled in below.' });
+            setShowAiDisclaimer(true);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Analysis Failed', description: (error as Error).message });
         } finally {
@@ -235,6 +238,14 @@ const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
                  <Button onClick={handleAnalyze} disabled={!frontPhoto || !backPhoto || isAnalyzing} className="w-full">
                     {isAnalyzing ? <Loader2 className="animate-spin" /> : 'Analyze with AI'}
                  </Button>
+                 {showAiDisclaimer && (
+                    <Alert>
+                        <AlertTitle className="text-primary/80">AI Disclaimer</AlertTitle>
+                        <AlertDescription>
+                            AI can make mistakes. Please review the auto-filled values and correct them if needed to ensure accuracy.
+                        </AlertDescription>
+                    </Alert>
+                 )}
             </CardContent>
         </Card>
     )
