@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from './ui/dialog';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { cn } from '@/lib/utils';
 
 const profileSchema = z.object({
   height: z.coerce.number().positive('Height must be positive'),
@@ -462,10 +463,10 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
                 </div>
             ) : baseMetrics ? (
                 <>
-                <MetricCard icon={Target} label="Body Mass Index (BMI)" value={baseMetrics.bmi.toString()} description={baseMetrics.bmiCategory} />
-                <MetricCard icon={Weight} label="Ideal Weight Range" value={baseMetrics.idealWeight} description="Based on healthy BMI range" />
-                <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${baseMetrics.bodyFat}%`} description="Estimated value" />
-                <MetricCard icon={Flame} label="Basal Metabolic Rate (BMR)" value={`${baseMetrics.bmr} kcal`} description="Calories burned at rest" />
+                <MetricCard icon={Target} label="Body Mass Index (BMI)" value={baseMetrics.bmi.toString()} description={baseMetrics.bmiCategory} iconClassName="text-red-500" />
+                <MetricCard icon={Weight} label="Ideal Weight Range" value={baseMetrics.idealWeight} description="Based on healthy BMI range" iconClassName="text-green-500" />
+                <MetricCard icon={TrendingUp} label="Body Fat Percentage" value={`~${baseMetrics.bodyFat}%`} description="Estimated value" iconClassName="text-purple-500" />
+                <MetricCard icon={Flame} label="Basal Metabolic Rate (BMR)" value={`${baseMetrics.bmr} kcal`} description="Calories burned at rest" iconClassName="text-orange-500" />
                 </>
             ) : (
                 <div className="flex items-center justify-center h-full text-center text-muted-foreground p-8">
@@ -502,13 +503,14 @@ interface MetricCardProps {
     label: string;
     value: string;
     description: string;
+    iconClassName?: string;
 }
 
-function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) {
+function MetricCard({ icon: Icon, label, value, description, iconClassName }: MetricCardProps) {
     return (
-        <div className="p-4 bg-secondary rounded-lg flex items-center">
-            <div className="p-3 rounded-full bg-primary/10 text-primary mr-4">
-                <Icon className="h-6 w-6" />
+        <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg flex items-center">
+            <div className="p-3 rounded-full bg-background/50 mr-4">
+                <Icon className={cn("h-6 w-6", iconClassName)} />
             </div>
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
@@ -520,3 +522,4 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
 }
 
     
+
