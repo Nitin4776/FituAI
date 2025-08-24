@@ -9,3 +9,4 @@ import '@/ai/flows/analyze-meal-from-image.ts';
 import '@/ai/flows/analyze-activity.ts';
 import '@/ai/flows/generate-meal-plan.ts';
 import '@/ai/flows/daily-suggestion.ts';
+import '@/ai/flows/analyze-user-vitals-from-image.ts';

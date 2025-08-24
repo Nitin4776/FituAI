@@ -1,25 +1,25 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useState, useMemo, useEffect } from 'react';
+import { useForm, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, ArrowRight } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, ArrowRight, Upload, Sparkles, User, Mail, Phone } from 'lucide-react';
 import { getProfile, saveProfile } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 const profileSchema = z.object({
-  name: z.string().optional(),
   height: z.coerce.number().positive('Height must be positive'),
   weight: z.coerce.number().positive('Weight must be positive'),
   age: z.coerce.number().int().min(1, 'Age must be positive'),
@@ -37,9 +37,100 @@ interface FitnessMetrics {
   bmr: number;
 }
 
-export function ProfileForm() {
+const toDataURL = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+  });
+
+function cmToFeetAndInches(cm: number) {
+    const totalInches = cm / 2.54;
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    return { feet, inches };
+}
+
+function feetAndInchesToCm(feet: number, inches: number) {
+    const totalInches = (feet * 12) + inches;
+    return Math.round(totalInches * 2.54);
+}
+
+const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
+    const [frontPhoto, setFrontPhoto] = useState<File | null>(null);
+    const [backPhoto, setBackPhoto] = useState<File | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const { toast } = useToast();
+
+    const handleAnalyze = async () => {
+        if (!frontPhoto || !backPhoto) {
+            toast({ variant: 'destructive', title: 'Please upload both photos.' });
+            return;
+        }
+        setIsAnalyzing(true);
+        try {
+            const [frontPhotoDataUri, backPhotoDataUri] = await Promise.all([
+                toDataURL(frontPhoto),
+                toDataURL(backPhoto),
+            ]);
+
+            const response = await fetch('/api/analyze-vitals', {
+                method: 'POST',
+                body: JSON.stringify({ frontPhotoDataUri, backPhotoDataUri }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) throw new Error('Failed to analyze photos.');
+            
+            const result = await response.json();
+
+            form.setValue('height', Math.round(result.heightCm));
+            form.setValue('weight', Math.round(result.weightKg));
+            form.setValue('age', Math.round(result.age));
+            
+            toast({ title: 'Analysis Complete!', description: 'Your estimated details have been filled in below.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Analysis Failed', description: (error as Error).message });
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary" /> AI Body Scan</CardTitle>
+                <CardDescription>Upload front and back photos for our AI to estimate your height, weight, and age. For best results, wear form-fitting clothes and stand in a neutral pose.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="front-photo">Front Photo</Label>
+                        <Input id="front-photo" type="file" accept="image/*" onChange={(e) => setFrontPhoto(e.target.files?.[0] || null)} />
+                         {frontPhoto && <p className="text-xs text-muted-foreground">Selected: {frontPhoto.name}</p>}
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="back-photo">Back Photo</Label>
+                        <Input id="back-photo" type="file" accept="image/*" onChange={(e) => setBackPhoto(e.target.files?.[0] || null)} />
+                        {backPhoto && <p className="text-xs text-muted-foreground">Selected: {backPhoto.name}</p>}
+                    </div>
+                 </div>
+                 <Button onClick={handleAnalyze} disabled={!frontPhoto || !backPhoto || isAnalyzing} className="w-full">
+                    {isAnalyzing ? <Loader2 className="animate-spin" /> : 'Analyze with AI'}
+                 </Button>
+            </CardContent>
+        </Card>
+    )
+}
+
+
+export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm');
+  const [feet, setFeet] = useState(0);
+  const [inches, setInches] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -47,7 +138,6 @@ export function ProfileForm() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: { 
-      name: '',
       height: '' as any,
       weight: '' as any,
       age: '' as any,
@@ -56,54 +146,50 @@ export function ProfileForm() {
     },
   });
 
-  const [isNewUser, setIsNewUser] = useState(false);
-
   useEffect(() => {
     async function loadProfile() {
       setIsLoading(true);
       const savedProfile = await getProfile();
       if (savedProfile) {
-        profileForm.reset({
-            ...savedProfile,
-            name: user?.displayName || '',
-            height: savedProfile.height || '',
-            weight: savedProfile.weight || '',
-            age: savedProfile.age || '',
-        });
-        if (!savedProfile.height) {
-            setIsNewUser(true);
+        profileForm.reset({ ...savedProfile });
+        if (savedProfile.height) {
+            const { feet, inches } = cmToFeetAndInches(savedProfile.height);
+            setFeet(feet);
+            setInches(inches);
         }
-      } else if (user) {
-        profileForm.reset({ name: user.displayName || '' });
-        setIsNewUser(true);
       }
       setIsLoading(false);
     }
     loadProfile();
-  }, [profileForm, user]);
+  }, [profileForm]);
+
+  useEffect(() => {
+      const heightInCm = profileForm.watch('height');
+      if (heightUnit === 'ft' && heightInCm) {
+          const { feet, inches } = cmToFeetAndInches(heightInCm);
+          setFeet(feet);
+          setInches(inches);
+      }
+  }, [profileForm.watch('height'), heightUnit])
+
+  const handleFeetInchChange = (newFeet: number, newInches: number) => {
+      setFeet(newFeet);
+      setInches(newInches);
+      const cm = feetAndInchesToCm(newFeet, newInches);
+      profileForm.setValue('height', cm, { shouldValidate: true });
+  }
 
   const onProfileSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
     setIsSubmitting(true);
     try {
-      const wasNewUser = isNewUser;
       await saveProfile(data);
+      onProfileSave(); // Callback to notify parent component
       toast({
         title: 'Details Saved',
         description: 'Your physical details have been updated.',
       });
       // Force re-render to update metrics
       profileForm.trigger();
-      setIsNewUser(false); // No longer a new user after saving
-
-      if (wasNewUser) {
-        toast({
-            title: 'Great! Next, set your goal.',
-            description: 'You will now be redirected to the Goal page.',
-            action: <Button onClick={() => router.push('/goal')}>Go to Goal <ArrowRight /></Button>
-        });
-        router.push('/goal');
-      }
-
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -143,17 +229,19 @@ export function ProfileForm() {
   const baseMetrics = useMemo(() => {
     const profileData = profileForm.getValues();
     if (!profileData.height || !profileData.weight || !profileData.age || !profileData.gender) return null;
-    if (Object.values(profileData).some(v => v === '')) return null;
+    if (profileForm.formState.isValidating || Object.keys(profileForm.formState.errors).length > 0) return null;
     return calculateBaseMetrics(profileData);
-  }, [profileForm.watch()]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileForm.watch(), profileForm.formState.isValidating, profileForm.formState.errors]);
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div className="space-y-8">
-          <Card>
+            <AIScan form={profileForm} />
+            <Card>
               <CardHeader>
               <CardTitle className="font-headline">Your Details</CardTitle>
-              <CardDescription>Enter your information to calculate your body metrics.</CardDescription>
+              <CardDescription>Enter your information manually to calculate your body metrics.</CardDescription>
               </CardHeader>
               <CardContent>
               {isLoading ? (
@@ -163,20 +251,42 @@ export function ProfileForm() {
               ) : (
                   <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                      <FormField control={profileForm.control} name="name" render={({ field }) => (
-                          <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Your name" {...field} readOnly className="text-muted-foreground" /></FormControl><FormMessage /></FormItem>
-                      )}/>
+                       <FormField
+                          control={profileForm.control}
+                          name="height"
+                          render={({ field }) => (
+                            <FormItem>
+                                <div className="flex justify-between items-center">
+                                    <FormLabel>Height</FormLabel>
+                                     <Tabs defaultValue={heightUnit} onValueChange={(value) => setHeightUnit(value as 'cm' | 'ft')} className="w-auto">
+                                        <TabsList className="h-7 text-xs">
+                                            <TabsTrigger value="cm" className="h-6 text-xs">cm</TabsTrigger>
+                                            <TabsTrigger value="ft" className="h-6 text-xs">ft/in</TabsTrigger>
+                                        </TabsList>
+                                    </Tabs>
+                                </div>
+                                <FormControl>
+                                    { heightUnit === 'cm' ? (
+                                        <Input type="number" placeholder="180" {...field} value={field.value ?? ''} />
+                                     ) : (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Input type="number" placeholder="ft" value={feet || ''} onChange={e => handleFeetInchChange(Number(e.target.value), inches)} />
+                                            <Input type="number" placeholder="in" value={inches || ''} onChange={e => handleFeetInchChange(feet, Number(e.target.value))} />
+                                        </div>
+                                     )}
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       <div className="grid sm:grid-cols-2 gap-4">
-                      <FormField control={profileForm.control} name="height" render={({ field }) => (
-                          <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" placeholder="180" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
-                          )}/>
                       <FormField control={profileForm.control} name="weight" render={({ field }) => (
                           <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                           )}/>
-                      </div>
                       <FormField control={profileForm.control} name="age" render={({ field }) => (
                           <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                       )}/>
+                      </div>
                       <FormField control={profileForm.control} name="gender" render={({ field }) => (
                           <FormItem className="space-y-3"><FormLabel>Gender</FormLabel><FormControl>
                               <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4">
@@ -202,8 +312,7 @@ export function ProfileForm() {
                           </FormItem>
                       )}/>
                       <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="animate-spin" />}
-                        Save Details
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Save Details'}
                       </Button>
                   </form>
                   </Form>
@@ -237,6 +346,28 @@ export function ProfileForm() {
             )}
             </CardContent>
         </Card>
+        
+        {user && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Account Information</CardTitle>
+                </CardHeader>
+                 <CardContent className="space-y-4">
+                    {user.email && (
+                         <div className="flex items-center gap-4 text-sm">
+                            <Mail className="text-muted-foreground" />
+                            <span>{user.email}</span>
+                        </div>
+                    )}
+                     {user.phoneNumber && (
+                         <div className="flex items-center gap-4 text-sm">
+                            <Phone className="text-muted-foreground" />
+                            <span>{user.phoneNumber}</span>
+                        </div>
+                    )}
+                 </CardContent>
+            </Card>
+        )}
       </div>
     </div>
   );
