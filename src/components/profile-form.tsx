@@ -228,7 +228,9 @@ const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2"><Sparkles className="text-primary" /> AI Body Scan</CardTitle>
+                <CardTitle className="font-headline flex items-center gap-2">
+                    AI Body Scan <Sparkles className="text-yellow-500" />
+                </CardTitle>
                 <CardDescription>Upload front and back photos for our AI to estimate your height, weight, and age. For best results, wear form-fitting clothes and stand in a neutral pose.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -520,6 +522,3 @@ function MetricCard({ icon: Icon, label, value, description, iconClassName }: Me
         </div>
     )
 }
-
-    
-
