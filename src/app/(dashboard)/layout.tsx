@@ -8,7 +8,7 @@ import {
   Clock,
   Home,
   LogOut,
-  User,
+  Target,
   Bot,
   TestTube2,
   Replace,
@@ -39,7 +39,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/profile', label: 'Goal', icon: Target },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
 ];
 
@@ -60,7 +60,7 @@ function BottomNavigation() {
   
   const bottomNavItems = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/profile', label: 'Profile', icon: User },
+    { href: '/profile', label: 'Goal', icon: Target },
     { type: 'log' },
     { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
     { type: 'ai' },
@@ -191,11 +191,11 @@ function DashboardLayoutContent({
                   <Link href="/profile">
                       <SidebarMenuButton
                       isActive={pathname === '/profile'}
-                      tooltip="Profile"
+                      tooltip="Goal"
                       className="w-full justify-start"
                       >
-                      <User className="size-4" />
-                      <span>Profile</span>
+                      <Target className="size-4" />
+                      <span>Goal</span>
                       </SidebarMenuButton>
                   </Link>
               </SidebarMenuItem>
