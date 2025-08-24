@@ -35,24 +35,24 @@ type SummaryData = {
 function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { label: string; consumed: number; goal: number; icon: React.ElementType; iconClassName?: string; }) {
     const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
     return (
-        <div>
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 flex flex-col justify-center items-center h-full">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <Icon className={cn("h-4 w-4", iconClassName)} />
                 <span>{label}</span>
             </div>
             <p className="font-bold text-lg">{Math.round(consumed)}g</p>
             <p className="text-xs text-muted-foreground">{percentage}% of goal</p>
-        </div>
+        </Card>
     )
 }
 
 function CaloriesBurned({ burned }: { burned: number }) {
      return (
-        <div>
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 flex flex-col justify-center items-center h-full">
             <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Flame className="h-4 w-4 text-orange-500" /> Burned</p>
             <p className="font-bold text-lg">{Math.round(burned)} kcal</p>
             <p className="text-xs text-muted-foreground">&nbsp;</p>
-        </div>
+        </Card>
     )
 }
 
@@ -202,9 +202,7 @@ export function TodaySummarySkeleton() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   {[...Array(5)].map((_, i) => (
                       <div key={i} className="space-y-1">
-                          <Skeleton className="h-5 w-5 mx-auto" />
-                          <Skeleton className="h-5 w-12 mx-auto" />
-                          <Skeleton className="h-3 w-16 mx-auto" />
+                          <Skeleton className="h-20 w-full rounded-lg" />
                       </div>
                   ))}
               </div>
