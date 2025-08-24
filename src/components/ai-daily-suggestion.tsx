@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
-import { Lightbulb, RefreshCw } from 'lucide-react';
+import { Lightbulb, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { getProfile, getBloodTestAnalyses, getTodaysMeals, getTodaysActivities, getSleepLogForToday } from '@/services/firestore';
 import type { DailySuggestionInput } from '@/ai/flows/daily-suggestion';
@@ -71,6 +71,7 @@ export function AiDailySuggestion() {
             <CardTitle className="font-headline flex items-center gap-2">
             <Lightbulb className="text-primary" />
             AI Daily Suggestion
+            <Sparkles className="h-5 w-5 text-yellow-500" />
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={fetchSuggestion} disabled={isLoading}>
                 <RefreshCw className={isLoading ? "animate-spin" : ""} />

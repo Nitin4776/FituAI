@@ -16,6 +16,7 @@ import {
   Dumbbell,
   Soup,
   ClipboardCheck,
+  Sparkles,
 } from 'lucide-react';
 
 import {
@@ -121,7 +122,10 @@ function BottomNavigation() {
                         </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="top" align="center" className="mb-2">
-                        <DropdownMenuLabel>AI Tools</DropdownMenuLabel>
+                        <DropdownMenuLabel className="flex items-center gap-2">
+                            <Sparkles className="size-4 text-yellow-500" />
+                            AI Tools
+                        </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {aiMenuItems.map(item => (
                             <DropdownMenuItem key={item.href} asChild>
@@ -255,12 +259,18 @@ function DashboardLayoutContent({
                         className="w-full justify-start"
                         >
                             <Bot className="size-4" />
-                            <span>AI</span>
+                            <span className='flex items-center gap-2'>
+                                AI 
+                                <Sparkles className="size-4 text-yellow-500"/>
+                            </span>
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                 </SidebarMenuItem>
                 <DropdownMenuContent side="right" align="start" sideOffset={8}>
-                    <DropdownMenuLabel>AI Tools</DropdownMenuLabel>
+                    <DropdownMenuLabel className="flex items-center gap-2">
+                        <Sparkles className="size-4 text-yellow-500" />
+                        AI Tools
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {aiMenuItems.map(item => (
                         <DropdownMenuItem key={item.href} asChild>

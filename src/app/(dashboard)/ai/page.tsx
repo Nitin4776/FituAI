@@ -9,7 +9,8 @@ import {
 import {
   TestTube2,
   Replace,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,7 +33,9 @@ export default function AIPage() {
   return (
     <div className="space-y-8">
        <div>
-        <h1 className="font-headline text-3xl md:text-4xl text-primary">AI Health Tools</h1>
+        <h1 className="font-headline text-3xl md:text-4xl text-primary flex items-center gap-2">
+            AI Health Tools <Sparkles className="text-yellow-500" />
+        </h1>
         <p className="mt-2 text-lg text-muted-foreground">
           Explore powerful, AI-driven features to gain deeper insights into your health.
         </p>
