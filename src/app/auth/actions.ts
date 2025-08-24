@@ -9,12 +9,23 @@ import {
   signOut,
   signInWithPopup,
   GoogleAuthProvider,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  type ConfirmationResult
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { saveProfile } from '@/services/firestore';
 
 
 const auth = getAuth(app);
+
+export function initializeRecaptchaVerifier() {
+    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+        });
+    }
+}
 
 async function setSessionCookie(user: any) {
   if (user) {
@@ -53,6 +64,48 @@ export async function signInWithGoogle() {
         throw new Error(error.message);
     }
 }
+
+export async function sendOtp(phoneNumber: string): Promise<void> {
+    const appVerifier = window.recaptchaVerifier;
+    try {
+        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        window.confirmationResult = confirmationResult;
+    } catch (error: any) {
+         // This can happen if the phone number is invalid, or if ReCAPTCHA fails.
+         // We need to reset the verifier to allow retries.
+        if (window.recaptchaVerifier) {
+            // @ts-ignore
+            window.recaptchaVerifier.render().then((widgetId) => {
+                // @ts-ignore
+                grecaptcha.reset(widgetId);
+            });
+        }
+        throw new Error("Failed to send OTP. Please check the number or try again.");
+    }
+}
+
+export async function signUpWithPhoneNumber(name: string, otp: string) {
+     try {
+        if (!window.confirmationResult) {
+            throw new Error("Please request an OTP first.");
+        }
+        const userCredential = await window.confirmationResult.confirm(otp);
+        
+        await updateProfile(userCredential.user, {
+            displayName: name
+        });
+        await saveProfile({ name }, userCredential.user.uid);
+        await setSessionCookie(userCredential.user);
+
+     } catch (error: any) {
+        let errorMessage = 'An unexpected error occurred during sign-up.';
+        if (error.code === 'auth/invalid-verification-code') {
+            errorMessage = "Invalid OTP. Please try again.";
+        }
+        throw new Error(errorMessage);
+     }
+}
+
 
 export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
   try {
@@ -133,4 +186,13 @@ export async function signOutAction() {
     await signOut(auth);
     // Request the browser to clear the session cookie
     await fetch('/api/auth/session', { method: 'DELETE' });
+}
+
+
+// Extend the Window interface
+declare global {
+  interface Window {
+    recaptchaVerifier: RecaptchaVerifier;
+    confirmationResult: ConfirmationResult;
+  }
 }

@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Mail, MessageSquare } from 'lucide-react';
+import { Loader2, Mail, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { signUpAction, signInWithGoogle, sendOtp, signUpWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
