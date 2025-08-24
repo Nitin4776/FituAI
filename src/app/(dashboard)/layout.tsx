@@ -16,6 +16,7 @@ import {
   Dumbbell,
   Soup,
   ClipboardCheck,
+  User,
 } from 'lucide-react';
 
 import {
@@ -39,7 +40,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/profile', label: 'Goal', icon: Target },
+  { href: '/goal', label: 'Goal', icon: Target },
   { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
 ];
 
@@ -60,7 +61,7 @@ function BottomNavigation() {
   
   const bottomNavItems = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/profile', label: 'Goal', icon: Target },
+    { href: '/goal', label: 'Goal', icon: Target },
     { type: 'log' },
     { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
     { type: 'ai' },
@@ -188,14 +189,26 @@ function DashboardLayoutContent({
                   </Link>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                  <Link href="/profile">
+                  <Link href="/goal">
                       <SidebarMenuButton
-                      isActive={pathname === '/profile'}
+                      isActive={pathname === '/goal'}
                       tooltip="Goal"
                       className="w-full justify-start"
                       >
                       <Target className="size-4" />
                       <span>Goal</span>
+                      </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <Link href="/profile">
+                      <SidebarMenuButton
+                      isActive={pathname === '/profile'}
+                      tooltip="Profile"
+                      className="w-full justify-start"
+                      >
+                      <User className="size-4" />
+                      <span>Profile</span>
                       </SidebarMenuButton>
                   </Link>
               </SidebarMenuItem>

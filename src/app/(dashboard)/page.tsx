@@ -42,17 +42,17 @@ export default function DashboardPage() {
       <AiDailySuggestion />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
-        <Link href="/profile">
+        <Link href="/goal">
           <Card className="hover:shadow-lg transition-shadow h-full hover:bg-accent/10">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Profile
+                Goal
               </CardTitle>
               <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">
-                Set up your profile to calculate your fitness metrics.
+                Set your goal to get personalized recommendations.
               </p>
             </CardContent>
           </Card>
