@@ -40,7 +40,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/goal', label: 'Goal', icon: Target },
-  { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
+  { href: '/fasting', label: 'Fasting Calc.', icon: Clock },
 ];
 
 const aiMenuItems = [
@@ -62,7 +62,7 @@ function BottomNavigation() {
     { href: '/', label: 'Home', icon: Home },
     { href: '/goal', label: 'Goal', icon: Target },
     { type: 'log' },
-    { href: '/fasting', label: 'Intermittent Fasting', icon: Clock },
+    { href: '/fasting', label: 'Fasting Calc.', icon: Clock },
     { type: 'ai' },
   ];
 
@@ -235,11 +235,11 @@ function DashboardLayoutContent({
                   <Link href="/fasting">
                       <SidebarMenuButton
                       isActive={pathname === '/fasting'}
-                      tooltip="Intermittent Fasting"
+                      tooltip="Fasting Calc."
                       className="w-full justify-start"
                       >
                       <Clock className="size-4" />
-                      <span>Intermittent Fasting</span>
+                      <span>Fasting Calc.</span>
                       </SidebarMenuButton>
                   </Link>
               </SidebarMenuItem>
