@@ -178,7 +178,7 @@ export function ActivityLogger() {
   const ActivityCard = ({ activity }: { activity: ActivityLog }) => {
     const Icon = getActivityIcon(activity.activityName);
     return (
-        <Card className="bg-secondary/50">
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10">
             <CardContent className="p-4">
                 <div className="flex justify-between items-start">
                     <div className="flex items-start gap-4">
