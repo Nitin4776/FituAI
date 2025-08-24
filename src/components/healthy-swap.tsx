@@ -125,7 +125,7 @@ export function HealthySwap() {
                 <p className="text-sm text-muted-foreground">Instead of {form.getValues('foodItem')}, try:</p>
                 <p className="text-2xl font-bold font-headline text-primary">{suggestion.healthySwap}</p>
               </div>
-              <div className="text-left p-4 bg-secondary rounded-lg">
+              <div className="text-left p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg">
                 <p className="font-semibold flex items-center"><Wheat className="mr-2 h-4 w-4"/>Why it's better:</p>
                 <p className="text-sm text-muted-foreground mt-1">{suggestion.reason}</p>
               </div>

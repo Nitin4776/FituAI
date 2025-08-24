@@ -287,7 +287,7 @@ export function BloodTestAnalyzer() {
                     <Accordion type="multiple" className="w-full space-y-2">
                         {pastAnalyses.map(analysis => (
                              <AccordionItem value={analysis.id} key={analysis.id} className="border-b-0">
-                                <Card className='bg-secondary/50'>
+                                <Card className='bg-gradient-to-r from-primary/10 to-accent/10'>
                                     <CardHeader className='p-4'>
                                         <AccordionTrigger className='p-0 hover:no-underline'>
                                             <div>

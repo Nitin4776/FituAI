@@ -133,7 +133,7 @@ export function AiMealPlan() {
   const MealPlanCard = ({ meal }: { meal: Meal }) => (
     <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="item-1" className="border-b-0">
-             <Card className="bg-secondary/50">
+             <Card className="bg-gradient-to-r from-primary/10 to-accent/10">
                 <CardHeader className="p-4">
                      <AccordionTrigger className='p-0 hover:no-underline'>
                         <div className="flex justify-between w-full items-center pr-2">
