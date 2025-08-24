@@ -16,7 +16,6 @@ import {
   Dumbbell,
   Soup,
   ClipboardCheck,
-  User,
 } from 'lucide-react';
 
 import {
@@ -197,18 +196,6 @@ function DashboardLayoutContent({
                       >
                       <Target className="size-4" />
                       <span>Goal</span>
-                      </SidebarMenuButton>
-                  </Link>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <Link href="/profile">
-                      <SidebarMenuButton
-                      isActive={pathname === '/profile'}
-                      tooltip="Profile"
-                      className="w-full justify-start"
-                      >
-                      <User className="size-4" />
-                      <span>Profile</span>
                       </SidebarMenuButton>
                   </Link>
               </SidebarMenuItem>
