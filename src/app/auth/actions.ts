@@ -11,7 +11,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   RecaptchaVerifier,
-  signInWithPhoneNumber,
+  signInWithPhoneNumber as firebaseSignInWithPhoneNumber,
   type ConfirmationResult
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
@@ -69,7 +69,7 @@ export async function signInWithGoogle() {
 export async function sendOtp(phoneNumber: string): Promise<void> {
     const appVerifier = window.recaptchaVerifier;
     try {
-        const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        const confirmationResult = await firebaseSignInWithPhoneNumber(auth, phoneNumber, appVerifier);
         window.confirmationResult = confirmationResult;
     } catch (error: any) {
          // This can happen if the phone number is invalid, or if ReCAPTCHA fails.
