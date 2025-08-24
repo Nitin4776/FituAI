@@ -1,4 +1,3 @@
-
 'use client'; 
 
 import { z } from 'zod';
@@ -17,9 +16,6 @@ import {
 import { app } from '@/lib/firebase';
 import { saveProfile as saveProfileServerAction } from '@/services/firestore.server';
 import { saveProfile } from '@/services/firestore';
-import { setCookie, removeCookie } from 'cookies-next';
-import { cookies } from 'next/headers';
-
 
 const auth = getAuth(app);
 
@@ -95,19 +91,6 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
             });
         }
         throw new Error("Failed to send OTP. Please check the number or try again.");
-    }
-}
-
-export async function verifyOtp(otp: string) {
-    if (window.confirmationResult) {
-        try {
-            const userCredential = await window.confirmationResult.confirm(otp);
-            await setSessionCookie(userCredential.user);
-        } catch (error: any) {
-            throw new Error("Invalid OTP. Please try again.");
-        }
-    } else {
-        throw new Error("No OTP confirmation result found. Please send OTP first.");
     }
 }
 
