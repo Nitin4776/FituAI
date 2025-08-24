@@ -297,6 +297,7 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
           setFeet(feet);
           setInches(inches);
       }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileForm.watch('height'), heightUnit])
 
   const handleFeetInchChange = (newFeet: number, newInches: number) => {
@@ -355,11 +356,11 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
 
   const baseMetrics = useMemo(() => {
     const profileData = profileForm.getValues();
-    if (!profileData.height || !profileData.weight || !profileData.age || !profileData.gender) return null;
-    if (profileForm.formState.isValidating || Object.keys(profileForm.formState.errors).length > 0) return null;
-    return calculateBaseMetrics(profileData);
+    const validationResult = profileSchema.safeParse(profileData);
+    if (!validationResult.success) return null;
+    return calculateBaseMetrics(validationResult.data);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileForm.watch(), profileForm.formState.isValidating, profileForm.formState.errors]);
+  }, [profileForm.watch(), profileForm.formState.isValid]);
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -480,18 +481,14 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
                     <CardTitle className="font-headline">Account Information</CardTitle>
                 </CardHeader>
                  <CardContent className="space-y-4">
-                    {user.email && (
-                         <div className="flex items-center gap-4 text-sm">
-                            <Mail className="text-muted-foreground" />
-                            <span>{user.email}</span>
-                        </div>
-                    )}
-                     {user.phoneNumber && (
-                         <div className="flex items-center gap-4 text-sm">
-                            <Phone className="text-muted-foreground" />
-                            <span>{user.phoneNumber}</span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-4 text-sm">
+                        <Mail className="text-muted-foreground" />
+                        <span>{user.email || 'No email provided'}</span>
+                    </div>
+                     <div className="flex items-center gap-4 text-sm">
+                        <Phone className="text-muted-foreground" />
+                        <span>{user.phoneNumber || 'No phone number provided'}</span>
+                    </div>
                  </CardContent>
             </Card>
         )}
@@ -521,3 +518,5 @@ function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) 
         </div>
     )
 }
+
+    
