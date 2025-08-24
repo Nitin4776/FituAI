@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { useForm, type SubmitHandler, Controller, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,132 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const PhoneSignUpForm = ({ form, onSubmit, isLoading }: { form: UseFormReturn<PhoneFormValues>, onSubmit: SubmitHandler<PhoneFormValues>, isLoading: boolean }) => (
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <Controller
+                name="phoneNumber"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                    <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                             <PhoneInput
+                                country={'in'}
+                                value={field.value}
+                                onChange={field.onChange}
+                                inputClass={cn(
+                                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm !pl-12 !w-full"
+                                )}
+                                buttonClass="rounded-l-md"
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? <Loader2 className="animate-spin" /> : <> Continue </>}
+            </Button>
+        </form>
+    </Form>
+  );
+
+  const OtpVerificationForm = ({ form, onSubmit, isLoading, phoneNumber, onBack }: { form: UseFormReturn<OtpFormValues>, onSubmit: SubmitHandler<OtpFormValues>, isLoading: boolean, phoneNumber: string, onBack: () => void }) => (
+     <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <div className="text-center">
+                <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to:</p>
+                <p className="font-semibold">{phoneNumber}</p>
+            </div>
+            <FormField
+                control={form.control}
+                name="otp"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Verification Code</FormLabel>
+                    <FormControl>
+                        <Input 
+                            placeholder="_ _ _ _ _ _" 
+                            {...field}
+                            className="text-center tracking-[0.5em]"
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? <Loader2 className="animate-spin" /> : <> Verify & Sign Up</> }
+            </Button>
+            <Button variant="link" size="sm" onClick={onBack} className="w-full">
+                Back to sign up
+            </Button>
+        </form>
+    </Form>
+  );
+
+  const EmailSignUpForm = ({ form, onSubmit, isLoading }: { form: UseFormReturn<EmailFormValues>, onSubmit: SubmitHandler<EmailFormValues>, isLoading: boolean }) => (
+    <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                <Input type="email" placeholder="you@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? <Loader2 className="animate-spin" /> : <> Sign Up </> }
+        </Button>
+        </form>
+    </Form>
+  );
 
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -151,134 +277,6 @@ export default function SignUpPage() {
     }
   }
   
-  const PhoneSignUpForm = () => (
-    <Form {...phoneForm}>
-        <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
-             <FormField
-                control={phoneForm.control}
-                name="name"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <Controller
-                name="phoneNumber"
-                control={phoneForm.control}
-                render={({ field, fieldState }) => (
-                    <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                             <PhoneInput
-                                country={'in'}
-                                value={field.value}
-                                onChange={field.onChange}
-                                inputClass={cn(
-                                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm !pl-12 !w-full"
-                                )}
-                                buttonClass="rounded-l-md"
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? <Loader2 className="animate-spin" /> : <> Continue </>}
-            </Button>
-        </form>
-    </Form>
-  )
-
-  const OtpVerificationForm = () => (
-     <Form {...otpForm}>
-        <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
-             <div className="text-center">
-                <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to:</p>
-                <p className="font-semibold">{phoneNumber}</p>
-            </div>
-            <FormField
-                control={otpForm.control}
-                name="otp"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Verification Code</FormLabel>
-                    <FormControl>
-                        <Input 
-                            placeholder="_ _ _ _ _ _" 
-                            {...field}
-                            className="text-center tracking-[0.5em]"
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? <Loader2 className="animate-spin" /> : <> Verify & Sign Up</> }
-            </Button>
-            <Button variant="link" size="sm" onClick={() => setStep('input')} className="w-full">
-                Back to sign up
-            </Button>
-        </form>
-    </Form>
-  )
-
-  const EmailSignUpForm = () => (
-    <Form {...emailForm}>
-        <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
-        <FormField
-            control={emailForm.control}
-            name="name"
-            render={({ field }) => (
-            <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                <Input placeholder="John Doe" {...field} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-            )}
-        />
-        <FormField
-            control={emailForm.control}
-            name="email"
-            render={({ field }) => (
-            <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-            )}
-        />
-        <FormField
-            control={emailForm.control}
-            name="password"
-            render={({ field }) => (
-            <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
-            )}
-        />
-        <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? <Loader2 className="animate-spin" /> : <> Sign Up </> }
-        </Button>
-        </form>
-    </Form>
-  )
-
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
        <div id="recaptcha-container"></div>
@@ -291,10 +289,28 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent>
             { step === 'otp' ? (
-                <OtpVerificationForm />
+                <OtpVerificationForm 
+                    form={otpForm}
+                    onSubmit={onOtpSubmit}
+                    isLoading={isLoading}
+                    phoneNumber={phoneNumber}
+                    onBack={() => setStep('input')}
+                />
             ) : (
                 <>
-                { signupMethod === 'phone' ? <PhoneSignUpForm/> : <EmailSignUpForm /> }
+                { signupMethod === 'phone' ? (
+                    <PhoneSignUpForm
+                        form={phoneForm}
+                        onSubmit={onPhoneSubmit}
+                        isLoading={isLoading}
+                    />
+                ) : (
+                    <EmailSignUpForm
+                        form={emailForm}
+                        onSubmit={onEmailSubmit}
+                        isLoading={isLoading}
+                    /> 
+                )}
 
                 <div className="relative my-4">
                     <div className="absolute inset-0 flex items-center">
