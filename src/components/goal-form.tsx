@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Flame, Wheat, Drumstick, Beef } from 'lucide-react';
 import { getProfile, saveProfile, updateDailySummaryWithNewGoals } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const goalSchema = z.object({
     goal: z.enum(['lose', 'maintain', 'gain']),
@@ -243,11 +244,11 @@ export function GoalForm() {
           <CardContent className='space-y-4'>
               {goalMetrics ? (
                   <>
-                      <MetricCard icon={Flame} label="Daily Calorie Goal" value={`${goalMetrics.dailyCalories} kcal`} description={`To ${profile?.goal} weight`} />
-                      <MetricCard icon={Drumstick} label="Protein" value={`${goalMetrics.protein}g`} description="Essential for muscle repair and growth." />
-                      <MetricCard icon={Wheat} label="Carbohydrates" value={`${goalMetrics.carbs}g`} description="Your body's main source of energy." />
-                      <MetricCard icon={Beef} label="Fats" value={`${goalMetrics.fats}g`} description="Important for hormone production and health." />
-                      <MetricCard icon={Wheat} label="Fiber" value={`${goalMetrics.fiber}g`} description="Crucial for digestive health." />
+                      <MetricCard icon={Flame} label="Daily Calorie Goal" value={`${goalMetrics.dailyCalories} kcal`} description={`To ${profile?.goal} weight`} iconClassName="text-orange-500" />
+                      <MetricCard icon={Drumstick} label="Protein" value={`${goalMetrics.protein}g`} description="Essential for muscle repair and growth." iconClassName="text-red-500" />
+                      <MetricCard icon={Wheat} label="Carbohydrates" value={`${goalMetrics.carbs}g`} description="Your body's main source of energy." iconClassName="text-yellow-500" />
+                      <MetricCard icon={Beef} label="Fats" value={`${goalMetrics.fats}g`} description="Important for hormone production and health." iconClassName="text-purple-500" />
+                      <MetricCard icon={Wheat} label="Fiber" value={`${goalMetrics.fiber}g`} description="Crucial for digestive health." iconClassName="text-green-500" />
                   </>
               ) : (
                   <div className="flex items-center justify-center h-full text-center text-muted-foreground p-8">
@@ -265,13 +266,14 @@ interface MetricCardProps {
     label: string;
     value: string;
     description: string;
+    iconClassName?: string;
 }
 
-function MetricCard({ icon: Icon, label, value, description }: MetricCardProps) {
+function MetricCard({ icon: Icon, label, value, description, iconClassName }: MetricCardProps) {
     return (
-        <div className="p-4 bg-secondary rounded-lg flex items-center">
-            <div className="p-3 rounded-full bg-primary/10 text-primary mr-4">
-                <Icon className="h-6 w-6" />
+        <div className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg flex items-center">
+            <div className="p-3 rounded-full bg-background/50 mr-4">
+                <Icon className={cn("h-6 w-6", iconClassName)} />
             </div>
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
