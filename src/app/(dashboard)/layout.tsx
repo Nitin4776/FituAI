@@ -44,9 +44,9 @@ const menuItems = [
 ];
 
 const aiMenuItems = [
-    { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
-    { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
     { href: '/ai-meal-plan', label: 'AI Meal Plan', icon: ClipboardCheck },
+    { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
+    { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
 ];
 
 
@@ -121,10 +121,12 @@ function BottomNavigation() {
                         </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="top" align="center" className="mb-2">
+                        <DropdownMenuLabel>AI Tools</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
                         {aiMenuItems.map(item => (
                             <DropdownMenuItem key={item.href} asChild>
                                 <Link href={item.href} className="flex items-center gap-2">
-                                <item.icon className="size-4" />
+                                <item.icon className="size-4 text-primary" />
                                 <span>{item.label}</span>
                                 </Link>
                             </DropdownMenuItem>
@@ -258,10 +260,12 @@ function DashboardLayoutContent({
                     </DropdownMenuTrigger>
                 </SidebarMenuItem>
                 <DropdownMenuContent side="right" align="start" sideOffset={8}>
+                    <DropdownMenuLabel>AI Tools</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
                     {aiMenuItems.map(item => (
                         <DropdownMenuItem key={item.href} asChild>
                             <Link href={item.href} className="flex items-center gap-2">
-                                <item.icon className="size-4" />
+                                <item.icon className="size-4 text-primary" />
                                 <span>{item.label}</span>
                             </Link>
                         </DropdownMenuItem>
