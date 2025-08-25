@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -60,32 +61,35 @@ export function SleepTracker() {
     return (
         <div className="text-center">
             <Label className="text-sm text-muted-foreground">How was your sleep?</Label>
-            <div className='flex gap-1 items-center justify-center pt-1'>
+            <div className='flex gap-2 items-start justify-center pt-1'>
                 {isLoading ? (
-                    <div className='flex items-center justify-center h-9 w-full'>
+                    <div className='flex items-center justify-center h-14 w-full'>
                         <Loader2 className="h-5 w-5 animate-spin" />
                     </div>
                 ) : (
                     <TooltipProvider>
                         {Object.entries(sleepOptions).map(([quality, emoji]) => (
-                            <Tooltip key={quality}>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className={cn(
-                                            'text-2xl rounded-full h-9 w-9 transition-all duration-200',
-                                            selectedSleep === quality ? 'bg-primary/20 scale-110' : 'opacity-50 hover:opacity-100'
-                                        )}
-                                        onClick={() => handleSelectSleep(quality as SleepQuality)}
-                                    >
-                                        {emoji}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p className='capitalize'>{quality}</p>
-                                </TooltipContent>
-                            </Tooltip>
+                            <div key={quality} className="flex flex-col items-center gap-1">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className={cn(
+                                                'text-2xl rounded-full h-9 w-9 transition-all duration-200',
+                                                selectedSleep === quality ? 'bg-primary/20 scale-110' : 'opacity-50 hover:opacity-100'
+                                            )}
+                                            onClick={() => handleSelectSleep(quality as SleepQuality)}
+                                        >
+                                            {emoji}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p className='capitalize'>{quality}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                <p className='text-xs capitalize text-muted-foreground'>{quality}</p>
+                            </div>
                         ))}
                     </TooltipProvider>
                 )}
