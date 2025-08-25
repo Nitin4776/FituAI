@@ -8,10 +8,13 @@ import { Lightbulb, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { getProfile, getBloodTestAnalyses, getTodaysMeals, getTodaysActivities, getSleepLogForToday } from '@/services/firestore';
 import type { DailySuggestionInput } from '@/ai/flows/daily-suggestion';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt } from './upgrade-prompt';
 
 export function AiDailySuggestion() {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
 
   const fetchSuggestion = useCallback(async () => {
     setIsLoading(true);
@@ -61,8 +64,20 @@ export function AiDailySuggestion() {
   }, []);
 
   useEffect(() => {
-    fetchSuggestion();
-  }, [fetchSuggestion]);
+    if (!subscriptionLoading && isSubscribed) {
+        fetchSuggestion();
+    } else if (!subscriptionLoading && !isSubscribed) {
+        setIsLoading(false);
+    }
+  }, [fetchSuggestion, isSubscribed, subscriptionLoading]);
+
+  if (subscriptionLoading) {
+    return <Skeleton className="h-40 w-full" />
+  }
+
+  if (!isSubscribed) {
+    return <UpgradePrompt featureName="AI Daily Suggestions" description="Get personalized, AI-powered tips every day based on your logs and goals." />;
+  }
 
   return (
     <Card className="bg-gradient-to-r from-primary/10 to-accent/10">

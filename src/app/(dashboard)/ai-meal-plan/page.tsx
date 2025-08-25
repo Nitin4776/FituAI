@@ -1,8 +1,15 @@
 
+'use client';
+
 import { AiMealPlan } from '@/components/ai-meal-plan';
+import { UpgradePrompt } from '@/components/upgrade-prompt';
+import { useSubscription } from '@/hooks/use-subscription';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles } from 'lucide-react';
 
 export default function AiMealPlanPage() {
+  const { isSubscribed, loading } = useSubscription();
+
   return (
     <div className="space-y-8">
       <div>
@@ -13,7 +20,13 @@ export default function AiMealPlanPage() {
           Let our AI create a personalized meal plan for your day based on your preferences.
         </p>
       </div>
-      <AiMealPlan />
+       {loading ? (
+        <Skeleton className="h-96 w-full" />
+      ) : isSubscribed ? (
+        <AiMealPlan />
+      ) : (
+        <UpgradePrompt featureName="AI Meal Plan Generator" />
+      )}
     </div>
   );
 }

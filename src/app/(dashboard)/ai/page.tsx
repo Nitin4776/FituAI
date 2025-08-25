@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -10,9 +12,11 @@ import {
   TestTube2,
   Replace,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSubscription } from '@/hooks/use-subscription';
 
 const aiFeatures = [
     {
@@ -20,16 +24,34 @@ const aiFeatures = [
         title: 'Healthy Swaps',
         description: 'Get AI-powered food swap suggestions.',
         icon: Replace,
+        premium: true,
     },
     {
         href: '/blood-test',
         title: 'Blood Test Analysis',
         description: 'Upload your report for an AI analysis.',
         icon: TestTube2,
+        premium: true,
+    },
+    {
+        href: '/ai-body-scan',
+        title: 'AI Body Scan',
+        description: 'Estimate your vitals from photos.',
+        icon: Sparkles,
+        premium: true,
+    },
+    {
+        href: '/ai-meal-plan',
+        title: 'AI Meal Plan',
+        description: 'Generate a daily meal plan.',
+        icon: Sparkles,
+        premium: true,
     }
 ]
 
 export default function AIPage() {
+  const { isSubscribed } = useSubscription();
+
   return (
     <div className="space-y-8">
        <div>
@@ -48,7 +70,10 @@ export default function AIPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-4">
                             <feature.icon className="h-8 w-8 text-primary" />
-                            <span>{feature.title}</span>
+                            <span className='flex items-center gap-2'>
+                                {feature.title}
+                                {feature.premium && !isSubscribed && <Lock className="h-5 w-5 text-primary/70" />}
+                            </span>
                         </CardTitle>
                         <CardDescription>{feature.description}</CardDescription>
                     </CardHeader>

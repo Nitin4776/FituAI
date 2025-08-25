@@ -19,6 +19,7 @@ import {
   Sparkles,
   Scan,
   GlassWater,
+  Lock
 } from 'lucide-react';
 
 import {
@@ -39,6 +40,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { useSubscription } from '@/hooks/use-subscription';
 
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -47,16 +49,27 @@ const menuItems = [
 ];
 
 const aiMenuItems = [
-    { href: '/ai-body-scan', label: 'AI Body Scan', icon: Scan },
-    { href: '/ai-meal-plan', label: 'AI Meal Plan', icon: ClipboardCheck },
-    { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
-    { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
+    { href: '/ai-body-scan', label: 'AI Body Scan', icon: Scan, premium: true },
+    { href: '/ai-meal-plan', label: 'AI Meal Plan', icon: ClipboardCheck, premium: true },
+    { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2, premium: true },
+    { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace, premium: true },
 ];
+
+function AIMenuLink({ item, isSubscribed }: { item: typeof aiMenuItems[0], isSubscribed: boolean }) {
+    return (
+        <Link href={item.href} className="flex items-center gap-2">
+            <item.icon className="size-4 text-primary" />
+            <span>{item.label}</span>
+            {item.premium && !isSubscribed && <Lock className="size-3 ml-auto" />}
+        </Link>
+    )
+}
 
 
 function BottomNavigation() {
   const pathname = usePathname();
   const { isMobile } = useSidebar();
+  const { isSubscribed } = useSubscription();
 
   if (!isMobile) {
     return null;
@@ -138,10 +151,7 @@ function BottomNavigation() {
                         <DropdownMenuSeparator />
                         {aiMenuItems.map(item => (
                             <DropdownMenuItem key={item.href} asChild>
-                                <Link href={item.href} className="flex items-center gap-2">
-                                <item.icon className="size-4 text-primary" />
-                                <span>{item.label}</span>
-                                </Link>
+                               <AIMenuLink item={item} isSubscribed={isSubscribed} />
                             </DropdownMenuItem>
                         ))}
                     </DropdownMenuContent>
@@ -178,6 +188,7 @@ function DashboardLayoutContent({
 }) {
   const pathname = usePathname();
   const { signOut } = useAuth();
+  const { isSubscribed } = useSubscription();
 
   return (
       <div className="relative flex min-h-screen">
@@ -289,10 +300,7 @@ function DashboardLayoutContent({
                     <DropdownMenuSeparator />
                     {aiMenuItems.map(item => (
                         <DropdownMenuItem key={item.href} asChild>
-                            <Link href={item.href} className="flex items-center gap-2">
-                                <item.icon className="size-4 text-primary" />
-                                <span>{item.label}</span>
-                            </Link>
+                            <AIMenuLink item={item} isSubscribed={isSubscribed} />
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>

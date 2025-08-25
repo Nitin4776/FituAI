@@ -1,8 +1,15 @@
 
+'use client';
+
 import { BloodTestAnalyzer } from '@/components/blood-test-analyzer';
+import { UpgradePrompt } from '@/components/upgrade-prompt';
+import { useSubscription } from '@/hooks/use-subscription';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles } from 'lucide-react';
 
 export default function BloodTestPage() {
+  const { isSubscribed, loading } = useSubscription();
+
   return (
     <div className="space-y-8">
       <div>
@@ -13,7 +20,13 @@ export default function BloodTestPage() {
           Upload your blood test report for an AI-powered analysis and summary.
         </p>
       </div>
-      <BloodTestAnalyzer />
+      {loading ? (
+        <Skeleton className="h-96 w-full" />
+      ) : isSubscribed ? (
+        <BloodTestAnalyzer />
+      ) : (
+        <UpgradePrompt featureName="Blood Test Analysis" />
+      )}
     </div>
   );
 }
