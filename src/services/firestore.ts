@@ -18,7 +18,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import type { MealLog, ActivityLog, SleepLog } from '@/lib/types';
+import type { MealLog, ActivityLog, SleepLog, WaterLog } from '@/lib/types';
 import { startOfDay } from 'date-fns';
 
 
@@ -321,6 +321,34 @@ export async function getSleepLogForToday(userId?: string): Promise<SleepLog | n
   return null;
 }
 
+// --- Water Intake ---
+export async function saveWaterIntake(waterData: { glasses: number }) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+
+    const todayId = getTodayDocId();
+    const waterLogDocRef = doc(db, 'users', userId, 'waterLogs', todayId);
+    
+    // Using set with merge to create or update the document for the day
+    await setDoc(waterLogDocRef, {
+        ...waterData,
+        createdAt: Timestamp.now(),
+    }, { merge: true });
+}
+
+export async function getTodaysWaterIntake(userId?: string): Promise<WaterLog | null> {
+    const uid = userId || getCurrentUserId();
+    if (!uid) return null;
+    
+    const todayId = getTodayDocId();
+    const waterLogDocRef = doc(db, 'users', uid, 'waterLogs', todayId);
+    const docSnap = await getDoc(waterLogDocRef);
+
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as WaterLog;
+    }
+    return null;
+}
 
 // --- Daily Summary ---
 const defaultSummary = {
