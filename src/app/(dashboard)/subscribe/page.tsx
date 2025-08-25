@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveProfile } from '@/services/firestore';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const standardFeatures = [
     'Set & Track Personal Goals',
@@ -28,7 +29,7 @@ const premiumFeatures = [
 const plans = [
     {
         name: 'Free',
-        price: '$0',
+        price: '₹0',
         duration: 'month',
         features: standardFeatures,
         premium: false,
@@ -37,7 +38,9 @@ const plans = [
     },
     {
         name: 'Monthly',
-        price: '$9.99',
+        price: '₹49',
+        originalPrice: '₹100',
+        discount: '51% off',
         duration: 'month',
         features: [...standardFeatures, ...premiumFeatures],
         premium: true,
@@ -46,7 +49,9 @@ const plans = [
     },
     {
         name: 'Half-Yearly',
-        price: '$49.99',
+        price: '₹294',
+        originalPrice: '₹600',
+        discount: '51% off',
         duration: '6 months',
         features: [...standardFeatures, ...premiumFeatures],
         premium: true,
@@ -55,7 +60,9 @@ const plans = [
     },
     {
         name: 'Yearly',
-        price: '$89.99',
+        price: '₹588',
+        originalPrice: '₹1200',
+        discount: '51% off',
         duration: 'year',
         features: [...standardFeatures, ...premiumFeatures],
         premium: true,
@@ -124,10 +131,20 @@ export default function SubscribePage() {
                     plan.premium && "border-primary border-2 shadow-primary/20 bg-gradient-to-r from-primary/10 to-accent/10"
                 )}>
                     <CardHeader>
-                        <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
+                        <div className="flex justify-between items-center">
+                            <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
+                            {plan.premium && (plan as any).discount && (
+                                <Badge variant="destructive">{(plan as any).discount}</Badge>
+                            )}
+                        </div>
                         <CardDescription>
-                            <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-                            <span className="text-muted-foreground">/{plan.duration}</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+                                {plan.premium && (plan as any).originalPrice && (
+                                     <span className="text-lg line-through text-muted-foreground">{(plan as any).originalPrice}</span>
+                                )}
+                                <span className="text-muted-foreground">/{plan.duration}</span>
+                            </div>
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow space-y-4">
