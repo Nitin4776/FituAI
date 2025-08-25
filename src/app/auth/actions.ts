@@ -20,17 +20,15 @@ import { saveProfile } from '@/services/firestore';
 
 const auth = getAuth(app);
 
-export function initializeRecaptchaVerifier(callback: () => void) {
-    if (typeof window !== 'undefined') {
-        // Unmount the previous verifier if it exists
-        if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.clear();
-        }
+export function initializeRecaptchaVerifier() {
+    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             'size': 'invisible',
-            'callback': () => {
+            'callback': (response: any) => {
                 // reCAPTCHA solved, allow signInWithPhoneNumber.
-                callback();
+            },
+            'expired-callback': () => {
+                // Response expired. Ask user to solve reCAPTCHA again.
             }
         });
     }
@@ -87,9 +85,7 @@ export async function sendOtp(phoneNumber: string): Promise<void> {
         let errorMessage = "Failed to send OTP. Please check the number and try again.";
         // Reset the verifier to allow retries
         if (window.recaptchaVerifier) {
-            // @ts-ignore
             window.recaptchaVerifier.render().then((widgetId) => {
-                // @ts-ignore
                 if (window.grecaptcha) {
                     window.grecaptcha.reset(widgetId);
                 }

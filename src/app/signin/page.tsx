@@ -161,6 +161,10 @@ export default function SignInPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const { toast } = useToast();
 
+  useEffect(() => {
+    initializeRecaptchaVerifier();
+  }, []);
+
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: '', password: '' },
@@ -195,35 +199,19 @@ export default function SignInPage() {
     setIsLoading(true);
     setPhoneNumber(data.phoneNumber);
     try {
-        const sendOtpWithRecaptcha = () => {
-            sendOtp(data.phoneNumber)
-                .then(() => {
-                    setStep('otp');
-                    toast({
-                        title: 'OTP Sent',
-                        description: 'Please check your phone for the verification code.',
-                    });
-                })
-                .catch((error) => {
-                     toast({
-                        variant: 'destructive',
-                        title: 'Failed to Send OTP',
-                        description: (error as Error).message,
-                    });
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        };
-        initializeRecaptchaVerifier(sendOtpWithRecaptcha);
-        window.recaptchaVerifier.render();
-
+        await sendOtp(data.phoneNumber)
+        setStep('otp');
+        toast({
+            title: 'OTP Sent',
+            description: 'Please check your phone for the verification code.',
+        });
     } catch (error) {
          toast({
             variant: 'destructive',
             title: 'Failed to Send OTP',
             description: (error as Error).message,
         });
+    } finally {
         setIsLoading(false);
     }
   }
