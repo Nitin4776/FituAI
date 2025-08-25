@@ -344,11 +344,11 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
                  <CardContent className="space-y-4">
                     <div className="flex items-center gap-4 text-sm">
                         <Mail className="text-muted-foreground" />
-                        <span>{user.email || 'No email provided'}</span>
+                        <span>{profileForm.getValues('email') || user.email || 'No email provided'}</span>
                     </div>
                      <div className="flex items-center gap-4 text-sm">
                         <Phone className="text-muted-foreground" />
-                        <span>{user.phoneNumber || 'No phone number provided'}</span>
+                        <span>{profileForm.getValues('phoneNumber') || user.phoneNumber || 'No phone number provided'}</span>
                     </div>
                  </CardContent>
             </Card>
@@ -380,3 +380,5 @@ function MetricCard({ icon: Icon, label, value, description, iconClassName }: Me
         </div>
     )
 }
+
+    
