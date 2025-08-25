@@ -135,6 +135,12 @@ export function TodaySummary() {
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
   const statusMessage = getCalorieStatusMessage(dailyTotals.calories, dailyGoal, hasProfile);
 
+  const getProgressVariant = (progress: number): "default" | "warning" | "danger" => {
+    if (progress > 105) return "danger";
+    if (progress >= 75) return "default";
+    return "warning";
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -162,7 +168,7 @@ export function TodaySummary() {
                            )}
                         </Link>
                   </div>
-                  <Progress value={calorieProgress} className="h-2"/>
+                  <Progress value={calorieProgress} variant={getProgressVariant(calorieProgress)} className="h-2"/>
                   <div className="flex justify-between items-center mt-1">
                     <p className="text-xs text-muted-foreground">{statusMessage}</p>
                     <span className="text-sm font-bold">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
