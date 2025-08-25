@@ -121,7 +121,7 @@ const PhotoInput = ({ label, onPhotoSelect, photo }: { label: string, onPhotoSel
                     </div>
                 )}
             </Card>
-            <Button variant="outline" className="w-full" onClick={() => setIsDialogOpen(true)}>Add {label}</Button>
+            <Button variant="outline" className="w-full" onClick={() => setIsDialogOpen(true)}>Add</Button>
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
