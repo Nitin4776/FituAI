@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: "fitUAI",
   description: "Your personalized AI-powered health and fitness companion.",
   manifest: "/manifest.json",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFBF7" },
+    { media: "(prefers-color-scheme: dark)", color: "#040716" },
+  ],
 };
 
 export default function RootLayout({
