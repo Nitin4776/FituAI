@@ -66,6 +66,14 @@ const activityLevelMultipliers = {
     very_active: 1.9,
 };
 
+const proteinPerKgMultipliers = {
+    sedentary: 1.2,
+    light: 1.4,
+    moderate: 1.6,
+    active: 1.8,
+    very_active: 2.0,
+}
+
 const goalCalorieAdjustments = {
     lose: -500,
     maintain: 0,
@@ -115,7 +123,7 @@ export function GoalForm() {
     }
     try {
         const metrics = calculateBMR(profile);
-        const goalMetrics = calculateGoalMetrics(metrics, profile.activityLevel, data.goal);
+        const goalMetrics = calculateGoalMetrics(metrics, profile, data.goal);
 
         const fullProfileData: FullProfile = {
             ...profile,
@@ -154,16 +162,26 @@ export function GoalForm() {
     return { bmr };
   }
   
-  const calculateGoalMetrics = (baseMetrics: FitnessMetrics, activityLevel: FullProfile['activityLevel'], goal: GoalFormValues['goal']): GoalMetrics => {
-      const tdee = baseMetrics.bmr * activityLevelMultipliers[activityLevel];
-      const dailyCalories = tdee + goalCalorieAdjustments[goal];
+  const calculateGoalMetrics = (baseMetrics: FitnessMetrics, profile: FullProfile, goal: GoalFormValues['goal']): GoalMetrics => {
+      const tdee = baseMetrics.bmr * activityLevelMultipliers[profile.activityLevel];
+      const dailyCalories = Math.round(tdee + goalCalorieAdjustments[goal]);
 
-      const protein = Math.round((dailyCalories * 0.3) / 4);
-      const carbs = Math.round((dailyCalories * 0.4) / 4);
-      const fats = Math.round((dailyCalories * 0.3) / 9);
+      // 1. Calculate Protein (based on body weight and activity level)
+      const protein = Math.round(proteinPerKgMultipliers[profile.activityLevel] * profile.weight);
+      const proteinCalories = protein * 4;
+
+      // 2. Calculate Fats (25% of total calories)
+      const fats = Math.round((dailyCalories * 0.25) / 9);
+      const fatCalories = fats * 9;
+
+      // 3. Calculate Carbohydrates (the remainder)
+      const carbCalories = dailyCalories - proteinCalories - fatCalories;
+      const carbs = Math.round(carbCalories / 4);
+
+      // 4. Calculate Fiber
       const fiber = Math.round((dailyCalories / 1000) * 14);
 
-      return { dailyCalories: Math.round(dailyCalories), protein, carbs, fats, fiber };
+      return { dailyCalories, protein, carbs, fats, fiber };
   }
 
   const goalMetrics = useMemo(() => {
