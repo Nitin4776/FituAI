@@ -23,8 +23,13 @@ import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'
 
 const profileSchema = z.object({
+  name: z.string().min(2, 'Name is required.'),
+  email: z.string().email('Valid email is required.').optional().or(z.literal('')),
+  phoneNumber: z.string().optional(),
   height: z.coerce.number().positive('Height must be positive'),
   weight: z.coerce.number().positive('Weight must be positive'),
   age: z.coerce.number().int().min(1, 'Age must be positive'),
@@ -90,7 +95,10 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
 
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { 
+    defaultValues: {
+      name: '',
+      email: '',
+      phoneNumber: '',
       height: '' as any,
       weight: '' as any,
       age: '' as any,
@@ -110,11 +118,18 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
             setFeet(feet);
             setInches(inches);
         }
+      } else if (user) {
+        // Pre-fill from auth if no firestore profile exists yet
+        profileForm.reset({
+            name: user.displayName || '',
+            email: user.email || '',
+            phoneNumber: user.phoneNumber || '',
+        });
       }
       setIsLoading(false);
     }
     loadProfile();
-  }, [profileForm]);
+  }, [profileForm, user]);
 
   useEffect(() => {
       const heightInCm = profileForm.watch('height');
@@ -205,6 +220,26 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
               ) : (
                   <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                        <FormField control={profileForm.control} name="name" render={({ field }) => (
+                            <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={profileForm.control} name="email" render={({ field }) => (
+                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="you@example.com" {...field} disabled={!!user?.email} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField control={profileForm.control} name="phoneNumber" render={({ field }) => (
+                            <FormItem><FormLabel>Phone Number</FormLabel><FormControl>
+                                <PhoneInput
+                                    country={'in'}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    inputClass={cn(
+                                        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm !pl-12 !w-full"
+                                    )}
+                                    buttonClass="rounded-l-md"
+                                    disabled={!!user?.phoneNumber}
+                                />
+                            </FormControl><FormMessage /></FormItem>
+                        )}/>
                        <FormField
                           control={profileForm.control}
                           name="height"

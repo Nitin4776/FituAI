@@ -12,10 +12,12 @@ import {
   GoogleAuthProvider,
   RecaptchaVerifier,
   signInWithPhoneNumber as firebaseSignInWithPhoneNumber,
-  type ConfirmationResult
+  type ConfirmationResult,
+  linkWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { saveProfile } from '@/services/firestore';
+import { getProfile, saveProfile } from '@/services/firestore';
 
 
 const auth = getAuth(app);
@@ -61,17 +63,25 @@ export async function signInWithGoogle() {
     try {
         const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
-        await setSessionCookie(user);
-
-        // Check if user is new, if so save their profile
-        if (user.metadata.creationTime === user.metadata.lastSignInTime) {
+        
+        const existingProfile = await getProfile(user.uid);
+        if (!existingProfile) {
              await saveProfile({ 
                 name: user.displayName, 
                 email: user.email, 
                 photoURL: user.photoURL 
             }, user.uid);
         }
+
+        await setSessionCookie(user);
+
     } catch (error: any) {
+        // Handle cases where the email is already linked to another account (e.g. phone)
+        if (error.code === 'auth/account-exists-with-different-credential') {
+            const pendingCred = error.credential;
+            // For now, we'll just inform the user. A more advanced flow could link them.
+            throw new Error("An account already exists with this email address. Please sign in with your other method.");
+        }
         throw new Error(error.message);
     }
 }
@@ -128,9 +138,8 @@ export async function signInWithPhoneNumber(otp: string) {
         const userCredential = await window.confirmationResult.confirm(otp);
         const user = userCredential.user;
 
-        // Check if the user is signing in for the first time.
-        // If so, create a profile stub so they're redirected to the profile page.
-        if (user.metadata.creationTime === user.metadata.lastSignInTime) {
+        const existingProfile = await getProfile(user.uid);
+        if (!existingProfile) {
             await saveProfile({ 
                 name: 'New User', // Placeholder name
                 phoneNumber: user.phoneNumber 
@@ -175,7 +184,7 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
     if (error.code) {
         switch (error.code) {
             case 'auth/email-already-in-use':
-                errorMessage = 'This email address is already in use by another account.';
+                errorMessage = 'This email address is already in use. Please sign in or use a different email.';
                 break;
             case 'auth/invalid-email':
                 errorMessage = 'The email address is not valid.';
