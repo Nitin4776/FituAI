@@ -1,0 +1,173 @@
+
+'use client';
+
+import { useState } from 'react';
+import { Check, Sparkles, X } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { saveProfile } from '@/services/firestore';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+const standardFeatures = [
+    'Set & Track Personal Goals',
+    'Intermittent Fasting Calculator',
+    'Log Meals, Activities & Water',
+];
+
+const premiumFeatures = [
+    'AI-Powered Healthy Swaps',
+    'AI Blood Test Analysis',
+    'AI Meal Plan Generator',
+    'AI Body Vitals Scan',
+    'Personalized AI Daily Suggestions',
+];
+
+const plans = [
+    {
+        name: 'Free',
+        price: '$0',
+        duration: 'month',
+        features: standardFeatures,
+        premium: false,
+        cta: 'Continue with Free',
+        planId: 'free',
+    },
+    {
+        name: 'Monthly',
+        price: '$9.99',
+        duration: 'month',
+        features: [...standardFeatures, ...premiumFeatures],
+        premium: true,
+        cta: 'Choose Monthly',
+        planId: 'monthly',
+    },
+    {
+        name: 'Half-Yearly',
+        price: '$49.99',
+        duration: '6 months',
+        features: [...standardFeatures, ...premiumFeatures],
+        premium: true,
+        cta: 'Choose Half-Yearly',
+        planId: 'half_yearly',
+    },
+    {
+        name: 'Yearly',
+        price: '$89.99',
+        duration: 'year',
+        features: [...standardFeatures, ...premiumFeatures],
+        premium: true,
+        cta: 'Choose Yearly',
+        planId: 'yearly',
+    }
+]
+
+export default function SubscribePage() {
+    const [isLoading, setIsLoading] = useState<string | null>(null);
+    const { toast } = useToast();
+    const router = useRouter();
+
+    const handleSelectPlan = async (planId: string) => {
+        setIsLoading(planId);
+        try {
+            const now = new Date();
+            let subscribedUntil: Date | null = null;
+            if (planId === 'monthly') {
+                subscribedUntil = new Date(now.setMonth(now.getMonth() + 1));
+            } else if (planId === 'half_yearly') {
+                subscribedUntil = new Date(now.setMonth(now.getMonth() + 6));
+            } else if (planId === 'yearly') {
+                subscribedUntil = new Date(now.setFullYear(now.getFullYear() + 1));
+            }
+
+            await saveProfile({
+                subscription: {
+                    plan: planId,
+                    subscribedAt: new Date(),
+                    subscribedUntil: subscribedUntil
+                }
+            });
+            
+            toast({
+                title: 'Plan Selected!',
+                description: `You are now on the ${planId} plan.`,
+            });
+
+            router.push('/');
+
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Something went wrong',
+                description: 'Could not update your subscription. Please try again.',
+            });
+        } finally {
+            setIsLoading(null);
+        }
+    }
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 sm:p-8">
+        <div className="text-center mb-8">
+            <h1 className="font-headline text-4xl md:text-5xl text-primary">Choose Your Plan</h1>
+            <p className="mt-2 text-lg text-muted-foreground">
+                Unlock the full power of AI to supercharge your health journey.
+            </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {plans.map(plan => (
+                <Card key={plan.name} className={cn(
+                    "flex flex-col",
+                    plan.premium && "border-primary border-2 shadow-primary/20"
+                )}>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
+                        <CardDescription>
+                            <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+                            <span className="text-muted-foreground">/{plan.duration}</span>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-4">
+                        <ul className="space-y-2 text-sm">
+                            {plan.features.map(feature => (
+                                <li key={feature} className="flex items-center gap-2">
+                                    <span className={cn(premiumFeatures.includes(feature) ? "text-primary" : "text-green-500")}>
+                                        <Check className="h-4 w-4" />
+                                    </span>
+                                    <span className="text-muted-foreground">{feature}</span>
+                                </li>
+                            ))}
+                             {!plan.premium && premiumFeatures.map(feature => (
+                                <li key={feature} className="flex items-center gap-2">
+                                     <span className="text-muted-foreground/50">
+                                        <X className="h-4 w-4" />
+                                    </span>
+                                    <span className="text-muted-foreground/50 line-through">{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        <Button
+                            className="w-full"
+                            variant={plan.premium ? 'default' : 'outline'}
+                            onClick={() => handleSelectPlan(plan.planId)}
+                            disabled={!!isLoading}
+                        >
+                            {isLoading === plan.planId ? <Loader2 className="animate-spin" /> : plan.cta}
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+         <div className="text-center mt-8">
+            <p className="text-xs text-muted-foreground">
+                You can change your plan at any time.
+            </p>
+        </div>
+    </div>
+  );
+}

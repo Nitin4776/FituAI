@@ -19,7 +19,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicPages = ['/signin', '/signup'];
+const publicPages = ['/signin', '/signup', '/subscribe'];
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -44,15 +44,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (user) {
         // User is logged in
-        if (isPublicPage) {
-             // If user is logged in and on a public page, go to dashboard.
+        if (isPublicPage && pathname !== '/subscribe') {
+             // If user is logged in and on a public page (not subscribe), go to dashboard.
              router.push('/');
         } else {
-            // Check if profile is complete. If not, redirect to profile page.
+            // Check if profile is complete and has a subscription.
             getProfile(user.uid).then(profile => {
+                if (!profile) return; // Profile still loading
+
+                // If user has no subscription plan, redirect to subscribe page
+                if (!profile.subscription?.plan && pathname !== '/subscribe') {
+                    router.push('/subscribe');
+                    return;
+                }
+
                 // A profile is considered incomplete if the user hasn't set their height yet.
                 const isProfileComplete = profile && profile.height;
-                if (!isProfileComplete && pathname !== '/profile') {
+                if (!isProfileComplete && pathname !== '/profile' && pathname !== '/subscribe') {
                     router.push('/profile');
                 }
             });
