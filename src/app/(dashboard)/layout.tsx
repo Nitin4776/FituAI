@@ -17,6 +17,7 @@ import {
   Soup,
   ClipboardCheck,
   Sparkles,
+  Scan,
 } from 'lucide-react';
 
 import {
@@ -48,6 +49,7 @@ const aiMenuItems = [
     { href: '/ai-meal-plan', label: 'AI Meal Plan', icon: ClipboardCheck },
     { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2 },
     { href: '/healthy-swaps', label: 'Healthy Swaps', icon: Replace },
+    { href: '/ai-body-scan', label: 'AI Body Scan', icon: Scan },
 ];
 
 

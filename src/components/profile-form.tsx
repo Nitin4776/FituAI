@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, ArrowRight, Upload, Sparkles, User, Mail, Phone, Video, Camera } from 'lucide-react';
+import { Target, Weight, Ruler, TrendingUp, Loader2, Flame, ArrowRight, Upload, Sparkles, User, Mail, Phone, Video, Camera, Scan } from 'lucide-react';
 import { getProfile, saveProfile } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const profileSchema = z.object({
   height: z.coerce.number().positive('Height must be positive'),
@@ -41,14 +42,6 @@ interface FitnessMetrics {
   bmr: number;
 }
 
-const toDataURL = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-  });
-
 function cmToFeetAndInches(cm: number) {
     const totalInches = cm / 2.54;
     const feet = Math.floor(totalInches / 12);
@@ -61,198 +54,28 @@ function feetAndInchesToCm(feet: number, inches: number) {
     return Math.round(totalInches * 2.54);
 }
 
-const PhotoInput = ({ label, onPhotoSelect, photo }: { label: string, onPhotoSelect: (photo: File) => void, photo: File | null }) => {
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [cameraMode, setCameraMode] = useState<'capture' | 'upload' | null>(null);
-    const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const { toast } = useToast();
-
-    useEffect(() => {
-        if (!isDialogOpen) {
-            setCameraMode(null); // Reset when main dialog closes
-        }
-    }, [isDialogOpen]);
-
-    useEffect(() => {
-        let stream: MediaStream | null = null;
-        if (cameraMode === 'capture') {
-            const getCameraPermission = async () => {
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    setHasCameraPermission(true);
-                    if (videoRef.current) {
-                        videoRef.current.srcObject = stream;
-                    }
-                } catch (error) {
-                    console.error('Error accessing camera:', error);
-                    setHasCameraPermission(false);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Camera Access Denied',
-                        description: 'Please enable camera permissions in your browser settings.',
-                    });
-                }
-            };
-            getCameraPermission();
-        }
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
-        }
-    }, [cameraMode, toast]);
-
-    const handleCapture = () => {
-        if (videoRef.current && canvasRef.current) {
-            const video = videoRef.current;
-            const canvas = canvasRef.current;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const context = canvas.getContext('2d');
-            if (context) {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        onPhotoSelect(new File([blob], `${label.toLowerCase().replace(' ', '-')}.jpg`, { type: 'image/jpeg' }));
-                        setIsDialogOpen(false);
-                    }
-                }, 'image/jpeg');
-            }
-        }
-    };
-
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            onPhotoSelect(file);
-            setIsDialogOpen(false);
-        }
-    };
-
-    return (
-        <div className="space-y-2">
-            <Label>{label}</Label>
-            <Card className="flex items-center justify-center p-2 min-h-[100px] bg-secondary/50">
-                {photo ? (
-                    <div className="relative w-24 h-24">
-                        <Image src={URL.createObjectURL(photo)} alt={`${label} preview`} layout="fill" objectFit="cover" className="rounded-md" />
-                    </div>
-                ) : (
-                    <div className="text-center text-muted-foreground text-sm">
-                        <p>No Photo Added</p>
-                    </div>
-                )}
-            </Card>
-            <Button variant="outline" className="w-full" onClick={() => setIsDialogOpen(true)}>Add Photo</Button>
-            
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add {label}</DialogTitle>
-                        <DialogDescription>Choose how you want to provide the photo.</DialogDescription>
-                    </DialogHeader>
-                    {!cameraMode ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-8">
-                            <Button variant="outline" className="h-24 text-lg" onClick={() => setCameraMode('capture')}><Camera className="mr-2" /> Capture</Button>
-                            <Button variant="outline" className="h-24 text-lg" onClick={() => fileInputRef.current?.click()}><Upload className="mr-2" /> Upload</Button>
-                            <Input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                        </div>
-                    ) : cameraMode === 'capture' ? (
-                        <div className="space-y-4">
-                            <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
-                            {hasCameraPermission === false && (
-                                <Alert variant="destructive">
-                                    <AlertTitle>Camera Access Denied</AlertTitle>
-                                </Alert>
-                            )}
-                            <canvas ref={canvasRef} className="hidden" />
-                            <Button className="w-full" onClick={handleCapture} disabled={!hasCameraPermission}><Camera className="mr-2" /> Capture Photo</Button>
-                            <Button variant="ghost" onClick={() => setCameraMode(null)}>Back</Button>
-                        </div>
-                    ) : null}
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
-};
-
-const AIScan = ({ form }: { form: UseFormReturn<ProfileFormValues> }) => {
-    const [frontPhoto, setFrontPhoto] = useState<File | null>(null);
-    const [backPhoto, setBackPhoto] = useState<File | null>(null);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [showAiDisclaimer, setShowAiDisclaimer] = useState(false);
-    const { toast } = useToast();
-
-    const handleAnalyze = async () => {
-        if (!frontPhoto || !backPhoto) {
-            toast({ variant: 'destructive', title: 'Please upload both photos.' });
-            return;
-        }
-        setIsAnalyzing(true);
-        setShowAiDisclaimer(false);
-        try {
-            const [frontPhotoDataUri, backPhotoDataUri] = await Promise.all([
-                toDataURL(frontPhoto),
-                toDataURL(backPhoto),
-            ]);
-
-            const response = await fetch('/api/analyze-vitals', {
-                method: 'POST',
-                body: JSON.stringify({ frontPhotoDataUri, backPhotoDataUri }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if (!response.ok) throw new Error('Failed to analyze photos.');
-            
-            const result = await response.json();
-
-            form.setValue('height', Math.round(result.heightCm));
-            form.setValue('weight', Math.round(result.weightKg));
-            form.setValue('age', Math.round(result.age));
-            
-            toast({ title: 'Analysis Complete!', description: 'Your estimated details have been filled in below.' });
-            setShowAiDisclaimer(true);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Analysis Failed', description: (error as Error).message });
-        } finally {
-            setIsAnalyzing(false);
-        }
-    };
-    
+const AIScanCard = () => {
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2">
                     AI Body Scan <Sparkles className="text-yellow-500" />
                 </CardTitle>
-                <CardDescription>Upload front and back photos for our AI to estimate your height, weight, and age. For best results, wear form-fitting clothes and stand in a neutral pose.</CardDescription>
+                <CardDescription>
+                    Use our premium AI feature to estimate your height, weight, and age from photos.
+                </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <PhotoInput label="Front Photo" photo={frontPhoto} onPhotoSelect={setFrontPhoto} />
-                     <PhotoInput label="Back Photo" photo={backPhoto} onPhotoSelect={setBackPhoto} />
-                 </div>
-                 <Button onClick={handleAnalyze} disabled={!frontPhoto || !backPhoto || isAnalyzing} className="w-full">
-                    {isAnalyzing ? <Loader2 className="animate-spin" /> : 'Analyze with AI'}
-                 </Button>
-                 {showAiDisclaimer && (
-                    <Alert>
-                        <AlertTitle className="text-primary/80">AI Disclaimer</AlertTitle>
-                        <AlertDescription>
-                            AI can make mistakes. Please review the auto-filled values and correct them if needed to ensure accuracy.
-                        </AlertDescription>
-                    </Alert>
-                 )}
+            <CardContent>
+                <Link href="/ai-body-scan">
+                    <Button className="w-full">
+                        <Scan className="mr-2" />
+                        Go to AI Body Scan
+                    </Button>
+                </Link>
             </CardContent>
         </Card>
-    )
-}
+    );
+};
 
 
 export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
@@ -368,7 +191,7 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div className="space-y-8">
-            <AIScan form={profileForm} />
+            <AIScanCard />
             <Card>
               <CardHeader>
               <CardTitle className="font-headline">Your Details</CardTitle>
