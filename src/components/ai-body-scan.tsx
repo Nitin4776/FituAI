@@ -242,6 +242,9 @@ export function AiBodyScan() {
 
     return (
         <div className="space-y-8">
+            <p className="text-xs text-muted-foreground text-center">
+                Disclaimer: Uploaded photos are not stored and are used only for temporary analysis.
+            </p>
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Upload Your Photos</CardTitle>
@@ -316,3 +319,5 @@ export function AiBodyScan() {
         </div>
     );
 }
+
+    
