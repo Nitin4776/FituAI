@@ -252,7 +252,6 @@ export function TodaySummary() {
                 <CardTitle className="font-headline">Today's Summary</CardTitle>
                 <CardDescription>Your nutritional intake for today against your goal.</CardDescription>
             </div>
-            <SleepTracker />
         </div>
       </CardHeader>
       <CardContent>
@@ -284,6 +283,9 @@ export function TodaySummary() {
                   <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} icon={Wheat} iconClassName="text-green-500" />
                   <WaterProgress consumed={dailyTotals.waterGlasses} goal={waterGoal} />
                   <CaloriesBurned burned={caloriesBurned} />
+              </div>
+              <div className="pt-4">
+                <SleepTracker />
               </div>
           </div>
       </CardContent>
@@ -332,8 +334,13 @@ export function TodaySummarySkeleton() {
                       </div>
                   ))}
               </div>
+              <div className="pt-4">
+                <Skeleton className="h-16 w-full" />
+              </div>
           </div>
       </CardContent>
     </Card>
   )
 }
+
+    
