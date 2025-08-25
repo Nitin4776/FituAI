@@ -92,10 +92,10 @@ export default function SubscribePage() {
             
             toast({
                 title: 'Plan Selected!',
-                description: `You are now on the ${planId} plan.`,
+                description: "You're now being redirected to complete your profile.",
             });
 
-            router.push('/');
+            router.push('/profile');
 
         } catch (error) {
             toast({
