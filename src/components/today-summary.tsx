@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { getDailySummaryForToday } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
-import { Flame, Drumstick, Wheat, Beef, BarChart, Camera, GlassWater } from 'lucide-react';
+import { Flame, Drumstick, Wheat, Beef, BarChart, Camera, GlassWater, Plus } from 'lucide-react';
 import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
@@ -105,11 +105,14 @@ function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
     }
 
     return (
-         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
+         <Card className="relative bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <GlassWater className="h-4 w-4 text-blue-500" />
                 <span>Water</span>
             </div>
+             <Link href="/log-water" className="absolute top-1 right-1 text-primary/50 hover:text-primary">
+                <Plus className="h-4 w-4" />
+            </Link>
             <div className="w-full h-20 relative">
                  <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart
@@ -136,7 +139,7 @@ function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
                 </div>
             </div>
             <p className={cn("text-xs font-semibold", percentageColorClass(percentage))}>
-                {Math.round(consumed)}/{goal} glasses
+                {Math.round(consumed)}/{goal}
             </p>
         </Card>
     )
