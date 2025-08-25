@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { getAuth, type User } from 'firebase/auth';
+import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
 type SummaryData = {
     dailyTotals: {
@@ -31,25 +32,55 @@ type SummaryData = {
     hasProfile: boolean;
 };
 
-
 function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { label: string; consumed: number; goal: number; icon: React.ElementType; iconClassName?: string; }) {
     const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
+    const chartData = [{ name: label, value: percentage > 120 ? 120 : percentage }]; // Cap at 120 for visual
     
-    const getPercentageColor = (p: number) => {
-        if (p > 105) return "text-red-500";
-        if (p < 75) return "text-yellow-500";
-        return "text-green-500";
+    const getProgressColor = (p: number) => {
+        if (p > 105) return "hsl(var(--destructive))";
+        if (p < 75) return "hsl(var(--chart-2))";
+        return "hsl(var(--chart-1))";
     };
 
+    const percentageColorClass = (p: number) => {
+        if (p > 105) return "text-destructive";
+        if (p < 75) return "text-yellow-500";
+        return "text-green-500";
+    }
+
     return (
-        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 flex flex-col justify-center items-center h-full">
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <Icon className={cn("h-4 w-4", iconClassName)} />
                 <span>{label}</span>
             </div>
-            <p className="font-bold text-lg">{Math.round(consumed)}g</p>
-            <p className={cn("text-xs font-semibold", getPercentageColor(percentage))}>
-                {percentage}% of goal
+            <div className="w-full h-16 relative">
+                 <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart
+                        innerRadius="70%"
+                        outerRadius="100%"
+                        data={chartData}
+                        startAngle={90}
+                        endAngle={-270}
+                        barSize={8}
+                    >
+                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                        <RadialBar
+                            background
+                            dataKey="value"
+                            angleAxisId={0}
+                            fill={getProgressColor(percentage)}
+                            className="stroke-none"
+                            cornerRadius={4}
+                        />
+                    </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="font-bold text-lg">{Math.round(consumed)}g</p>
+                </div>
+            </div>
+            <p className={cn("text-xs font-semibold", percentageColorClass(percentage))}>
+                {percentage}%
             </p>
         </Card>
     )
@@ -57,10 +88,15 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
 
 function CaloriesBurned({ burned }: { burned: number }) {
      return (
-        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 flex flex-col justify-center items-center h-full">
-            <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Flame className="h-4 w-4 text-orange-500" /> Burned</p>
-            <p className="font-bold text-lg">{Math.round(burned)} kcal</p>
-            <p className="text-xs text-muted-foreground">&nbsp;</p>
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36 text-center">
+            <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
+                <Flame className="h-4 w-4 text-orange-500" />
+                <span>Burned</span>
+            </div>
+            <div className="w-full flex-grow flex items-center justify-center">
+                <p className="font-bold text-3xl">{Math.round(burned)}</p>
+            </div>
+             <p className="text-xs font-semibold">kcal</p>
         </Card>
     )
 }
@@ -233,7 +269,7 @@ export function TodaySummarySkeleton() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
                   {[...Array(5)].map((_, i) => (
                       <div key={i} className="space-y-1">
-                          <Skeleton className="h-20 w-full rounded-lg" />
+                          <Skeleton className="h-36 w-full rounded-lg" />
                       </div>
                   ))}
               </div>
