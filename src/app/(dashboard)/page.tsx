@@ -14,7 +14,8 @@ import {
   Bot,
   PlusCircle,
   Soup,
-  Dumbbell
+  Dumbbell,
+  GlassWater
 } from 'lucide-react';
 import Link from 'next/link';
 import { TodaySummary } from '@/components/today-summary';
@@ -92,7 +93,7 @@ export default function DashboardPage() {
                 <DialogHeader>
                     <DialogTitle>What would you like to log?</DialogTitle>
                     <DialogDescription>
-                        Choose whether you want to log a meal you've eaten or an activity you've completed.
+                        Choose whether you want to log a meal, activity, or water intake.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-1 gap-4 pt-4">
@@ -111,6 +112,15 @@ export default function DashboardPage() {
                             <div>
                                 <p className="font-semibold">Log Activity / Workout</p>
                                 <p className="text-xs text-muted-foreground">Estimate calories burned from your workouts.</p>
+                           </div>
+                        </Button>
+                     </Link>
+                     <Link href="/log-water" onClick={() => setIsLogDialogOpen(false)}>
+                        <Button variant="outline" className="w-full h-16 justify-start text-left">
+                           <GlassWater className="mr-4 text-primary" />
+                           <div>
+                                <p className="font-semibold">Log Water Intake</p>
+                                <p className="text-xs text-muted-foreground">Track your daily water consumption.</p>
                            </div>
                         </Button>
                      </Link>
