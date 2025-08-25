@@ -54,7 +54,7 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
                 <Icon className={cn("h-4 w-4", iconClassName)} />
                 <span>{label}</span>
             </div>
-            <div className="w-full h-16 relative">
+            <div className="w-full h-20 relative">
                  <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart
                         innerRadius="70%"
@@ -76,7 +76,7 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
                     </RadialBarChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="font-bold">{Math.round(consumed)}g</p>
+                    <p className="text-lg">{Math.round(consumed)}g</p>
                 </div>
             </div>
             <p className={cn("text-xs font-semibold", percentageColorClass(percentage))}>
