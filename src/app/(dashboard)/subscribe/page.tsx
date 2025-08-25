@@ -145,7 +145,7 @@ export default function SubscribePage() {
                                      <span className="text-muted-foreground/50">
                                         <X className="h-4 w-4" />
                                     </span>
-                                    <span className="text-muted-foreground/50 line-through">{feature}</span>
+                                    <span className="text-muted-foreground/50">{feature}</span>
                                 </li>
                             ))}
                         </ul>
