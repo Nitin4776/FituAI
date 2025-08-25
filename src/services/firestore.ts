@@ -365,6 +365,8 @@ const defaultSummary = {
         fats: 67,
         fiber: 30,
     },
+    waterGlasses: 0,
+    waterGoal: 8,
 };
 
 export async function getDailySummaryForToday() {
@@ -372,30 +374,46 @@ export async function getDailySummaryForToday() {
     if (!userId) return defaultSummary;
     const todayId = getTodayDocId();
     const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
-    const docSnap = await getDoc(summaryDocRef);
+    
+    const [summarySnap, waterSnap, profile] = await Promise.all([
+        getDoc(summaryDocRef),
+        getTodaysWaterIntake(userId),
+        getProfile(userId),
+    ]);
 
-    if (docSnap.exists()) {
-        return docSnap.data();
+    let summaryData;
+
+    if (summarySnap.exists()) {
+        summaryData = summarySnap.data();
     } else {
-        const profile = await getProfile(); // Correctly await the profile
+        // Create a new summary
+        const newSummary = { ...defaultSummary };
         if (profile && (profile as any).dailyCalories) {
-            const newSummary = {
-                ...defaultSummary,
-                dailyGoal: (profile as any).dailyCalories,
-                macroGoals: {
-                    protein: (profile as any).protein || 0,
-                    carbs: (profile as any).carbs || 0,
-                    fats: (profile as any).fats || 0,
-                    fiber: (profile as any).fiber || 0,
-                },
+            newSummary.dailyGoal = (profile as any).dailyCalories;
+            newSummary.macroGoals = {
+                protein: (profile as any).protein || 0,
+                carbs: (profile as any).carbs || 0,
+                fats: (profile as any).fats || 0,
+                fiber: (profile as any).fiber || 0,
             };
-            await setDoc(summaryDocRef, newSummary);
-            return newSummary;
         }
-        // If no profile or no goals in profile, create a default summary
-        await setDoc(summaryDocRef, defaultSummary);
-        return defaultSummary;
+        await setDoc(summaryDocRef, newSummary);
+        summaryData = newSummary;
     }
+
+    // Add water data to the summary
+    summaryData.waterGlasses = waterSnap?.glasses || 0;
+    
+    // Calculate water goal
+    const GLASS_SIZE_ML = 250;
+    if (profile && (profile as any).weight) {
+        const recommendedIntakeMl = (profile as any).weight * 33;
+        summaryData.waterGoal = Math.round(recommendedIntakeMl / GLASS_SIZE_ML);
+    } else {
+        summaryData.waterGoal = 8; // Default if no weight
+    }
+
+    return summaryData;
 }
 
 

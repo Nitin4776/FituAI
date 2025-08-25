@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { getDailySummaryForToday } from '@/services/firestore';
 import { Skeleton } from './ui/skeleton';
-import { Flame, Drumstick, Wheat, Beef, BarChart, Camera } from 'lucide-react';
+import { Flame, Drumstick, Wheat, Beef, BarChart, Camera, GlassWater } from 'lucide-react';
 import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
@@ -20,6 +20,7 @@ type SummaryData = {
         carbs: number;
         fats: number;
         fiber: number;
+        waterGlasses: number;
     };
     dailyGoal: number;
     caloriesBurned: number;
@@ -29,6 +30,7 @@ type SummaryData = {
         fats: number;
         fiber: number;
     };
+    waterGoal: number;
     hasProfile: boolean;
 };
 
@@ -86,6 +88,61 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
     )
 }
 
+function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
+    const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
+    const chartData = [{ name: 'Water', value: percentage > 120 ? 120 : percentage }];
+
+    const getProgressColor = (p: number) => {
+        if (p > 105) return "hsl(var(--destructive))";
+        if (p < 75) return "hsl(var(--chart-2))";
+        return "hsl(var(--chart-1))";
+    };
+
+    const percentageColorClass = (p: number) => {
+        if (p > 105) return "text-destructive";
+        if (p < 75) return "text-yellow-500";
+        return "text-green-500";
+    }
+
+    return (
+         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
+            <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
+                <GlassWater className="h-4 w-4 text-blue-500" />
+                <span>Water</span>
+            </div>
+            <div className="w-full h-20 relative">
+                 <ResponsiveContainer width="100%" height="100%">
+                    <RadialBarChart
+                        innerRadius="70%"
+                        outerRadius="100%"
+                        data={chartData}
+                        startAngle={90}
+                        endAngle={-270}
+                        barSize={8}
+                    >
+                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                        <RadialBar
+                            background
+                            dataKey="value"
+                            angleAxisId={0}
+                            fill={getProgressColor(percentage)}
+                            className="stroke-none"
+                            cornerRadius={4}
+                        />
+                    </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-lg">{Math.round(consumed)}</p>
+                </div>
+            </div>
+            <p className={cn("text-xs font-semibold", percentageColorClass(percentage))}>
+                {Math.round(consumed)}/{goal} glasses
+            </p>
+        </Card>
+    )
+}
+
+
 function CaloriesBurned({ burned }: { burned: number }) {
      return (
         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36 text-center">
@@ -136,10 +193,12 @@ export function TodaySummary() {
         carbs: summary.carbs,
         fats: summary.fats,
         fiber: summary.fiber,
+        waterGlasses: summary.waterGlasses,
       },
       dailyGoal: summary.dailyGoal,
       caloriesBurned: summary.caloriesBurned,
       macroGoals: summary.macroGoals,
+      waterGoal: summary.waterGoal,
       hasProfile: summary.dailyGoal > 0,
     });
     setIsLoading(false);
@@ -176,7 +235,7 @@ export function TodaySummary() {
       return <TodaySummarySkeleton />;
   }
 
-  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals, hasProfile } = summaryData;
+  const { dailyTotals, dailyGoal, caloriesBurned, macroGoals, waterGoal, hasProfile } = summaryData;
   const calorieProgress = dailyGoal > 0 ? (dailyTotals.calories / dailyGoal) * 100 : 0;
   const statusMessage = getCalorieStatusMessage(dailyTotals.calories, dailyGoal, hasProfile);
 
@@ -219,11 +278,12 @@ export function TodaySummary() {
                     <span className="text-sm font-bold">{Math.round(dailyTotals.calories)} / {dailyGoal} kcal</span>
                   </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
                   <MacroProgress label="Protein" consumed={dailyTotals.protein} goal={macroGoals.protein} icon={Drumstick} iconClassName="text-red-500" />
                   <MacroProgress label="Carbs" consumed={dailyTotals.carbs} goal={macroGoals.carbs} icon={Wheat} iconClassName="text-yellow-500" />
                   <MacroProgress label="Fats" consumed={dailyTotals.fats} goal={macroGoals.fats} icon={Beef} iconClassName="text-purple-500" />
                   <MacroProgress label="Fiber" consumed={dailyTotals.fiber} goal={macroGoals.fiber} icon={Wheat} iconClassName="text-green-500" />
+                  <WaterProgress consumed={dailyTotals.waterGlasses} goal={waterGoal} />
                   <CaloriesBurned burned={caloriesBurned} />
               </div>
           </div>
@@ -266,8 +326,8 @@ export function TodaySummarySkeleton() {
                      <Skeleton className="h-4 w-1/5" />
                   </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                  {[...Array(5)].map((_, i) => (
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
+                  {[...Array(6)].map((_, i) => (
                       <div key={i} className="space-y-1">
                           <Skeleton className="h-36 w-full rounded-lg" />
                       </div>
