@@ -5,13 +5,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Sparkles, Camera, Save, AlertCircle, ListChecks, Target, Bot, Activity } from 'lucide-react';
+import { Loader2, Upload, Sparkles, Camera, AlertCircle, ListChecks, Target, Bot, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Input } from './ui/input';
-import { saveProfile } from '@/services/firestore';
 import type { AnalyzeUserVitalsOutput } from '@/ai/flows/analyze-user-vitals-from-image';
 
 const toDataURL = (file: File): Promise<string> =>
@@ -207,20 +206,6 @@ export function AiBodyScan() {
         }
     };
     
-    const handleSaveToProfile = async () => {
-        if (!analysisResult || !analysisResult.heightCm || !analysisResult.weightKg || !analysisResult.age) return;
-        try {
-            await saveProfile({
-                height: Math.round(analysisResult.heightCm),
-                weight: Math.round(analysisResult.weightKg),
-                age: Math.round(analysisResult.age)
-            });
-            toast({ title: 'Profile Updated!', description: 'Your details have been saved to your profile.'});
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: (error as Error).message });
-        }
-    }
-
     const ResultCard = ({ title, value, icon, description }: {title: string, value?: string | number, icon: React.ElementType, description?: string}) => {
         const Icon = icon;
         return (
@@ -257,7 +242,7 @@ export function AiBodyScan() {
                 <CardHeader>
                     <CardTitle className="font-headline">AI Analysis Results</CardTitle>
                     <CardDescription>
-                        Here are the vitals estimated by the AI. You can save core metrics to your profile.
+                        Here are the vitals estimated by the AI. These are for informational purposes only.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -292,10 +277,6 @@ export function AiBodyScan() {
                                     AI can make mistakes. These values are estimates. For precise measurements, please consult a professional.
                                 </AlertDescription>
                             </Alert>
-                             <Button onClick={handleSaveToProfile} className="w-full">
-                                <Save className="mr-2"/>
-                                Save Core Vitals to Profile
-                            </Button>
                         </>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
