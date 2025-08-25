@@ -67,6 +67,22 @@ export function WaterLogger() {
 
     const progressPercentage = goalGlasses > 0 ? (glasses / goalGlasses) * 100 : 0;
     
+    const getProgressVariant = (progress: number): "default" | "warning" | "danger" => {
+        if (progress > 105) return "danger";
+        if (progress >= 75) return "default";
+        return "warning";
+    }
+
+    const getStatusMessage = (progress: number): string => {
+        if (progress === 0) return "Let's start hydrating!";
+        if (progress < 50) return "You're just getting started. Keep it up!";
+        if (progress < 75) return "You're on the right track!";
+        if (progress <= 105) return "Great job! You've met your hydration goal.";
+        return "Excellent! You've surpassed your hydration goal for today.";
+    }
+
+    const statusMessage = getStatusMessage(progressPercentage);
+
     return (
         <Card>
         <CardHeader>
@@ -105,10 +121,10 @@ export function WaterLogger() {
             </Card>
 
             <div>
-                <Progress value={progressPercentage} className="h-4" />
-                <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                    <span>{glasses} of {goalGlasses} glasses</span>
-                    <span>{Math.round(progressPercentage)}%</span>
+                <Progress value={progressPercentage} variant={getProgressVariant(progressPercentage)} className="h-4" />
+                <div className="flex justify-between items-center mt-2 text-sm">
+                    <p className="text-muted-foreground">{statusMessage}</p>
+                    <span className="font-bold">{Math.round(progressPercentage)}%</span>
                 </div>
             </div>
         </CardContent>
