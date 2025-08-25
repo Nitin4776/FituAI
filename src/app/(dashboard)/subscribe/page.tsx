@@ -142,7 +142,7 @@ export default function SubscribePage() {
                             ))}
                              {!plan.premium && premiumFeatures.map(feature => (
                                 <li key={feature} className="flex items-center gap-2">
-                                     <span className="text-muted-foreground/50">
+                                     <span className="text-destructive">
                                         <X className="h-4 w-4" />
                                     </span>
                                     <span className="text-muted-foreground/50">{feature}</span>
