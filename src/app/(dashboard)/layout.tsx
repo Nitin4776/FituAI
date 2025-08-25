@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   Sparkles,
   Scan,
+  GlassWater,
 } from 'lucide-react';
 
 import {
@@ -79,7 +80,7 @@ function BottomNavigation() {
                   <div
                     className={cn(
                       'flex flex-1 flex-col items-center justify-center p-2 rounded-md transition-colors',
-                      ['/log-meal', '/log-activity'].includes(pathname)
+                      ['/log-meal', '/log-activity', '/log-water'].includes(pathname)
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground'
                     )}
@@ -101,6 +102,12 @@ function BottomNavigation() {
                             <Link href="/log-activity" className="flex items-center gap-2">
                             <Dumbbell className="size-4" />
                             <span>Log Activity/Workout</span>
+                        </Link>
+                    </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                        <Link href="/log-water" className="flex items-center gap-2">
+                            <GlassWater className="size-4" />
+                            <span>Log Water Intake</span>
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -212,7 +219,7 @@ function DashboardLayoutContent({
                 <SidebarMenuItem>
                     <DropdownMenuTrigger asChild>
                        <SidebarMenuButton
-                        isActive={['/log-meal', '/log-activity'].includes(pathname)}
+                        isActive={['/log-meal', '/log-activity', '/log-water'].includes(pathname)}
                         tooltip="Log Data"
                         className="w-full justify-start"
                         >
@@ -234,6 +241,12 @@ function DashboardLayoutContent({
                          <Link href="/log-activity" className="flex items-center gap-2">
                             <Dumbbell className="size-4" />
                             <span>Log Activity/Workout</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/log-water" className="flex items-center gap-2">
+                            <GlassWater className="size-4" />
+                            <span>Log Water Intake</span>
                         </Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
