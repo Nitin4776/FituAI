@@ -98,21 +98,12 @@ function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
         return "hsl(var(--chart-1))";
     };
 
-    const percentageColorClass = (p: number) => {
-        if (p > 105) return "text-destructive";
-        if (p < 75) return "text-yellow-500";
-        return "text-green-500";
-    }
-
     return (
          <Card className="relative bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <GlassWater className="h-4 w-4 text-blue-500" />
                 <span>Water</span>
             </div>
-             <Link href="/log-water" className="absolute top-1 right-1 text-primary/50 hover:text-primary">
-                <Plus className="h-4 w-4" />
-            </Link>
             <div className="w-full h-20 relative">
                  <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart
@@ -138,9 +129,14 @@ function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
                     <p className="text-lg">{Math.round(consumed)}</p>
                 </div>
             </div>
-            <p className={cn("text-xs font-semibold", percentageColorClass(percentage))}>
-                {Math.round(consumed)}/{goal}
-            </p>
+            <div className="text-center">
+                <p className="text-xs font-semibold">
+                    {Math.round(consumed)}/{goal}
+                </p>
+                <Link href="/log-water" className="text-primary/50 hover:text-primary">
+                    <Plus className="h-4 w-4 mx-auto" />
+                </Link>
+            </div>
         </Card>
     )
 }
