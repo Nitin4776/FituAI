@@ -39,6 +39,7 @@ const AnalyzeUserVitalsOutputSchema = z.object({
   age: z.number().optional().describe('The estimated age of the user as a single number.'),
   ageRange: z.string().optional().describe('The estimated age range of the user (e.g., "Early 20s", "Mid 30s", "Late 40s").'),
   bodyType: z.string().optional().describe('The estimated body type of the user (e.g., "Ectomorph", "Mesomorph", "Endomorph").'),
+  bodyTypeDescription: z.string().optional().describe('A detailed description of the estimated body type.'),
   bodyFatPercentage: z.number().optional().describe('The estimated body fat percentage.'),
   postureAnalysis: z.string().optional().describe("A brief analysis of the user's posture. If a full body is not visible, this field should contain a message asking the user to re-upload photos."),
   recommendations: z.string().optional().describe('Actionable recommendations to improve fitness and body shape, formatted as markdown bullet points.'),
@@ -66,9 +67,10 @@ const prompt = ai.definePrompt({
   3.  Estimate the user's age as a single integer ("age").
   4.  Provide a descriptive age range ("ageRange"), e.g., "Mid 30s".
   5.  Determine the user's body type ("bodyType"), e.g., Ectomorph, Mesomorph, Endomorph.
-  6.  Estimate the user's body fat percentage ("bodyFatPercentage").
-  7.  Provide a brief "postureAnalysis" based on the side view.
-  8.  Give actionable "recommendations" to get in good shape, formatted as markdown bullet points.
+  6.  Provide a detailed description of that body type ("bodyTypeDescription").
+  7.  Estimate the user's body fat percentage ("bodyFatPercentage").
+  8.  Provide a brief "postureAnalysis" based on the side view.
+  9.  Give actionable "recommendations" to get in good shape, formatted as markdown bullet points.
 
   Front Photo: {{media url=frontPhotoDataUri}}
   Back Photo: {{media url=backPhotoDataUri}}

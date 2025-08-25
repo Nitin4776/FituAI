@@ -5,13 +5,14 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, Sparkles, Camera, AlertCircle, ListChecks, Target, Bot, Activity } from 'lucide-react';
+import { Loader2, Upload, Sparkles, Camera, AlertCircle, ListChecks, Target, Bot, Activity, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Input } from './ui/input';
 import type { AnalyzeUserVitalsOutput } from '@/ai/flows/analyze-user-vitals-from-image';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const toDataURL = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -206,19 +207,41 @@ export function AiBodyScan() {
         }
     };
     
-    const ResultCard = ({ title, value, icon, description }: {title: string, value?: string | number, icon: React.ElementType, description?: string}) => {
+    const ResultCard = ({ title, value, icon, description, tooltipText }: {title: string, value?: string | number, icon: React.ElementType, description?: string, tooltipText?: string}) => {
         const Icon = icon;
-        return (
+
+        const content = (
             <div>
-                <Label className="flex items-center text-muted-foreground"><Icon className="mr-2 h-4 w-4" />{title}</Label>
+                <Label className="flex items-center text-muted-foreground">
+                    <Icon className="mr-2 h-4 w-4" />
+                    {title}
+                    {tooltipText && <Info className="ml-1 h-3 w-3 text-primary/50" />}
+                </Label>
                 <p className="font-bold text-lg text-primary">{value || 'N/A'}</p>
                 {description && <p className="text-xs text-muted-foreground">{description}</p>}
             </div>
-        )
+        );
+
+        if (tooltipText) {
+            return (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                           {content}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                           <p className="max-w-xs">{tooltipText}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )
+        }
+        
+        return content;
     }
 
     return (
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Upload Your Photos</CardTitle>
@@ -258,7 +281,12 @@ export function AiBodyScan() {
                                     <ResultCard title="Est. Height" value={`${Math.round(analysisResult.heightCm || 0)} cm`} icon={Target} />
                                     <ResultCard title="Est. Weight" value={`${Math.round(analysisResult.weightKg || 0)} kg`} icon={Target} />
                                     <ResultCard title="Est. Age Range" value={analysisResult.ageRange} icon={Target} />
-                                    <ResultCard title="Est. Body Type" value={analysisResult.bodyType} icon={Bot} />
+                                    <ResultCard 
+                                        title="Est. Body Type" 
+                                        value={analysisResult.bodyType} 
+                                        icon={Bot} 
+                                        tooltipText={analysisResult.bodyTypeDescription}
+                                    />
                                     <ResultCard title="Est. Body Fat" value={`~${Math.round(analysisResult.bodyFatPercentage || 0)}%`} icon={Target} />
                                 </div>
                                 <div>
