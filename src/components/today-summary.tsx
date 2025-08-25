@@ -34,6 +34,13 @@ type SummaryData = {
 
 function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { label: string; consumed: number; goal: number; icon: React.ElementType; iconClassName?: string; }) {
     const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
+    
+    const getPercentageColor = (p: number) => {
+        if (p > 105) return "text-red-500";
+        if (p < 75) return "text-yellow-500";
+        return "text-green-500";
+    };
+
     return (
         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-4 flex flex-col justify-center items-center h-full">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
@@ -41,7 +48,9 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
                 <span>{label}</span>
             </div>
             <p className="font-bold text-lg">{Math.round(consumed)}g</p>
-            <p className="text-xs text-muted-foreground">{percentage}% of goal</p>
+            <p className={cn("text-xs font-semibold", getPercentageColor(percentage))}>
+                {percentage}% of goal
+            </p>
         </Card>
     )
 }
