@@ -8,9 +8,9 @@ import { Skeleton } from './ui/skeleton';
 import { Flame, Drumstick, Wheat, Beef, BarChart, Camera } from 'lucide-react';
 import { SleepTracker } from './sleep-tracker';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { getAuth } from 'firebase/auth';
+import { getAuth, type User } from 'firebase/auth';
 
 type SummaryData = {
     dailyTotals: {
@@ -81,35 +81,51 @@ export function TodaySummary() {
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const getSummaryData = useCallback(async () => {
+    setIsLoading(true);
+    const summary = await getDailySummaryForToday();
+    setSummaryData({
+      dailyTotals: {
+        calories: summary.consumedCalories,
+        protein: summary.protein,
+        carbs: summary.carbs,
+        fats: summary.fats,
+        fiber: summary.fiber,
+      },
+      dailyGoal: summary.dailyGoal,
+      caloriesBurned: summary.caloriesBurned,
+      macroGoals: summary.macroGoals,
+      hasProfile: summary.dailyGoal > 0,
+    });
+    setIsLoading(false);
+  }, []);
+
   useEffect(() => {
-    async function getSummaryData() {
-        const summary = await getDailySummaryForToday();
-        setSummaryData({
-            dailyTotals: {
-                calories: summary.consumedCalories,
-                protein: summary.protein,
-                carbs: summary.carbs,
-                fats: summary.fats,
-                fiber: summary.fiber,
-            },
-            dailyGoal: summary.dailyGoal,
-            caloriesBurned: summary.caloriesBurned,
-            macroGoals: summary.macroGoals,
-            hasProfile: summary.dailyGoal > 0,
-        });
-        setIsLoading(false);
-    }
-    const unsubscribe = getAuth().onAuthStateChanged(user => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        getSummaryData();
+      }
+    };
+
+    const unsubscribeAuth = getAuth().onAuthStateChanged((user: User | null) => {
       if (user) {
         getSummaryData();
+        // Add listener when user is logged in
+        document.addEventListener('visibilitychange', handleVisibilityChange);
       } else {
         setIsLoading(false);
         setSummaryData(null);
+        // Remove listener when user logs out
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      unsubscribeAuth();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [getSummaryData]);
+
 
   if (isLoading || !summaryData) {
       return <TodaySummarySkeleton />;
