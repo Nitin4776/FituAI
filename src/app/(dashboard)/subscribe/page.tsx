@@ -121,7 +121,7 @@ export default function SubscribePage() {
             {plans.map(plan => (
                 <Card key={plan.name} className={cn(
                     "flex flex-col",
-                    plan.premium && "border-primary border-2 shadow-primary/20"
+                    plan.premium && "border-primary border-2 shadow-primary/20 bg-gradient-to-r from-primary/10 to-accent/10"
                 )}>
                     <CardHeader>
                         <CardTitle className="font-headline text-2xl">{plan.name}</CardTitle>
