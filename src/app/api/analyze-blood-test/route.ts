@@ -2,6 +2,8 @@
 import { analyzeBloodTestResults, type AnalyzeBloodTestResultsInput } from '@/ai/flows/blood-test-results-analysis';
 import { NextResponse } from 'next/server';
 
+export const maxDuration = 60; // 1 minute
+
 export async function POST(request: Request) {
   try {
     const body: AnalyzeBloodTestResultsInput = await request.json();

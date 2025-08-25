@@ -2,6 +2,8 @@
 import { analyzeUserVitalsFromImage, type AnalyzeUserVitalsInput } from '@/ai/flows/analyze-user-vitals-from-image';
 import { NextResponse } from 'next/server';
 
+export const maxDuration = 60; // 1 minute
+
 export async function POST(request: Request) {
   try {
     const body: AnalyzeUserVitalsInput = await request.json();
