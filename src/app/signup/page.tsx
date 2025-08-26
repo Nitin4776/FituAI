@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, type SubmitHandler, Controller, type UseFormReturn } from 'react-hook-form';
+import { useForm, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -17,13 +17,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Mail, MessageSquare } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { signUpAction, signInWithGoogle, sendOtp, signUpWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
+import { signUpAction, signInWithGoogle, initializeRecaptchaVerifier } from '../auth/actions';
 import { Logo } from '@/components/icons/logo';
-import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'
-import { cn } from '@/lib/utils';
 
 
 const emailSchema = z.object({
@@ -33,17 +31,6 @@ const emailSchema = z.object({
 });
 type EmailFormValues = z.infer<typeof emailSchema>;
 
-const phoneSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters.'),
-    phoneNumber: z.string().min(10, 'Please enter a valid phone number.'),
-});
-type PhoneFormValues = z.infer<typeof phoneSchema>;
-
-const otpSchema = z.object({
-    otp: z.string().length(6, 'OTP must be 6 digits.'),
-});
-type OtpFormValues = z.infer<typeof otpSchema>;
-
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" viewBox="0 0 48 48">
     <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
@@ -52,84 +39,6 @@ const GoogleIcon = () => (
     <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.022,35.533,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
   </svg>
 );
-
-const PhoneSignUpForm = ({ form, onSubmit, isLoading }: { form: UseFormReturn<PhoneFormValues>, onSubmit: SubmitHandler<PhoneFormValues>, isLoading: boolean }) => (
-    <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <Controller
-                name="phoneNumber"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                    <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                             <PhoneInput
-                                country={'in'}
-                                value={field.value}
-                                onChange={field.onChange}
-                                inputClass={cn(
-                                    "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm !pl-12 !w-full"
-                                )}
-                                buttonClass="rounded-l-md"
-                            />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? <Loader2 className="animate-spin" /> : <> Continue </>}
-            </Button>
-        </form>
-    </Form>
-  );
-
-  const OtpVerificationForm = ({ form, onSubmit, isLoading, phoneNumber, onBack }: { form: UseFormReturn<OtpFormValues>, onSubmit: SubmitHandler<OtpFormValues>, isLoading: boolean, phoneNumber: string, onBack: () => void }) => (
-     <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <div className="text-center">
-                <p className="text-sm text-muted-foreground">Enter the 6-digit code sent to:</p>
-                <p className="font-semibold">{phoneNumber}</p>
-            </div>
-            <FormField
-                control={form.control}
-                name="otp"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Verification Code</FormLabel>
-                    <FormControl>
-                        <Input 
-                            placeholder="_ _ _ _ _ _" 
-                            {...field}
-                            className="text-center tracking-[0.5em]"
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? <Loader2 className="animate-spin" /> : <> Verify & Sign Up</> }
-            </Button>
-            <Button variant="link" size="sm" onClick={onBack} className="w-full">
-                Back to sign up
-            </Button>
-        </form>
-    </Form>
-  );
 
   const EmailSignUpForm = ({ form, onSubmit, isLoading }: { form: UseFormReturn<EmailFormValues>, onSubmit: SubmitHandler<EmailFormValues>, isLoading: boolean }) => (
     <Form {...form}>
@@ -182,10 +91,6 @@ const PhoneSignUpForm = ({ form, onSubmit, isLoading }: { form: UseFormReturn<Ph
 
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [signupMethod, setSignupMethod] = useState<'phone' | 'email'>('phone');
-  const [step, setStep] = useState<'input' | 'otp'>('input');
-  const [userName, setUserName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   
   const { toast } = useToast();
   
@@ -196,16 +101,6 @@ export default function SignUpPage() {
   const emailForm = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: { name: '', email: '', password: '' },
-  });
-
-  const phoneForm = useForm<PhoneFormValues>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { name: '', phoneNumber: '' },
-  });
-
-  const otpForm = useForm<OtpFormValues>({
-    resolver: zodResolver(otpSchema),
-    defaultValues: { otp: '' }
   });
 
 
@@ -223,44 +118,6 @@ export default function SignUpPage() {
       setIsLoading(false);
     }
   };
-
-  const onPhoneSubmit: SubmitHandler<PhoneFormValues> = async (data) => {
-    setIsLoading(true);
-    setUserName(data.name);
-    setPhoneNumber(data.phoneNumber);
-    try {
-        await sendOtp(data.phoneNumber)
-        setStep('otp');
-        toast({
-            title: 'OTP Sent',
-            description: 'Please check your phone for the verification code.',
-        });
-    } catch (error) {
-        toast({
-            variant: 'destructive',
-            title: 'Failed to Send OTP',
-            description: (error as Error).message,
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  }
-
-  const onOtpSubmit: SubmitHandler<OtpFormValues> = async (data) => {
-    setIsLoading(true);
-    try {
-        await signUpWithPhoneNumber(userName, data.otp);
-    } catch (error) {
-        toast({
-            variant: 'destructive',
-            title: 'Verification Failed',
-            description: (error as Error).message,
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  }
-
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -288,54 +145,24 @@ export default function SignUpPage() {
           <CardTitle className="font-headline font-bold">Join to start your personalized fitness plan.</CardTitle>
         </CardHeader>
         <CardContent>
-            { step === 'otp' ? (
-                <OtpVerificationForm 
-                    form={otpForm}
-                    onSubmit={onOtpSubmit}
-                    isLoading={isLoading}
-                    phoneNumber={phoneNumber}
-                    onBack={() => setStep('input')}
-                />
-            ) : (
-                <>
-                { signupMethod === 'phone' ? (
-                    <PhoneSignUpForm
-                        form={phoneForm}
-                        onSubmit={onPhoneSubmit}
-                        isLoading={isLoading}
-                    />
-                ) : (
-                    <EmailSignUpForm
-                        form={emailForm}
-                        onSubmit={onEmailSubmit}
-                        isLoading={isLoading}
-                    /> 
-                )}
+            <EmailSignUpForm
+                form={emailForm}
+                onSubmit={onEmailSubmit}
+                isLoading={isLoading}
+            /> 
 
-                <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">Or</span>
-                    </div>
+            <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
                 </div>
-                
-                { signupMethod === 'phone' ? (
-                     <Button variant="outline" onClick={() => setSignupMethod('email')} disabled={isLoading} className="w-full">
-                        <Mail className="mr-2" /> Continue with Email
-                    </Button>
-                ) : (
-                    <Button variant="outline" onClick={() => setSignupMethod('phone')} disabled={isLoading} className="w-full">
-                        <MessageSquare className="mr-2" /> Continue with Phone
-                    </Button>
-                )}
-
-                <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full mt-4">
-                    {isLoading ? <Loader2 className="animate-spin" /> : <><GoogleIcon /> Google</>}
-                </Button>
-                </>
-            )}
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+            </div>
+            
+            <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading} className="w-full mt-4">
+                {isLoading ? <Loader2 className="animate-spin" /> : <><GoogleIcon /> Google</>}
+            </Button>
           
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
@@ -348,8 +175,3 @@ export default function SignUpPage() {
     </div>
   );
 }
-
-    
-
-    
-
