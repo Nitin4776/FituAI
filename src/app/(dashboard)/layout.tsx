@@ -45,7 +45,7 @@ import { useSubscription } from '@/hooks/use-subscription';
 const menuItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/goal', label: 'Goal', icon: Target },
-  { href: '/fasting', label: 'Fasting Calc.', icon: Clock },
+  { href: '/fasting', label: 'Fasting', icon: Clock },
 ];
 
 const aiMenuItems = [
@@ -79,7 +79,7 @@ function BottomNavigation() {
     { href: '/', label: 'Home', icon: Home },
     { href: '/goal', label: 'Goal', icon: Target },
     { type: 'log' },
-    { href: '/fasting', label: 'Fasting Calc.', icon: Clock },
+    { href: '/fasting', label: 'Fasting', icon: Clock },
     { type: 'ai' },
   ];
 
@@ -98,7 +98,7 @@ function BottomNavigation() {
                         : 'text-muted-foreground'
                     )}
                   >
-                    <PlusCircle className="size-5" />
+                    <PlusCircle className="size-7" />
                     <span className="text-xs mt-1">Log</span>
                   </div>
                 </DropdownMenuTrigger>
@@ -267,11 +267,11 @@ function DashboardLayoutContent({
                   <Link href="/fasting">
                       <SidebarMenuButton
                       isActive={pathname === '/fasting'}
-                      tooltip="Fasting Calc."
+                      tooltip="Fasting"
                       className="w-full justify-start"
                       >
                       <Clock className="size-4" />
-                      <span>Fasting Calc.</span>
+                      <span>Fasting</span>
                       </SidebarMenuButton>
                   </Link>
               </SidebarMenuItem>
