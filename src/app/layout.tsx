@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Your personalized AI-powered health and fitness companion.",
   manifest: "/manifest.json",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFBF7" },
+    { media: "(prefers-color-scheme: light)", color: "#FFF9F5" },
     { media: "(prefers-color-scheme: dark)", color: "#040716" },
   ],
 };
