@@ -11,6 +11,17 @@ import { saveProfile } from '@/services/firestore';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogDescription,
+    DialogFooter,
+    DialogClose
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const standardFeatures = [
     'Set & Track Personal Goals',
@@ -71,10 +82,32 @@ const plans = [
     }
 ]
 
+type Plan = typeof plans[0];
+
 export default function SubscribePage() {
     const [isLoading, setIsLoading] = useState<string | null>(null);
+    const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+    const [couponCode, setCouponCode] = useState('');
     const { toast } = useToast();
     const router = useRouter();
+
+    const handlePlanSelection = (plan: Plan) => {
+        if (plan.planId === 'free') {
+            handleSelectPlan(plan.planId);
+        } else {
+            setSelectedPlan(plan);
+            setIsCouponDialogOpen(true);
+        }
+    };
+
+    const handleProceedToPayment = () => {
+        if (selectedPlan) {
+            // Here you would typically validate the coupon code
+            // For now, we'll just proceed to payment
+            handleSelectPlan(selectedPlan.planId);
+        }
+    };
 
     const handleSelectPlan = async (planId: string) => {
         setIsLoading(planId);
@@ -112,6 +145,7 @@ export default function SubscribePage() {
             });
         } finally {
             setIsLoading(null);
+            setIsCouponDialogOpen(false);
         }
     }
 
@@ -171,7 +205,7 @@ export default function SubscribePage() {
                         <Button
                             className="w-full"
                             variant={plan.premium ? 'default' : 'outline'}
-                            onClick={() => handleSelectPlan(plan.planId)}
+                            onClick={() => handlePlanSelection(plan)}
                             disabled={!!isLoading}
                         >
                             {isLoading === plan.planId ? <Loader2 className="animate-spin" /> : plan.cta}
@@ -185,6 +219,34 @@ export default function SubscribePage() {
                 You can change your plan at any time.
             </p>
         </div>
+
+        <Dialog open={isCouponDialogOpen} onOpenChange={setIsCouponDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Have a Coupon Code?</DialogTitle>
+                    <DialogDescription>
+                        Enter your coupon code below to apply a discount to your '{selectedPlan?.name}' plan. If you don't have one, just proceed to payment.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-2">
+                    <Label htmlFor="coupon-code">Coupon Code</Label>
+                    <Input 
+                        id="coupon-code" 
+                        placeholder="Enter your code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                    />
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                         <Button variant="ghost">Cancel</Button>
+                    </DialogClose>
+                    <Button onClick={handleProceedToPayment} disabled={isLoading === selectedPlan?.planId}>
+                        {isLoading === selectedPlan?.planId ? <Loader2 className="animate-spin" /> : 'Make a Payment'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
