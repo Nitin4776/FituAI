@@ -162,6 +162,22 @@ export async function signInWithPhoneNumber(otp: string) {
 export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
   try {
     const validatedCredentials = signUpSchema.parse(credentials);
+    const currentUser = auth.currentUser;
+
+    // If user is already logged in (e.g. with phone), link the new email credential
+    if (currentUser) {
+        const credential = EmailAuthProvider.credential(
+            validatedCredentials.email,
+            validatedCredentials.password
+        );
+        await linkWithCredential(currentUser, credential);
+        await updateProfile(currentUser, { displayName: validatedCredentials.name });
+        await saveProfile({ name: validatedCredentials.name, email: validatedCredentials.email }, currentUser.uid);
+        await setSessionCookie(currentUser);
+        return;
+    }
+
+    // Standard email/password sign up for new users
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       validatedCredentials.email,
@@ -178,13 +194,15 @@ export async function signUpAction(credentials: z.infer<typeof signUpSchema>) {
      }, userCredential.user.uid);
     await setSessionCookie(userCredential.user);
 
-
   } catch (error: any) {
     let errorMessage = 'An unexpected error occurred.';
     if (error.code) {
         switch (error.code) {
             case 'auth/email-already-in-use':
                 errorMessage = 'This email address is already in use. Please sign in or use a different email.';
+                break;
+            case 'auth/credential-already-in-use':
+                errorMessage = 'This email is already associated with another account. Please sign in with your other method.';
                 break;
             case 'auth/invalid-email':
                 errorMessage = 'The email address is not valid.';
