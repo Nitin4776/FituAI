@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.fitlife.ai',
-  appName: 'FitLife AI',
+  appName: 'FituAI',
   webDir: 'out',
   bundledWebRuntime: false,
 };

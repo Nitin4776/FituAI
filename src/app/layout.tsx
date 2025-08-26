@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/hooks/use-auth";
 
 export const metadata: Metadata = {
-  title: "fitUAI",
+  title: "FituAI",
   description: "Your personalized AI-powered health and fitness companion.",
   manifest: "/manifest.json",
   themeColor: [
