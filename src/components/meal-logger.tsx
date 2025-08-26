@@ -45,6 +45,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt } from './upgrade-prompt';
 
 const mealTypes = {
   breakfast: 'Breakfast',
@@ -84,6 +86,7 @@ export function MealLogger() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
+  const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [cameraMode, setCameraMode] = useState<'capture' | 'upload' | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
@@ -91,6 +94,7 @@ export function MealLogger() {
   const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
   const [editingMeal, setEditingMeal] = useState<MealLog | null>(null);
   const { toast } = useToast();
+  const { isSubscribed } = useSubscription();
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -115,16 +119,19 @@ export function MealLogger() {
     fetchMeals();
   }, []);
 
-  useEffect(() => {
-    if (!isCameraDialogOpen) {
-      setCameraMode(null);
-    }
-  }, [isCameraDialogOpen]);
-
   // Effect to request camera permission when capture mode is selected
   useEffect(() => {
     let stream: MediaStream | null = null;
-    if (cameraMode === 'capture') {
+    const cleanupStream = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+    };
+
+    if (isCameraDialogOpen && cameraMode === 'capture') {
       const getCameraPermission = async () => {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -143,16 +150,12 @@ export function MealLogger() {
         }
       };
       getCameraPermission();
+    } else {
+        cleanupStream();
     }
-    return () => {
-       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    };
-  }, [cameraMode, toast]);
+    
+    return cleanupStream;
+  }, [cameraMode, isCameraDialogOpen, toast]);
 
   const handleAddClick = (mealType: MealType) => {
     setEditingMeal(null);
@@ -240,6 +243,10 @@ export function MealLogger() {
   };
 
   const handleCameraClick = (mealType: MealType) => {
+    if (!isSubscribed) {
+        setIsUpgradeDialogOpen(true);
+        return;
+    }
     setSelectedMealType(mealType);
     setIsCameraDialogOpen(true);
     setCameraMode(null); // Reset mode when opening
@@ -537,6 +544,14 @@ export function MealLogger() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        <Dialog open={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Upgrade to Premium</DialogTitle>
+                </DialogHeader>
+                <UpgradePrompt featureName="AI Meal Scan" description="Automatically log your food by taking a photo of your meal." />
+            </DialogContent>
+        </Dialog>
     </>
   );
 }

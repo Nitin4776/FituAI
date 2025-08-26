@@ -45,6 +45,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { useSubscription } from '@/hooks/use-subscription';
+import { UpgradePrompt } from './upgrade-prompt';
 
 const activityFormSchema = z.object({
   activityName: z.string().min(2, 'Activity name is required.'),
@@ -83,11 +85,13 @@ export function ActivityLogger() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
+  const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [cameraMode, setCameraMode] = useState<'capture' | 'upload' | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [editingActivity, setEditingActivity] = useState<ActivityLog | null>(null);
   const { toast } = useToast();
+  const { isSubscribed } = useSubscription();
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -109,14 +113,17 @@ export function ActivityLogger() {
   }, []);
   
   useEffect(() => {
-    if (!isCameraDialogOpen) {
-      setCameraMode(null);
-    }
-  }, [isCameraDialogOpen]);
-
-  useEffect(() => {
     let stream: MediaStream | null = null;
-    if (cameraMode === 'capture') {
+    const cleanupStream = () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+       if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+
+    if (isCameraDialogOpen && cameraMode === 'capture') {
       const getCameraPermission = async () => {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -135,16 +142,12 @@ export function ActivityLogger() {
         }
       };
       getCameraPermission();
+    } else {
+        cleanupStream();
     }
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-    };
-  }, [cameraMode, toast]);
+
+    return cleanupStream;
+  }, [cameraMode, isCameraDialogOpen, toast]);
 
   const handleAddClick = () => {
     setEditingActivity(null);
@@ -233,6 +236,10 @@ export function ActivityLogger() {
   };
 
   const handleCameraClick = () => {
+    if (!isSubscribed) {
+        setIsUpgradeDialogOpen(true);
+        return;
+    }
     setIsCameraDialogOpen(true);
     setCameraMode(null);
   }
@@ -510,6 +517,14 @@ export function ActivityLogger() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+       <Dialog open={isUpgradeDialogOpen} onOpenChange={setIsUpgradeDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Upgrade to Premium</DialogTitle>
+                </DialogHeader>
+                <UpgradePrompt featureName="AI Activity Scan" description="Automatically log your workouts by taking a photo of the equipment screen." />
+            </DialogContent>
+        </Dialog>
     </>
   );
 }
