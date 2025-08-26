@@ -1,11 +1,11 @@
 {
-  "name": "FitLife AI",
-  "short_name": "FitLife",
-  "description": "Your personalized AI-powered health and fitness companion.",
+  "name": "FituAI",
+  "short_name": "FituAI",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#43A047",
+  "background_color": "#FFF9F5",
+  "theme_color": "#FFF9F5",
+  "description": "Your personalized AI-powered health and fitness companion.",
   "icons": [
     {
       "src": "https://firebasestorage.googleapis.com/v0/b/crickseries.firebasestorage.app/o/ChatGPT%20Image%20Aug%2022%2C%202025%2C%2004_53_05%20PM.png?alt=media&token=f683841c-65cc-4887-8590-72f080da56f3",
