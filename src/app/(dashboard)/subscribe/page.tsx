@@ -103,9 +103,11 @@ export default function SubscribePage() {
     };
 
     const handleProceedToPayment = () => {
-        if (selectedPlan) {
-            handleSelectPlan(selectedPlan.planId);
-        }
+        toast({
+            variant: 'destructive',
+            title: 'Coming Soon!',
+            description: 'Payment gateway integration in progress. Please try the 1-month free plan with the available coupon code.',
+        });
     };
     
     const handleApplyCoupon = async () => {
@@ -268,7 +270,10 @@ export default function SubscribePage() {
                 <DialogHeader>
                     <DialogTitle>Have a Coupon Code?</DialogTitle>
                     <DialogDescription>
-                        Enter your coupon code below to apply a discount to your '{selectedPlan?.name}' plan. If you don't have one, just proceed to payment.
+                        {selectedPlan?.planId === 'monthly' 
+                            ? 'Get 1 month of premium access for FREE! Enter the coupon code "FITUAI-INDIA" and click Apply.'
+                            : 'If you have a coupon code, enter it below. Otherwise, proceed to payment.'
+                        }
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-2">
