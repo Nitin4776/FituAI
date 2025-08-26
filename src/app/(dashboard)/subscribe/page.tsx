@@ -97,21 +97,64 @@ export default function SubscribePage() {
             handleSelectPlan(plan.planId);
         } else {
             setSelectedPlan(plan);
+            setCouponCode('');
             setIsCouponDialogOpen(true);
         }
     };
 
     const handleProceedToPayment = () => {
         if (selectedPlan) {
-            // Here you would typically validate the coupon code
-            // For now, we'll just proceed to payment
             handleSelectPlan(selectedPlan.planId);
         }
     };
+    
+    const handleApplyCoupon = async () => {
+        if (selectedPlan?.planId === 'monthly' && couponCode === 'FITUAI-INDIA') {
+            setIsLoading(selectedPlan.planId);
+            try {
+                const now = new Date();
+                const subscribedUntil = new Date(now.setMonth(now.getMonth() + 1));
+                
+                await saveProfile({
+                    subscription: {
+                        plan: 'monthly',
+                        subscribedAt: new Date(),
+                        subscribedUntil: subscribedUntil,
+                        coupon: 'FITUAI-INDIA'
+                    }
+                });
+                
+                toast({
+                    title: 'Coupon Applied!',
+                    description: "You've received a 1-month free subscription! You're being redirected.",
+                });
+
+                router.push('/profile');
+
+            } catch(error) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Something went wrong',
+                    description: 'Could not apply your coupon. Please try again.',
+                });
+            } finally {
+                setIsLoading(null);
+                setIsCouponDialogOpen(false);
+            }
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Coupon',
+                description: 'This coupon code is not valid for the selected plan.',
+            });
+        }
+    }
 
     const handleSelectPlan = async (planId: string) => {
         setIsLoading(planId);
         try {
+            // This is where you would call the API to create a payment order
+            // For now, we simulate success and update the profile
             const now = new Date();
             let subscribedUntil: Date | null = null;
             if (planId === 'monthly') {
@@ -230,19 +273,29 @@ export default function SubscribePage() {
                 </DialogHeader>
                 <div className="py-4 space-y-2">
                     <Label htmlFor="coupon-code">Coupon Code</Label>
-                    <Input 
-                        id="coupon-code" 
-                        placeholder="Enter your code"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                    />
+                    <div className="flex gap-2">
+                        <Input 
+                            id="coupon-code" 
+                            placeholder="Enter your code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value)}
+                        />
+                         {selectedPlan?.planId === 'monthly' && (
+                            <Button 
+                                onClick={handleApplyCoupon}
+                                disabled={isLoading === 'monthly' || couponCode.toUpperCase() !== 'FITUAI-INDIA'}
+                            >
+                                {isLoading === 'monthly' ? <Loader2 className="animate-spin" /> : 'Apply'}
+                            </Button>
+                         )}
+                    </div>
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
                          <Button variant="ghost">Cancel</Button>
                     </DialogClose>
-                    <Button onClick={handleProceedToPayment} disabled={isLoading === selectedPlan?.planId}>
-                        {isLoading === selectedPlan?.planId ? <Loader2 className="animate-spin" /> : 'Make a Payment'}
+                    <Button onClick={handleProceedToPayment} disabled={!!isLoading}>
+                        {isLoading && isLoading !== 'monthly' ? <Loader2 className="animate-spin" /> : 'Make a Payment'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
