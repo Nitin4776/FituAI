@@ -51,7 +51,7 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
     }
 
     return (
-        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <Icon className={cn("h-4 w-4", iconClassName)} />
                 <span>{label}</span>
@@ -89,48 +89,17 @@ function MacroProgress({ label, consumed, goal, icon: Icon, iconClassName }: { l
 }
 
 function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
-    const percentage = goal > 0 ? Math.round((consumed / goal) * 100) : 0;
-    const chartData = [{ name: 'Water', value: percentage > 120 ? 120 : percentage }];
-
-    const getProgressColor = (p: number) => {
-        if (p > 105) return "hsl(var(--destructive))";
-        if (p < 75) return "hsl(var(--chart-2))";
-        return "hsl(var(--chart-1))";
-    };
-
     return (
-         <Card className="relative bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36">
+         <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center text-center">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <GlassWater className="h-4 w-4 text-blue-500" />
                 <span>Water</span>
             </div>
-            <div className="w-full h-20 relative">
-                 <ResponsiveContainer width="100%" height="100%">
-                    <RadialBarChart
-                        innerRadius="70%"
-                        outerRadius="100%"
-                        data={chartData}
-                        startAngle={90}
-                        endAngle={-270}
-                        barSize={8}
-                    >
-                        <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                        <RadialBar
-                            background
-                            dataKey="value"
-                            angleAxisId={0}
-                            fill={getProgressColor(percentage)}
-                            className="stroke-none"
-                            cornerRadius={4}
-                        />
-                    </RadialBarChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-lg">{Math.round(consumed)}</p>
-                </div>
+            <div className="w-full flex-grow flex items-center justify-center">
+                <p className="font-bold text-3xl">{Math.round(consumed)}</p>
             </div>
             <div className="text-center">
-                <p className="text-xs font-semibold">
+                 <p className="text-xs font-semibold">
                     {Math.round(consumed)}/{goal}
                 </p>
                 <Link href="/log-water" className="text-primary/50 hover:text-primary">
@@ -144,7 +113,7 @@ function WaterProgress({ consumed, goal }: { consumed: number, goal: number }) {
 
 function CaloriesBurned({ burned }: { burned: number }) {
      return (
-        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center h-36 text-center">
+        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 p-2 flex flex-col justify-between items-center text-center">
             <div className='flex items-center justify-center gap-1 text-sm text-muted-foreground'>
                 <Flame className="h-4 w-4 text-orange-500" />
                 <span>Burned</span>
@@ -330,7 +299,7 @@ export function TodaySummarySkeleton() {
               <div className="grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
                   {[...Array(6)].map((_, i) => (
                       <div key={i} className="space-y-1">
-                          <Skeleton className="h-36 w-full rounded-lg" />
+                          <Skeleton className="h-32 w-full rounded-lg" />
                       </div>
                   ))}
               </div>
@@ -342,5 +311,3 @@ export function TodaySummarySkeleton() {
     </Card>
   )
 }
-
-    
