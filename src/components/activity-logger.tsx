@@ -109,10 +109,17 @@ export function ActivityLogger() {
   }, []);
   
   useEffect(() => {
+    if (!isCameraDialogOpen) {
+      setCameraMode(null);
+    }
+  }, [isCameraDialogOpen]);
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
     if (cameraMode === 'capture') {
       const getCameraPermission = async () => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
           setHasCameraPermission(true);
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -128,13 +135,15 @@ export function ActivityLogger() {
         }
       };
       getCameraPermission();
-    } else {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+    }
+    return () => {
+      if (stream) {
         stream.getTracks().forEach(track => track.stop());
+      }
+      if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
-    }
+    };
   }, [cameraMode, toast]);
 
   const handleAddClick = () => {
