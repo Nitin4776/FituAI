@@ -19,10 +19,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { signUpAction, signInWithGoogle, initializeRecaptchaVerifier } from '../auth/actions';
+import { signInWithGoogle, initializeRecaptchaVerifier } from '../auth/actions';
+import { signUpWithEmail } from '@/services/firestore.server';
+import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { Logo } from '@/components/icons/logo';
 import 'react-phone-input-2/lib/style.css'
-
 
 const emailSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -91,7 +92,6 @@ const GoogleIcon = () => (
 
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
-  
   const { toast } = useToast();
   
   useEffect(() => {
@@ -107,7 +107,9 @@ export default function SignUpPage() {
   const onEmailSubmit: SubmitHandler<EmailFormValues> = async (data) => {
     setIsLoading(true);
     try {
-      await signUpAction(data);
+      await signUpWithEmail(data);
+      // After successful sign-up on the backend, sign in the user on the client
+      await signInWithEmailAndPassword(getAuth(), data.email, data.password);
     } catch (error) {
        toast({
         variant: 'destructive',

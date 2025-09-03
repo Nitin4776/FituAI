@@ -19,7 +19,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, LogIn, Mail, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
-import { signInAction, signInWithGoogle, sendOtp, signInWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
+import { signInWithGoogle, sendOtp, signInWithPhoneNumber, initializeRecaptchaVerifier } from '../auth/actions';
+import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { Logo } from '@/components/icons/logo';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'
@@ -183,7 +184,7 @@ export default function SignInPage() {
   const onEmailSubmit: SubmitHandler<EmailFormValues> = async (data) => {
     setIsLoading(true);
     try {
-      await signInAction(data);
+      await signInWithEmailAndPassword(getAuth(), data.email, data.password);
     } catch (error) {
       toast({
         variant: 'destructive',
