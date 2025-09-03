@@ -5,6 +5,10 @@ const config: CapacitorConfig = {
   appName: 'FituAI',
   webDir: 'out',
   bundledWebRuntime: false,
+  server: {
+    url: 'http://localhost:3000',
+    cleartext: true,
+  },
 };
 
 export default config;
