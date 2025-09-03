@@ -1,8 +1,8 @@
+
 'use client'; 
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber as firebaseSignInWithPhoneNumber, type ConfirmationResult, signOut as firebaseSignOut } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { saveProfile as saveProfileClient } from '@/services/firestore';
 import { saveProfile as saveProfileServer } from '@/services/firestore.server';
 import { getProfile } from '@/services/firestore';
 
@@ -103,6 +103,11 @@ export async function signInWithPhoneNumber(otp: string) {
         }
         throw new Error(errorMessage);
      }
+}
+
+export async function signOut() {
+    await firebaseSignOut(auth);
+    await fetch('/api/auth/session', { method: 'DELETE' });
 }
 
 // Extend the Window interface

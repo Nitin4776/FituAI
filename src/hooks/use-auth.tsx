@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getAuth, onIdTokenChanged, type User } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { signOutAction } from '@/app/auth/actions';
+import { signOut } from '@/app/auth/actions';
 import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { getProfile } from '@/services/firestore';
@@ -71,9 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  const signOut = async () => {
+  const handleSignOut = async () => {
     try {
-      await signOutAction();
+      await signOut();
       router.push('/signin');
     } catch (error) {
       console.error('Sign out failed', error);
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signOut: handleSignOut }}>
       {children}
     </AuthContext.Provider>
   );
