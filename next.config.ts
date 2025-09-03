@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 import withPWAInit from '@ducanh2912/next-pwa';
 
@@ -8,7 +9,6 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -32,17 +32,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-        config.externals = {
-            ...config.externals,
-            '@opentelemetry/exporter-jaeger': 'commonjs @opentelemetry/exporter-jaeger',
-            '@genkit-ai/firebase': 'commonjs @genkit-ai/firebase',
-            'firebase-admin': 'commonjs firebase-admin',
-        };
-    }
-    return config;
-  }
 };
 
 export default withPWA(nextConfig);
