@@ -350,6 +350,73 @@ export async function getTodaysWaterIntake(userId?: string): Promise<WaterLog | 
     return null;
 }
 
+
+// --- Meal Plan ---
+export async function saveMealPlan(planData: any) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+
+    const batch = writeBatch(db);
+    const planColRef = collection(db, 'users', userId, 'mealPlans');
+
+    // 1. Get and delete all existing meal plans for the user
+    const existingPlansQuery = query(planColRef);
+    const existingPlansSnapshot = await getDocs(existingPlansQuery);
+    existingPlansSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+
+    // 2. Add the new meal plan
+    const newPlanRef = doc(planColRef); // Creates a new doc with a random ID
+    batch.set(newPlanRef, {
+        ...planData,
+        createdAt: Timestamp.now(),
+    });
+    
+    await batch.commit();
+}
+
+export async function getLatestMealPlan() {
+    const userId = getCurrentUserId();
+    if (!userId) return null;
+
+    const planColRef = collection(db, 'users', userId, 'mealPlans');
+    const q = query(
+        planColRef,
+        orderBy('createdAt', 'desc'),
+        limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+        // Check if the plan is for today
+        const today = new Date().toISOString().split('T')[0];
+        const planDate = new Date(data.createdAt.seconds * 1000).toISOString().split('T')[0];
+        if (today === planDate) {
+            return { id: doc.id, ...data };
+        }
+    }
+    return null;
+}
+
+export async function deleteLatestMealPlan() {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+
+    const planColRef = collection(db, 'users', userId, 'mealPlans');
+    const q = query(planColRef);
+    const querySnapshot = await getDocs(q);
+
+    const batch = writeBatch(db);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+}
+
+
 // --- Workout Plan ---
 export async function saveWorkoutPlan(planData: any) {
     const userId = getCurrentUserId();
