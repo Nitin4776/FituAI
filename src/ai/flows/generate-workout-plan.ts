@@ -32,7 +32,7 @@ const ExerciseSchema = z.object({
   reps: z.string().describe('The number of repetitions per set (e.g., "8-12", "15").'),
   rest: z.string().describe('The rest period between sets in seconds or minutes (e.g., "60s", "2min").'),
   notes: z.string().optional().describe('Additional notes or tips for the exercise (e.g., "Focus on form", "Go to failure on last set").'),
-  youtubeLink: z.string().url().optional().describe('A URL to a relevant YouTube video demonstrating the exercise form.'),
+  youtubeSearchQuery: z.string().optional().describe('A concise and accurate search query for YouTube to find a video demonstrating the exercise form (e.g., "how to do dumbbell bench press").'),
 });
 export type Exercise = z.infer<typeof ExerciseSchema>;
 
@@ -81,7 +81,7 @@ Your task is to generate:
 2.  A "planSummary": A short paragraph explaining the plan's structure and what it helps to achieve.
 3.  A "weeklySchedule": A 7-day array, starting with Monday. For each day, provide the "day", "focus", and a list of "exercises".
     - For each exercise, detail the "name", "sets", "reps", and "rest" period. Include optional "notes" for technique or intensity.
-    - For each exercise, also find and include a "youtubeLink" to a high-quality, short instructional video from a reputable fitness channel demonstrating proper form.
+    - For each exercise, also generate a concise and accurate "youtubeSearchQuery" that can be used to find a high-quality instructional video on YouTube demonstrating proper form (e.g., "how to do dumbbell bench press", "barbell squat technique").
     - If the user specified a "restDay", ensure that day is a rest day. If they chose "any", include at least one to two rest days on logical days (e.g., not after a very intense day, spread them out).
     - For a rest day, the "exercises" array should be empty.
 

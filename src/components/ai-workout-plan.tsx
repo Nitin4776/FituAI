@@ -31,7 +31,6 @@ import { getProfile } from '@/services/firestore';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 const planFormSchema = z.object({
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']),
@@ -53,40 +52,11 @@ type Profile = {
     activityLevel: string;
 }
 
-type VideoPlayerState = {
-    url: string;
-    name: string;
-} | null;
-
-const getYouTubeEmbedUrl = (url: string): string | null => {
-    if (!url) return null;
-    let videoId: string | null = null;
-    try {
-        const urlObj = new URL(url);
-        if (urlObj.hostname === 'youtu.be') {
-            videoId = urlObj.pathname.slice(1);
-        } else if (urlObj.hostname.includes('youtube.com')) {
-            if (urlObj.pathname.startsWith('/shorts/')) {
-                videoId = urlObj.pathname.split('/shorts/')[1];
-            } else {
-                videoId = urlObj.searchParams.get('v');
-            }
-        }
-    } catch(e) {
-        console.error("Invalid youtube url", e);
-        return null;
-    }
-
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-};
-
-
 export function AiWorkoutPlan() {
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [videoState, setVideoState] = useState<VideoPlayerState>(null);
   const { toast } = useToast();
 
   const form = useForm<PlanFormValues>({
@@ -211,10 +181,12 @@ export function AiWorkoutPlan() {
                                                     <TableCell>{ex.reps}</TableCell>
                                                     <TableCell>{ex.rest}</TableCell>
                                                     <TableCell>
-                                                        {ex.youtubeLink && (
-                                                            <Button variant="ghost" size="icon" onClick={() => setVideoState({ url: ex.youtubeLink || '', name: ex.name })}>
-                                                                <Youtube className="text-red-600" />
-                                                            </Button>
+                                                        {ex.youtubeSearchQuery && (
+                                                            <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.youtubeSearchQuery)}`} target="_blank" rel="noopener noreferrer">
+                                                                <Button variant="ghost" size="icon">
+                                                                    <Youtube className="text-red-600" />
+                                                                </Button>
+                                                            </a>
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
@@ -275,8 +247,6 @@ export function AiWorkoutPlan() {
         </Alert>
     )
   }
-
-  const embedUrl = videoState?.url ? getYouTubeEmbedUrl(videoState.url) : null;
 
   return (
     <>
@@ -384,25 +354,6 @@ export function AiWorkoutPlan() {
                 </div>
             )}
       </div>
-
-       <Dialog open={!!videoState} onOpenChange={(isOpen) => !isOpen && setVideoState(null)}>
-        <DialogContent className="max-w-3xl p-4">
-          <DialogHeader>
-            <DialogTitle>{videoState?.name || 'Exercise Video'}</DialogTitle>
-          </DialogHeader>
-           {embedUrl && (
-            <div className="aspect-video">
-                <iframe
-                src={embedUrl}
-                title="YouTube video player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full rounded-md"
-                ></iframe>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
