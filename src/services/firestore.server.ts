@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase.server';
 import { getAuth as getAdminAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { getAuth } from "firebase-admin/auth";
 import { app } from '@/lib/firebase';
+import { Timestamp } from 'firebase-admin/firestore';
 
 const clientAuth = getAdminAuth(app);
 
@@ -14,6 +15,24 @@ export async function saveProfile(profileData: any, uid: string) {
   const userDocRef = db().collection('users').doc(uid);
   await userDocRef.set(profileData, { merge: true });
 }
+
+export async function updateUserSubscription(userId: string, subscriptionData: { plan: string, status: string, subscriptionId: string, nextPaymentDate?: Timestamp }) {
+    if (!userId) throw new Error('User UID is required to update subscription');
+    const userDocRef = db().collection('users').doc(userId);
+    
+    const dataToUpdate = {
+        subscription: {
+            plan: subscriptionData.plan,
+            status: subscriptionData.status,
+            subscriptionId: subscriptionData.subscriptionId,
+            subscribedAt: Timestamp.now(),
+            ...(subscriptionData.nextPaymentDate && { subscribedUntil: subscriptionData.nextPaymentDate })
+        }
+    };
+
+    await userDocRef.set(dataToUpdate, { merge: true });
+}
+
 
 export async function getProfile(userId: string) {
   if (!userId) return null;

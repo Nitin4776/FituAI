@@ -92,22 +92,51 @@ export default function SubscribePage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const handlePlanSelection = (plan: Plan) => {
+    const handlePlanSelection = async (plan: Plan) => {
         if (plan.planId === 'free') {
-            handleSelectPlan(plan.planId);
+            await handleFreePlan();
         } else {
             setSelectedPlan(plan);
             setCouponCode('');
             setIsCouponDialogOpen(true);
         }
     };
+    
+    const handleProceedToPayment = async () => {
+        if (!selectedPlan) return;
+        setIsLoading(selectedPlan.planId);
 
-    const handleProceedToPayment = () => {
-        toast({
-            variant: 'destructive',
-            title: 'Coming Soon!',
-            description: 'Payment gateway integration in progress. Please try the 1-month free plan with the available coupon code.',
-        });
+        try {
+            const res = await fetch('/api/subscription/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    planId: selectedPlan.planId,
+                    returnUrl: `${window.location.origin}/profile` // Redirect back to profile after payment
+                }),
+            });
+
+            const data = await res.json();
+            
+            if (res.ok && data.subscription_link) {
+                window.location.href = data.subscription_link; // Redirect to Cashfree checkout
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Failed to create subscription',
+                    description: data.error || 'Please try again later.',
+                });
+            }
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Something went wrong',
+                description: 'Could not initiate payment. ' + error.message,
+            });
+        } finally {
+            setIsLoading(null);
+            setIsCouponDialogOpen(false);
+        }
     };
     
     const handleApplyCoupon = async () => {
@@ -120,6 +149,7 @@ export default function SubscribePage() {
                 await saveProfile({
                     subscription: {
                         plan: 'monthly',
+                        status: 'ACTIVE',
                         subscribedAt: new Date(),
                         subscribedUntil: subscribedUntil,
                         coupon: 'FITUAI-INDIA'
@@ -152,32 +182,19 @@ export default function SubscribePage() {
         }
     }
 
-    const handleSelectPlan = async (planId: string) => {
-        setIsLoading(planId);
+    const handleFreePlan = async () => {
+        setIsLoading('free');
         try {
-            // This is where you would call the API to create a payment order
-            // For now, we simulate success and update the profile
-            const now = new Date();
-            let subscribedUntil: Date | null = null;
-            if (planId === 'monthly') {
-                subscribedUntil = new Date(now.setMonth(now.getMonth() + 1));
-            } else if (planId === 'half_yearly') {
-                subscribedUntil = new Date(now.setMonth(now.getMonth() + 6));
-            } else if (planId === 'yearly') {
-                subscribedUntil = new Date(now.setFullYear(now.getFullYear() + 1));
-            }
-
             await saveProfile({
                 subscription: {
-                    plan: planId,
+                    plan: 'free',
                     subscribedAt: new Date(),
-                    subscribedUntil: subscribedUntil
                 }
             });
             
             toast({
                 title: 'Plan Selected!',
-                description: "You're now being redirected to complete your profile.",
+                description: "You're on the free plan. You're being redirected to complete your profile.",
             });
 
             router.push('/profile');
@@ -190,7 +207,6 @@ export default function SubscribePage() {
             });
         } finally {
             setIsLoading(null);
-            setIsCouponDialogOpen(false);
         }
     }
 
@@ -299,7 +315,7 @@ export default function SubscribePage() {
                     <DialogClose asChild>
                          <Button variant="ghost">Cancel</Button>
                     </DialogClose>
-                    <Button onClick={handleProceedToPayment} disabled={!!isLoading}>
+                    <Button onClick={handleProceedToPayment} disabled={!!isLoading && isLoading !== 'monthly'}>
                         {isLoading && isLoading !== 'monthly' ? <Loader2 className="animate-spin" /> : 'Make a Payment'}
                     </Button>
                 </DialogFooter>
