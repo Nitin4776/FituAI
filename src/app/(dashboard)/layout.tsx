@@ -19,7 +19,8 @@ import {
   Sparkles,
   Scan,
   GlassWater,
-  Lock
+  Lock,
+  HeartPulse
 } from 'lucide-react';
 
 import {
@@ -49,6 +50,7 @@ const menuItems = [
 ];
 
 const aiMenuItems = [
+    { href: '/ai-workout-plan', label: 'AI Workout Plan', icon: HeartPulse, premium: true },
     { href: '/ai-body-scan', label: 'AI Body Scan', icon: Scan, premium: true },
     { href: '/ai-meal-plan', label: 'AI Meal Plan', icon: ClipboardCheck, premium: true },
     { href: '/blood-test', label: 'Blood Test Analysis', icon: TestTube2, premium: true },

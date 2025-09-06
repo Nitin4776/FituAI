@@ -1,4 +1,3 @@
-
 'use client';
 
 import { GoalForm } from '@/components/goal-form';
@@ -27,9 +26,11 @@ export default function GoalPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button disabled>
-            <Sparkles className="mr-2" />
-            Generate Workout Plan (Coming Soon)
+            <Button asChild>
+                <Link href="/ai-workout-plan">
+                    <Sparkles className="mr-2" />
+                    Generate Workout Plan
+                </Link>
           </Button>
         </CardContent>
       </Card>
