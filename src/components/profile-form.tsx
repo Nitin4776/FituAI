@@ -48,6 +48,7 @@ interface FitnessMetrics {
 }
 
 function cmToFeetAndInches(cm: number) {
+    if (!cm || cm <= 0) return { feet: 0, inches: 0 };
     const totalInches = cm / 2.54;
     const feet = Math.floor(totalInches / 12);
     const inches = Math.round(totalInches % 12);
@@ -99,9 +100,9 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
       name: '',
       email: '',
       phoneNumber: '',
-      height: '' as any,
-      weight: '' as any,
-      age: '' as any,
+      height: undefined,
+      weight: undefined,
+      age: undefined,
       gender: 'male', 
       activityLevel: 'sedentary',
     },
@@ -134,17 +135,21 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
   useEffect(() => {
       const heightInCm = profileForm.watch('height');
       if (heightUnit === 'ft' && heightInCm) {
-          const { feet, inches } = cmToFeetAndInches(heightInCm);
-          setFeet(feet);
-          setInches(inches);
+          const { feet: f, inches: i } = cmToFeetAndInches(heightInCm);
+          setFeet(f);
+          setInches(i);
       }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileForm.watch('height'), heightUnit])
 
   const handleFeetInchChange = (newFeet: number, newInches: number) => {
-      setFeet(newFeet);
-      setInches(newInches);
-      const cm = feetAndInchesToCm(newFeet, newInches);
+      // Treat NaN as 0 to prevent state issues on re-render
+      const cleanFeet = isNaN(newFeet) ? 0 : newFeet;
+      const cleanInches = isNaN(newInches) ? 0 : newInches;
+
+      setFeet(cleanFeet);
+      setInches(cleanInches);
+      const cm = feetAndInchesToCm(cleanFeet, cleanInches);
       profileForm.setValue('height', cm, { shouldValidate: true });
   }
 
@@ -221,7 +226,7 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
                   <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
                         <FormField control={profileForm.control} name="name" render={({ field }) => (
-                            <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Your Name" {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
                         <FormField control={profileForm.control} name="email" render={({ field }) => (
                             <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="you@example.com" {...field} disabled={!!user?.email} /></FormControl><FormMessage /></FormItem>
@@ -256,7 +261,7 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
                                 </div>
                                 <FormControl>
                                     { heightUnit === 'cm' ? (
-                                        <Input type="number" placeholder="180" {...field} value={field.value ?? ''} />
+                                        <Input type="number" placeholder="cm" {...field} value={field.value ?? ''} />
                                      ) : (
                                         <div className="grid grid-cols-2 gap-2">
                                             <Input type="number" placeholder="ft" value={feet || ''} onChange={e => handleFeetInchChange(Number(e.target.value), inches)} />
@@ -270,10 +275,10 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
                         />
                       <div className="grid sm:grid-cols-2 gap-4">
                       <FormField control={profileForm.control} name="weight" render={({ field }) => (
-                          <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="75" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="kg" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                           )}/>
                       <FormField control={profileForm.control} name="age" render={({ field }) => (
-                          <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="30" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Age</FormLabel><FormControl><Input type="number" placeholder="years" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                       )}/>
                       </div>
                       <FormField control={profileForm.control} name="gender" render={({ field }) => (
@@ -380,5 +385,3 @@ function MetricCard({ icon: Icon, label, value, description, iconClassName }: Me
         </div>
     )
 }
-
-    
