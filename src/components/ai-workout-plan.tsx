@@ -58,8 +58,8 @@ type VideoPlayerState = {
     name: string;
 } | null;
 
-const getYouTubeEmbedUrl = (url: string) => {
-    if (!url) return '';
+const getYouTubeEmbedUrl = (url: string): string | null => {
+    if (!url) return null;
     try {
         const urlObj = new URL(url);
         if (urlObj.hostname === 'youtu.be') {
@@ -74,7 +74,7 @@ const getYouTubeEmbedUrl = (url: string) => {
     } catch(e) {
         console.error("Invalid youtube url", e);
     }
-    return '';
+    return null;
 };
 
 
@@ -273,6 +273,8 @@ export function AiWorkoutPlan() {
     )
   }
 
+  const embedUrl = videoState?.url ? getYouTubeEmbedUrl(videoState.url) : null;
+
   return (
     <>
         <Card>
@@ -385,19 +387,19 @@ export function AiWorkoutPlan() {
           <DialogHeader>
             <DialogTitle>{videoState?.name || 'Exercise Video'}</DialogTitle>
           </DialogHeader>
-          <div className="aspect-video">
-            <iframe
-              src={getYouTubeEmbedUrl(videoState?.url || '')}
-              title="YouTube video player"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full rounded-md"
-            ></iframe>
-          </div>
+           {embedUrl && (
+            <div className="aspect-video">
+                <iframe
+                src={embedUrl}
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full rounded-md"
+                ></iframe>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>
   );
 }
-
-    
