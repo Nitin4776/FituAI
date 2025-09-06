@@ -69,21 +69,20 @@ const activityLevelMultipliers = {
     very_active: 1.9,
 };
 
-const proteinPerKgMultipliers = {
-    sedentary: 1.2,
-    light: 1.4,
-    moderate: 1.6,
-    active: 1.8,
-    very_active: 2.0,
-    build: 2.2, // Specific high multiplier for muscle building goal
+const activityLevelProteinIncrement = {
+    sedentary: 0.0,
+    light: 0.1,
+    moderate: 0.2,
+    active: 0.3,
+    very_active: 0.4,
 }
 
 const goalCalorieAdjustments = {
     lose: -500,
-    lose_muscle: -300, // Smaller deficit when building muscle
+    lose_muscle: -300, // Smaller deficit when building muscle to preserve mass
     maintain: 0,
     gain: 500,
-    build: 250, // Slight surplus for lean gains when maintaining
+    maintain_muscle: 250, // Slight surplus for lean gains
 };
 
 
@@ -172,24 +171,33 @@ export function GoalForm() {
   const calculateGoalMetrics = (baseMetrics: FitnessMetrics, profile: FullProfile, goal: GoalFormValues['goal'], buildMuscle: boolean): GoalMetrics => {
       const tdee = baseMetrics.bmr * activityLevelMultipliers[profile.activityLevel];
       
-      let calorieAdjustment = goalCalorieAdjustments[goal];
+      let calorieAdjustment = 0;
       if (buildMuscle) {
-          if (goal === 'lose') calorieAdjustment = goalCalorieAdjustments.lose_muscle; // smaller deficit
-          if (goal === 'maintain') calorieAdjustment = goalCalorieAdjustments.build; // lean bulk
+          if (goal === 'lose') calorieAdjustment = goalCalorieAdjustments.lose_muscle;
+          else if (goal === 'maintain') calorieAdjustment = goalCalorieAdjustments.maintain_muscle;
+          else calorieAdjustment = goalCalorieAdjustments.gain; // Same for gain
+      } else {
+          calorieAdjustment = goalCalorieAdjustments[goal];
       }
       
       const dailyCalories = Math.round(tdee + calorieAdjustment);
       
-      const proteinMultiplier = buildMuscle
-        ? proteinPerKgMultipliers.build 
-        : proteinPerKgMultipliers[profile.activityLevel];
-
-      const protein = Math.round(proteinMultiplier * profile.weight);
+      // Protein Calculation
+      const baseProteinMultiplier = buildMuscle ? 1.8 : 1.6;
+      const proteinIncrement = activityLevelProteinIncrement[profile.activityLevel];
+      const finalProteinMultiplier = baseProteinMultiplier + proteinIncrement;
+      const protein = Math.round(finalProteinMultiplier * profile.weight);
       const proteinCalories = protein * 4;
-      const fats = Math.round((dailyCalories * 0.25) / 9);
-      const fatCalories = fats * 9;
+
+      // Fat Calculation (25% of total calories)
+      const fatCalories = dailyCalories * 0.25;
+      const fats = Math.round(fatCalories / 9);
+
+      // Carb Calculation (Remaining calories)
       const carbCalories = dailyCalories - proteinCalories - fatCalories;
       const carbs = Math.round(carbCalories / 4);
+
+      // Fiber Calculation
       const fiber = Math.round((dailyCalories / 1000) * 14);
 
       return { dailyCalories, protein, carbs, fats, fiber };
