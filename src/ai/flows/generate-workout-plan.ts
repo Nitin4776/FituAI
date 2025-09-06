@@ -100,5 +100,3 @@ const generateWorkoutPlanFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
