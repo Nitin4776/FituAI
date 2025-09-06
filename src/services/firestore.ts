@@ -400,6 +400,7 @@ const defaultSummary = {
     },
     waterGlasses: 0,
     waterGoal: 8,
+    todaysMeals: [],
 };
 
 export async function getDailySummaryForToday() {
@@ -408,10 +409,11 @@ export async function getDailySummaryForToday() {
     const todayId = getTodayDocId();
     const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
     
-    const [summarySnap, waterSnap, profile] = await Promise.all([
+    const [summarySnap, waterSnap, profile, mealsSnap] = await Promise.all([
         getDoc(summaryDocRef),
         getTodaysWaterIntake(userId),
         getProfile(userId),
+        getTodaysMeals(userId),
     ]);
 
     let summaryData;
@@ -419,7 +421,6 @@ export async function getDailySummaryForToday() {
     if (summarySnap.exists()) {
         summaryData = summarySnap.data();
     } else {
-        // Create a new summary
         const newSummary = { ...defaultSummary };
         if (profile && (profile as any).dailyCalories) {
             newSummary.dailyGoal = (profile as any).dailyCalories;
@@ -434,16 +435,15 @@ export async function getDailySummaryForToday() {
         summaryData = newSummary;
     }
 
-    // Add water data to the summary
     summaryData.waterGlasses = waterSnap?.glasses || 0;
+    summaryData.todaysMeals = mealsSnap || [];
     
-    // Calculate water goal
     const GLASS_SIZE_ML = 250;
     if (profile && (profile as any).weight) {
         const recommendedIntakeMl = (profile as any).weight * 33;
         summaryData.waterGoal = Math.round(recommendedIntakeMl / GLASS_SIZE_ML);
     } else {
-        summaryData.waterGoal = 8; // Default if no weight
+        summaryData.waterGoal = 8;
     }
 
     return summaryData;
@@ -456,13 +456,11 @@ export async function updateDailySummaryWithNewGoals(goals: { dailyGoal: number,
     const todayId = getTodayDocId();
     const summaryDocRef = doc(db, 'users', userId, 'dailySummaries', todayId);
 
-    // Ensure document exists before updating, creating if necessary
     const docSnap = await getDoc(summaryDocRef);
     if (!docSnap.exists()) {
-        await getDailySummaryForToday(); // This will create it with potentially old goals
+        await getDailySummaryForToday(); 
     }
     
-    // Now set the new goals
     await setDoc(summaryDocRef, {
         dailyGoal: goals.dailyGoal,
         macroGoals: goals.macroGoals,
