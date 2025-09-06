@@ -86,7 +86,13 @@ function MacroBreakdownDialog({
                         )
                     })}
                 </div>
-                 <DialogFooter className="mt-4">
+                 <DialogFooter className="mt-4 sm:justify-between">
+                    <Button asChild variant="outline">
+                        <Link href="/log-meal" onClick={onClose}>
+                            <Utensils className="mr-2" />
+                            Log Meal
+                        </Link>
+                    </Button>
                     <Button asChild>
                         <Link href="/ai-meal-plan">
                             <Sparkles className="mr-2" />
