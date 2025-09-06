@@ -60,21 +60,24 @@ type VideoPlayerState = {
 
 const getYouTubeEmbedUrl = (url: string): string | null => {
     if (!url) return null;
+    let videoId: string | null = null;
     try {
         const urlObj = new URL(url);
         if (urlObj.hostname === 'youtu.be') {
-            return `https://www.youtube.com/embed/${urlObj.pathname.slice(1)}`;
-        }
-        if (urlObj.hostname.includes('youtube.com')) {
-            const videoId = urlObj.searchParams.get('v');
-            if (videoId) {
-                return `https://www.youtube.com/embed/${videoId}`;
+            videoId = urlObj.pathname.slice(1);
+        } else if (urlObj.hostname.includes('youtube.com')) {
+            if (urlObj.pathname.startsWith('/shorts/')) {
+                videoId = urlObj.pathname.split('/shorts/')[1];
+            } else {
+                videoId = urlObj.searchParams.get('v');
             }
         }
     } catch(e) {
         console.error("Invalid youtube url", e);
+        return null;
     }
-    return null;
+
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
 };
 
 
