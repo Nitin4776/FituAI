@@ -1,3 +1,4 @@
+
 // IMPORTANT: Replace this with your actual Firebase config
 // This is just a placeholder and will not work.
 import { initializeApp, getApps, getApp } from 'firebase/app';
