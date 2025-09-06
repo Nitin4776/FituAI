@@ -16,6 +16,7 @@ const GenerateWorkoutPlanInputSchema = z.object({
   goal: z.enum(['lose', 'maintain', 'gain']).describe("The user's primary fitness goal."),
   bodyTypeGoal: z.enum(['lean', 'toned', 'muscular']).describe("The user's desired body type."),
   buildMuscle: z.boolean().optional().describe('Whether the user has a secondary goal of building muscle.'),
+  restDay: z.enum(['any', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']).optional().describe('The user\'s preferred rest day.'),
 });
 export type GenerateWorkoutPlanInput = z.infer<typeof GenerateWorkoutPlanInputSchema>;
 
@@ -52,7 +53,7 @@ const prompt = ai.definePrompt({
   output: { schema: GenerateWorkoutPlanOutputSchema },
   prompt: `You are an expert fitness coach. Create a progressive, personalized 7-day workout plan based on the user's preferences.
 
-The plan should be well-structured, with a clear focus for each day, and include at least one to two rest days.
+The plan should be well-structured, with a clear focus for each day.
 The exercise selection should be appropriate for the user's fitness level and goals.
 
 User Preferences:
@@ -60,13 +61,15 @@ User Preferences:
 - Primary Goal: {{{goal}}}
 - Desired Body Type: {{{bodyTypeGoal}}}
 - Build Muscle: {{#if buildMuscle}}Yes{{else}}No{{/if}}
+- Preferred Rest Day: {{#if restDay}}{{{restDay}}}{{else}}Any{{/if}}
 
 Your task is to generate:
 1.  A "planName": A creative and motivating title for the workout plan.
 2.  A "planSummary": A short paragraph explaining the plan's structure and what it helps to achieve.
 3.  A "weeklySchedule": A 7-day array, starting with Monday. For each day, provide the "day", "focus", and a list of "exercises".
     - For each exercise, detail the "name", "sets", "reps", and "rest" period. Include optional "notes" for technique or intensity.
-    - If a day is a rest day, the "exercises" array should be empty.
+    - If the user specified a "restDay", ensure that day is a rest day. If they chose "any", include at least one to two rest days on logical days (e.g., not after a very intense day, spread them out).
+    - For a rest day, the "exercises" array should be empty.
 
 Ensure the plan is progressive and logical. For example, don't schedule two intense leg days back-to-back.
 `,

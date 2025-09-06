@@ -23,23 +23,24 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Dumbbell, Flame, Brain, Check, RefreshCcw } from 'lucide-react';
+import { Loader2, Sparkles, Dumbbell, Brain, Check } from 'lucide-react';
 import type { GenerateWorkoutPlanOutput } from '@/ai/flows/generate-workout-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { getProfile } from '@/services/firestore';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import Link from 'next/link';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 
 const planFormSchema = z.object({
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']),
   bodyTypeGoal: z.enum(['lean', 'toned', 'muscular']),
+  restDay: z.enum(['any', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
 });
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
 type WorkoutPlan = GenerateWorkoutPlanOutput;
+const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export function AiWorkoutPlan() {
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
@@ -53,6 +54,7 @@ export function AiWorkoutPlan() {
     defaultValues: {
         fitnessLevel: 'beginner',
         bodyTypeGoal: 'toned',
+        restDay: 'any',
     }
   });
 
@@ -92,7 +94,10 @@ export function AiWorkoutPlan() {
       }
 
       const result = await response.json();
+      // Ensure the schedule is sorted Monday-Sunday
+      result.weeklySchedule.sort((a, b) => weekDays.indexOf(a.day.toLowerCase()) - weekDays.indexOf(b.day.toLowerCase()));
       setWorkoutPlan(result);
+
       toast({
         title: "Workout Plan Generated!",
         description: "Your personalized weekly workout plan is ready.",
@@ -115,21 +120,20 @@ export function AiWorkoutPlan() {
         <CardDescription>{plan.planSummary}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="monday" className="w-full">
-            <TabsList>
-                 {plan.weeklySchedule.map(day => (
-                    <TabsTrigger key={day.day} value={day.day.toLowerCase()}>{day.day}</TabsTrigger>
-                 ))}
-            </TabsList>
-
-            {plan.weeklySchedule.map(day => (
-                <TabsContent key={day.day} value={day.day.toLowerCase()}>
+        <Accordion type="single" collapsible className="w-full space-y-2" defaultValue={weekDays[new Date().getDay() -1]}>
+             {plan.weeklySchedule.map(day => (
+                <AccordionItem value={day.day.toLowerCase()} key={day.day} className="border-b-0">
                     <Card className="bg-gradient-to-r from-primary/10 to-accent/10">
-                        <CardHeader>
-                            <CardTitle className="font-headline">{day.focus}</CardTitle>
+                        <CardHeader className='p-0'>
+                             <AccordionTrigger className='p-4 hover:no-underline'>
+                                <div className="flex justify-between w-full items-center pr-2">
+                                   <h4 className="font-semibold capitalize">{day.day}</h4>
+                                   <span className='text-sm text-muted-foreground font-semibold'>{day.focus}</span>
+                                </div>
+                            </AccordionTrigger>
                         </CardHeader>
-                        <CardContent>
-                            {day.exercises && day.exercises.length > 0 ? (
+                        <AccordionContent className='px-4 pb-4'>
+                             {day.exercises && day.exercises.length > 0 ? (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -160,11 +164,11 @@ export function AiWorkoutPlan() {
                                     <p className="text-sm text-muted-foreground">Recovery is just as important as training. Use today to rest and recharge.</p>
                                 </div>
                             )}
-                        </CardContent>
+                        </AccordionContent>
                     </Card>
-                </TabsContent>
-            ))}
-        </Tabs>
+                </AccordionItem>
+             ))}
+        </Accordion>
       </CardContent>
     </Card>
   )
@@ -202,7 +206,7 @@ export function AiWorkoutPlan() {
 
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FormField
                                 control={form.control}
                                 name="fitnessLevel"
@@ -237,6 +241,31 @@ export function AiWorkoutPlan() {
                                             <SelectItem value="lean">Lean</SelectItem>
                                             <SelectItem value="toned">Toned</SelectItem>
                                             <SelectItem value="muscular">Muscular</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="restDay"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Preferred Rest Day</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="any">Any</SelectItem>
+                                            <SelectItem value="monday">Monday</SelectItem>
+                                            <SelectItem value="tuesday">Tuesday</SelectItem>
+                                            <SelectItem value="wednesday">Wednesday</SelectItem>
+                                            <SelectItem value="thursday">Thursday</SelectItem>
+                                            <SelectItem value="friday">Friday</SelectItem>
+                                            <SelectItem value="saturday">Saturday</SelectItem>
+                                            <SelectItem value="sunday">Sunday</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
