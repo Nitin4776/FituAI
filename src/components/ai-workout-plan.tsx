@@ -23,7 +23,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Dumbbell, Brain, Check } from 'lucide-react';
+import { Loader2, Sparkles, Dumbbell, Brain, Check, User } from 'lucide-react';
 import type { GenerateWorkoutPlanOutput } from '@/ai/flows/generate-workout-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -42,11 +42,21 @@ type PlanFormValues = z.infer<typeof planFormSchema>;
 type WorkoutPlan = GenerateWorkoutPlanOutput;
 const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
+type Profile = {
+    goal: string;
+    buildMuscle: boolean;
+    age: number;
+    gender: string;
+    height: number;
+    weight: number;
+    activityLevel: string;
+}
+
 export function AiWorkoutPlan() {
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [profileGoal, setProfileGoal] = useState<{ goal: string, buildMuscle: boolean } | null>(null);
-  const [isLoadingGoal, setIsLoadingGoal] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<PlanFormValues>({
@@ -59,19 +69,27 @@ export function AiWorkoutPlan() {
   });
 
   useEffect(() => {
-    async function fetchGoal() {
-        setIsLoadingGoal(true);
-        const profile = await getProfile();
-        if (profile && profile.goal) {
-            setProfileGoal({ goal: profile.goal, buildMuscle: profile.buildMuscle || false });
+    async function fetchProfile() {
+        setIsLoadingProfile(true);
+        const profileData = await getProfile();
+        if (profileData) {
+            setProfile(profileData as Profile);
         }
-        setIsLoadingGoal(false);
+        setIsLoadingProfile(false);
     }
-    fetchGoal();
+    fetchProfile();
   }, []);
 
   const onSubmit: SubmitHandler<PlanFormValues> = async (data) => {
-    if (!profileGoal) {
+    if (!profile) {
+        toast({
+            variant: 'destructive',
+            title: 'Profile Not Found',
+            description: 'Please complete your profile on the Profile page before generating a workout plan.',
+        });
+        return;
+    }
+    if (!profile.goal) {
         toast({
             variant: 'destructive',
             title: 'Goal Not Set',
@@ -79,23 +97,30 @@ export function AiWorkoutPlan() {
         });
         return;
     }
+
     setIsLoading(true);
     setWorkoutPlan(null);
+
+    const fullPlanInput = {
+        ...data,
+        ...profile
+    };
 
     try {
       const response = await fetch('/api/generate-workout-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, ...profileGoal }),
+        body: JSON.stringify(fullPlanInput),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate workout plan');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate workout plan');
       }
 
       const result = await response.json();
       // Ensure the schedule is sorted Monday-Sunday
-      result.weeklySchedule.sort((a, b) => weekDays.indexOf(a.day.toLowerCase()) - weekDays.indexOf(b.day.toLowerCase()));
+      result.weeklySchedule.sort((a: any, b: any) => weekDays.indexOf(a.day.toLowerCase()) - weekDays.indexOf(b.day.toLowerCase()));
       setWorkoutPlan(result);
 
       toast({
@@ -120,7 +145,7 @@ export function AiWorkoutPlan() {
         <CardDescription>{plan.planSummary}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Accordion type="single" collapsible className="w-full space-y-2" defaultValue={weekDays[new Date().getDay() -1]}>
+        <Accordion type="single" collapsible className="w-full space-y-2" defaultValue={weekDays[new Date().getDay() -1] || 'monday'}>
              {plan.weeklySchedule.map(day => (
                 <AccordionItem value={day.day.toLowerCase()} key={day.day} className="border-b-0">
                     <Card className="bg-gradient-to-r from-primary/10 to-accent/10">
@@ -173,36 +198,55 @@ export function AiWorkoutPlan() {
     </Card>
   )
 
+  const renderAlert = () => {
+    if (isLoadingProfile) {
+        return <Skeleton className="h-10 w-full" />
+    }
+    if (!profile) {
+        return (
+            <Alert variant="destructive">
+                <User className="h-4 w-4" />
+                <AlertTitle>Complete Your Profile First!</AlertTitle>
+                <AlertDescription>
+                    Please go to the <Link href="/profile" className="underline font-semibold">Profile page</Link> to enter your physical details.
+                </AlertDescription>
+            </Alert>
+        )
+    }
+     if (!profile.goal) {
+        return (
+            <Alert variant="destructive">
+                <Dumbbell className="h-4 w-4" />
+                <AlertTitle>Set Your Goal First!</AlertTitle>
+                <AlertDescription>
+                    Please go to the <Link href="/goal" className="underline font-semibold">Goal page</Link> to set your primary fitness goal before generating a workout plan.
+                </AlertDescription>
+            </Alert>
+        )
+    }
+    return (
+        <Alert>
+            <Check className="h-4 w-4" />
+            <AlertTitle>Your Goal is Set!</AlertTitle>
+            <AlertDescription>
+                Your plan will be generated for your goal to <span className="font-semibold capitalize">{profile.goal} weight</span>
+                {profile.buildMuscle && <span className="font-semibold"> and build muscle</span>}.
+            </AlertDescription>
+        </Alert>
+    )
+  }
+
   return (
     <>
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Set Your Workout Preferences</CardTitle>
                 <CardDescription>
-                Tell the AI your preferences to generate a tailored plan. Your primary goal is taken from the Goal page.
+                Tell the AI your preferences to generate a tailored plan. Your primary goal and profile info are used automatically.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 {isLoadingGoal ? (
-                     <Skeleton className="h-10 w-1/2" />
-                 ) : !profileGoal ? (
-                    <Alert variant="destructive">
-                        <Dumbbell className="h-4 w-4" />
-                        <AlertTitle>Set Your Goal First!</AlertTitle>
-                        <AlertDescription>
-                            Please go to the <Link href="/goal" className="underline font-semibold">Goal page</Link> to set your primary fitness goal before generating a workout plan.
-                        </AlertDescription>
-                    </Alert>
-                 ) : (
-                    <Alert>
-                        <Check className="h-4 w-4" />
-                        <AlertTitle>Your Goal is Set!</AlertTitle>
-                        <AlertDescription>
-                            Your plan will be generated for your goal to <span className="font-semibold capitalize">{profileGoal.goal} weight</span>
-                            {profileGoal.buildMuscle && <span className="font-semibold"> and build muscle</span>}.
-                        </AlertDescription>
-                    </Alert>
-                 )}
+                 {renderAlert()}
 
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
@@ -273,7 +317,7 @@ export function AiWorkoutPlan() {
                                 )}
                             />
                         </div>
-                        <Button type="submit" disabled={isLoading || isLoadingGoal || !profileGoal} className="w-full">
+                        <Button type="submit" disabled={isLoading || isLoadingProfile || !profile || !profile.goal} className="w-full">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             {isLoading ? 'Generating Your Plan...' : 'Generate Workout Plan'}
                         </Button>
