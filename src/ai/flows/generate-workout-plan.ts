@@ -34,12 +34,14 @@ const ExerciseSchema = z.object({
   notes: z.string().optional().describe('Additional notes or tips for the exercise (e.g., "Focus on form", "Go to failure on last set").'),
   youtubeLink: z.string().url().optional().describe('A URL to a relevant YouTube video demonstrating the exercise form.'),
 });
+export type Exercise = z.infer<typeof ExerciseSchema>;
 
 const DailyWorkoutSchema = z.object({
   day: z.string().describe('The day of the week (e.g., "Monday").'),
   focus: z.string().describe('The main focus for the day (e.g., "Upper Body Strength", "Cardio & Core", "Rest Day").'),
   exercises: z.array(ExerciseSchema).optional().describe('A list of exercises for the day. This is empty for rest days.'),
 });
+export type DailyWorkout = z.infer<typeof DailyWorkoutSchema>;
 
 const GenerateWorkoutPlanOutputSchema = z.object({
   planName: z.string().describe('A catchy and motivating name for the generated workout plan.'),
@@ -98,3 +100,5 @@ const generateWorkoutPlanFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

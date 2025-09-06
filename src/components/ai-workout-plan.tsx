@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Dumbbell, Brain, Check, User, Youtube } from 'lucide-react';
-import type { GenerateWorkoutPlanOutput, DailyWorkout } from '@/ai/flows/generate-workout-plan';
+import type { GenerateWorkoutPlanOutput, DailyWorkout, Exercise } from '@/ai/flows/generate-workout-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { getProfile } from '@/services/firestore';
@@ -53,6 +53,11 @@ type Profile = {
     activityLevel: string;
 }
 
+type VideoPlayerState = {
+    url: string;
+    name: string;
+} | null;
+
 const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return '';
     try {
@@ -78,7 +83,7 @@ export function AiWorkoutPlan() {
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoState, setVideoState] = useState<VideoPlayerState>(null);
   const { toast } = useToast();
 
   const form = useForm<PlanFormValues>({
@@ -193,7 +198,7 @@ export function AiWorkoutPlan() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {day.exercises.map(ex => (
+                                            {day.exercises.map((ex: Exercise) => (
                                                 <TableRow key={ex.name}>
                                                     <TableCell className="font-medium">
                                                         {ex.name}
@@ -204,7 +209,7 @@ export function AiWorkoutPlan() {
                                                     <TableCell>{ex.rest}</TableCell>
                                                     <TableCell>
                                                         {ex.youtubeLink && (
-                                                            <Button variant="ghost" size="icon" onClick={() => setVideoUrl(ex.youtubeLink || '')}>
+                                                            <Button variant="ghost" size="icon" onClick={() => setVideoState({ url: ex.youtubeLink || '', name: ex.name })}>
                                                                 <Youtube className="text-red-600" />
                                                             </Button>
                                                         )}
@@ -375,15 +380,18 @@ export function AiWorkoutPlan() {
             )}
       </div>
 
-       <Dialog open={!!videoUrl} onOpenChange={(isOpen) => !isOpen && setVideoUrl(null)}>
-        <DialogContent className="max-w-3xl p-0">
+       <Dialog open={!!videoState} onOpenChange={(isOpen) => !isOpen && setVideoState(null)}>
+        <DialogContent className="max-w-3xl p-4">
+          <DialogHeader>
+            <DialogTitle>{videoState?.name || 'Exercise Video'}</DialogTitle>
+          </DialogHeader>
           <div className="aspect-video">
             <iframe
-              src={getYouTubeEmbedUrl(videoUrl || '')}
+              src={getYouTubeEmbedUrl(videoState?.url || '')}
               title="YouTube video player"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              className="w-full h-full"
+              className="w-full h-full rounded-md"
             ></iframe>
           </div>
         </DialogContent>
@@ -391,3 +399,5 @@ export function AiWorkoutPlan() {
     </>
   );
 }
+
+    
