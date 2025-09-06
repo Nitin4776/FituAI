@@ -32,7 +32,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Utensils, ChefHat, Flame, Drumstick, Wheat, Beef } from 'lucide-react';
+import { Loader2, Sparkles, Utensils, ChefHat, Flame, Drumstick, Wheat, Beef, Youtube } from 'lucide-react';
 import type { GenerateMealPlanOutput } from '@/ai/flows/generate-meal-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -168,7 +168,14 @@ export function AiMealPlan() {
                         </div>
 
                         <div>
-                            <h5 className="font-semibold mb-2 flex items-center gap-2"><ChefHat /> Recipe</h5>
+                            <div className="flex items-center gap-2 mb-2">
+                                <h5 className="font-semibold flex items-center gap-2"><ChefHat /> Recipe</h5>
+                                 {meal.youtubeSearchQuery && (
+                                    <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(meal.youtubeSearchQuery)}`} target="_blank" rel="noopener noreferrer">
+                                        <Youtube className="h-5 w-5 text-red-600 hover:text-red-700" />
+                                    </a>
+                                )}
+                            </div>
                             <MarkdownList content={meal.recipe} />
                         </div>
                     </div>

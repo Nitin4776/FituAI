@@ -24,6 +24,7 @@ const MealSchema = z.object({
     protein: z.number().describe('The estimated grams of protein in the meal.'),
     carbs: z.number().describe('The estimated grams of carbohydrates in the meal.'),
     fats: z.number().describe('The estimated grams of fat in the meal.'),
+    youtubeSearchQuery: z.string().optional().describe('A concise and accurate search query for YouTube to find a video demonstrating the recipe (e.g., "how to make healthy chicken salad").'),
 });
 
 const GenerateMealPlanOutputSchema = z.object({
@@ -64,6 +65,7 @@ const prompt = ai.definePrompt({
   - A simple "recipe" formatted as markdown bullet points
   - The estimated "calories"
   - The estimated "protein", "carbs", and "fats" in grams.
+  - A concise and accurate "youtubeSearchQuery" to find a recipe video on YouTube.
 
   Ensure the meal plan is appropriate for the specified diet.
   {{#if dailyCalorieGoal}}
