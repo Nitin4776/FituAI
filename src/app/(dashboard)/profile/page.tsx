@@ -132,9 +132,14 @@ export default function ProfilePage() {
                     <span>{profileData?.phoneNumber || user?.phoneNumber || 'No phone number provided'}</span>
                 </div>
                  <div className="space-y-2">
-                    <div className="flex items-center gap-4 text-sm">
-                        <Gem className="text-muted-foreground" />
-                        <h4 className='font-medium'>Subscription</h4>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-sm">
+                            <Gem className="text-muted-foreground" />
+                            <h4 className='font-medium'>Subscription</h4>
+                        </div>
+                        <Button asChild variant="outline" size="sm">
+                           <Link href="/subscribe">Change Plan</Link>
+                        </Button>
                     </div>
                      {profileData?.subscription?.plan && profileData.subscription.plan !== 'free' ? (
                         <div className="pl-8 space-y-3">

@@ -340,24 +340,6 @@ export function ProfileForm({ onProfileSave }: { onProfileSave: () => void }) {
             )}
             </CardContent>
         </Card>
-        
-        {user && (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Account Information</CardTitle>
-                </CardHeader>
-                 <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm">
-                        <Mail className="text-muted-foreground" />
-                        <span>{profileForm.getValues('email') || user.email || 'No email provided'}</span>
-                    </div>
-                     <div className="flex items-center gap-4 text-sm">
-                        <Phone className="text-muted-foreground" />
-                        <span>{profileForm.getValues('phoneNumber') || user.phoneNumber || 'No phone number provided'}</span>
-                    </div>
-                 </CardContent>
-            </Card>
-        )}
       </div>
     </div>
   );
