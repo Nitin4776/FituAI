@@ -75,14 +75,15 @@ const proteinPerKgMultipliers = {
     moderate: 1.6,
     active: 1.8,
     very_active: 2.0,
-    build: 2.2,
+    build: 2.2, // Specific high multiplier for muscle building goal
 }
 
 const goalCalorieAdjustments = {
     lose: -500,
+    lose_muscle: -300, // Smaller deficit when building muscle
     maintain: 0,
     gain: 500,
-    build: 300, 
+    build: 250, // Slight surplus for lean gains when maintaining
 };
 
 
@@ -96,7 +97,6 @@ export function GoalForm() {
     defaultValues: {
         goal: 'maintain',
         buildMuscle: false,
-        targetWeight: '' as any,
     }
   });
 
@@ -111,7 +111,7 @@ export function GoalForm() {
         goalForm.reset({
             goal: savedProfile.goal || 'maintain',
             buildMuscle: savedProfile.buildMuscle || false,
-            targetWeight: savedProfile.targetWeight || '',
+            targetWeight: savedProfile.targetWeight || undefined,
         });
       }
       setIsLoading(false);
@@ -173,10 +173,11 @@ export function GoalForm() {
       const tdee = baseMetrics.bmr * activityLevelMultipliers[profile.activityLevel];
       
       let calorieAdjustment = goalCalorieAdjustments[goal];
-      // If maintaining but want to build muscle, add a slight surplus (lean bulk)
-      if (goal === 'maintain' && buildMuscle) {
-          calorieAdjustment = 250;
+      if (buildMuscle) {
+          if (goal === 'lose') calorieAdjustment = goalCalorieAdjustments.lose_muscle; // smaller deficit
+          if (goal === 'maintain') calorieAdjustment = goalCalorieAdjustments.build; // lean bulk
       }
+      
       const dailyCalories = Math.round(tdee + calorieAdjustment);
       
       const proteinMultiplier = buildMuscle
