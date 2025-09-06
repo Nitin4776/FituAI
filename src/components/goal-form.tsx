@@ -183,7 +183,7 @@ export function GoalForm() {
       const dailyCalories = Math.round(tdee + calorieAdjustment);
       
       // Protein Calculation
-      const baseProteinMultiplier = buildMuscle ? 1.8 : 1.6;
+      const baseProteinMultiplier = buildMuscle ? 1.7 : 1.5;
       const proteinIncrement = activityLevelProteinIncrement[profile.activityLevel];
       const finalProteinMultiplier = baseProteinMultiplier + proteinIncrement;
       const protein = Math.round(finalProteinMultiplier * profile.weight);
