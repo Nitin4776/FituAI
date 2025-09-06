@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import type { MealLog, ActivityLog, SleepLog, WaterLog } from '@/lib/types';
-import { startOfDay } from 'date-fns';
+import { startOfDay, subDays } from 'date-fns';
 
 
 function getCurrentUserId() {
@@ -349,6 +349,39 @@ export async function getTodaysWaterIntake(userId?: string): Promise<WaterLog | 
     }
     return null;
 }
+
+// --- Workout Plan ---
+export async function saveWorkoutPlan(planData: any) {
+    const userId = getCurrentUserId();
+    if (!userId) throw new Error("User not authenticated");
+    const planColRef = collection(db, 'users', userId, 'workoutPlans');
+    await addDoc(planColRef, {
+        ...planData,
+        createdAt: Timestamp.now(),
+    });
+}
+
+export async function getLatestWorkoutPlan() {
+    const userId = getCurrentUserId();
+    if (!userId) return null;
+
+    const sevenDaysAgo = subDays(new Date(), 7);
+    const planColRef = collection(db, 'users', userId, 'workoutPlans');
+    const q = query(
+        planColRef,
+        orderBy('createdAt', 'desc'),
+        where('createdAt', '>=', Timestamp.fromDate(sevenDaysAgo)),
+        limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
+    }
+    return null;
+}
+
 
 // --- Daily Summary ---
 const defaultSummary = {

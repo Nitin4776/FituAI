@@ -23,11 +23,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Dumbbell, Brain, Check, User, Youtube } from 'lucide-react';
+import { Loader2, Sparkles, Dumbbell, Brain, Check, User, Youtube, RefreshCw } from 'lucide-react';
 import type { GenerateWorkoutPlanOutput, DailyWorkout, Exercise } from '@/ai/flows/generate-workout-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { getProfile } from '@/services/firestore';
+import { getProfile, saveWorkoutPlan, getLatestWorkoutPlan } from '@/services/firestore';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -52,93 +52,7 @@ type Profile = {
     activityLevel: string;
 }
 
-export function AiWorkoutPlan() {
-  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const { toast } = useToast();
-
-  const form = useForm<PlanFormValues>({
-    resolver: zodResolver(planFormSchema),
-    defaultValues: {
-        fitnessLevel: 'beginner',
-        bodyTypeGoal: 'toned',
-        restDay: 'any',
-    }
-  });
-
-  useEffect(() => {
-    async function fetchProfile() {
-        setIsLoadingProfile(true);
-        const profileData = await getProfile();
-        if (profileData) {
-            setProfile(profileData as Profile);
-        }
-        setIsLoadingProfile(false);
-    }
-    fetchProfile();
-  }, []);
-
-  const onSubmit: SubmitHandler<PlanFormValues> = async (data) => {
-    if (!profile) {
-        toast({
-            variant: 'destructive',
-            title: 'Profile Not Found',
-            description: 'Please complete your profile on the Profile page before generating a workout plan.',
-        });
-        return;
-    }
-    if (!profile.goal) {
-        toast({
-            variant: 'destructive',
-            title: 'Goal Not Set',
-            description: 'Please set your fitness goal on the Goal page before generating a workout plan.',
-        });
-        return;
-    }
-
-    setIsLoading(true);
-    setWorkoutPlan(null);
-
-    const fullPlanInput = {
-        ...data,
-        ...profile
-    };
-
-    try {
-      const response = await fetch('/api/generate-workout-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fullPlanInput),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate workout plan');
-      }
-
-      const result = await response.json();
-      // Ensure the schedule is sorted Monday-Sunday
-      result.weeklySchedule.sort((a: any, b: any) => weekDays.indexOf(a.day.toLowerCase()) - weekDays.indexOf(b.day.toLowerCase()));
-      setWorkoutPlan(result);
-
-      toast({
-        title: "Workout Plan Generated!",
-        description: "Your personalized weekly workout plan is ready.",
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: (error as Error).message,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const WorkoutPlanDisplay = ({ plan }: { plan: WorkoutPlan }) => (
+const WorkoutPlanDisplay = ({ plan }: { plan: WorkoutPlan }) => (
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="font-headline text-3xl text-primary">{plan.planName}</CardTitle>
@@ -210,6 +124,103 @@ export function AiWorkoutPlan() {
     </Card>
   )
 
+export function AiWorkoutPlan() {
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const { toast } = useToast();
+
+  const form = useForm<PlanFormValues>({
+    resolver: zodResolver(planFormSchema),
+    defaultValues: {
+        fitnessLevel: 'beginner',
+        bodyTypeGoal: 'toned',
+        restDay: 'any',
+    }
+  });
+
+  useEffect(() => {
+    async function loadInitialData() {
+        setIsLoadingProfile(true);
+        const [profileData, savedPlan] = await Promise.all([
+            getProfile(),
+            getLatestWorkoutPlan()
+        ]);
+
+        if (profileData) {
+            setProfile(profileData as Profile);
+        }
+        if (savedPlan) {
+            setWorkoutPlan(savedPlan as WorkoutPlan);
+        }
+        setIsLoadingProfile(false);
+    }
+    loadInitialData();
+  }, []);
+
+  const onSubmit: SubmitHandler<PlanFormValues> = async (data) => {
+    if (!profile) {
+        toast({
+            variant: 'destructive',
+            title: 'Profile Not Found',
+            description: 'Please complete your profile on the Profile page before generating a workout plan.',
+        });
+        return;
+    }
+    if (!profile.goal) {
+        toast({
+            variant: 'destructive',
+            title: 'Goal Not Set',
+            description: 'Please set your fitness goal on the Goal page before generating a workout plan.',
+        });
+        return;
+    }
+
+    setIsLoading(true);
+    setWorkoutPlan(null);
+
+    const fullPlanInput = {
+        ...data,
+        ...profile
+    };
+
+    try {
+      const response = await fetch('/api/generate-workout-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullPlanInput),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate workout plan');
+      }
+
+      const result = await response.json();
+      result.weeklySchedule.sort((a: any, b: any) => weekDays.indexOf(a.day.toLowerCase()) - weekDays.indexOf(b.day.toLowerCase()));
+      setWorkoutPlan(result);
+      await saveWorkoutPlan(result);
+
+      toast({
+        title: "Workout Plan Generated & Saved!",
+        description: "Your personalized weekly workout plan is ready.",
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Generation Failed',
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateNew = () => {
+    setWorkoutPlan(null);
+  }
+  
   const renderAlert = () => {
     if (isLoadingProfile) {
         return <Skeleton className="h-10 w-full" />
@@ -245,6 +256,38 @@ export function AiWorkoutPlan() {
                 {profile.buildMuscle && <span className="font-semibold"> and build muscle</span>}.
             </AlertDescription>
         </Alert>
+    )
+  }
+
+  if (isLoadingProfile) {
+    return (
+        <div className="space-y-4">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-96 w-full" />
+        </div>
+    )
+  }
+
+  if (isLoading) {
+     return (
+        <div className="flex flex-col items-center justify-center text-center space-y-4 py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Crafting your personalized workout plan...<br/>This can take up to a minute.</p>
+        </div>
+    )
+  }
+
+  if (workoutPlan) {
+    return (
+        <div className="space-y-6">
+            <div className="text-center">
+                <Button onClick={handleGenerateNew} variant="outline">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Generate New Plan
+                </Button>
+            </div>
+            <WorkoutPlanDisplay plan={workoutPlan} />
+        </div>
     )
   }
 
@@ -337,23 +380,6 @@ export function AiWorkoutPlan() {
                 </Form>
             </CardContent>
         </Card>
-        
-        <div className="mt-8">
-            {isLoading ? (
-                <div className="flex flex-col items-center justify-center text-center space-y-4">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                    <p className="text-muted-foreground">Crafting your personalized workout plan...<br/>This can take up to a minute.</p>
-                </div>
-            ) : workoutPlan ? (
-                <WorkoutPlanDisplay plan={workoutPlan} />
-            ) : (
-                <div className="text-center py-20 text-muted-foreground">
-                    <Dumbbell className="h-12 w-12 mx-auto" />
-                    <p className="mt-4 text-lg">Your AI-generated workout plan will appear here.</p>
-                    <p>Set your preferences above to get started.</p>
-                </div>
-            )}
-      </div>
     </>
   );
 }
