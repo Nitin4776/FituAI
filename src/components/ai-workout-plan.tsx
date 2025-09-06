@@ -23,14 +23,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Dumbbell, Brain, Check, User } from 'lucide-react';
-import type { GenerateWorkoutPlanOutput } from '@/ai/flows/generate-workout-plan';
+import { Loader2, Sparkles, Dumbbell, Brain, Check, User, Youtube } from 'lucide-react';
+import type { GenerateWorkoutPlanOutput, DailyWorkout } from '@/ai/flows/generate-workout-plan';
 import { Skeleton } from './ui/skeleton';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { getProfile } from '@/services/firestore';
 import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 
 const planFormSchema = z.object({
   fitnessLevel: z.enum(['beginner', 'intermediate', 'advanced']),
@@ -52,11 +53,32 @@ type Profile = {
     activityLevel: string;
 }
 
+const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return '';
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname === 'youtu.be') {
+            return `https://www.youtube.com/embed/${urlObj.pathname.slice(1)}`;
+        }
+        if (urlObj.hostname.includes('youtube.com')) {
+            const videoId = urlObj.searchParams.get('v');
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}`;
+            }
+        }
+    } catch(e) {
+        console.error("Invalid youtube url", e);
+    }
+    return '';
+};
+
+
 export function AiWorkoutPlan() {
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<PlanFormValues>({
@@ -146,7 +168,7 @@ export function AiWorkoutPlan() {
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full space-y-2" defaultValue={weekDays[new Date().getDay() -1] || 'monday'}>
-             {plan.weeklySchedule.map(day => (
+             {plan.weeklySchedule.map((day: DailyWorkout) => (
                 <AccordionItem value={day.day.toLowerCase()} key={day.day} className="border-b-0">
                     <Card className="bg-gradient-to-r from-primary/10 to-accent/10">
                         <CardHeader className='p-0'>
@@ -159,29 +181,39 @@ export function AiWorkoutPlan() {
                         </CardHeader>
                         <AccordionContent className='px-4 pb-4'>
                              {day.exercises && day.exercises.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Exercise</TableHead>
-                                            <TableHead>Sets</TableHead>
-                                            <TableHead>Reps</TableHead>
-                                            <TableHead>Rest</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {day.exercises.map(ex => (
-                                            <TableRow key={ex.name}>
-                                                <TableCell className="font-medium">
-                                                    {ex.name}
-                                                    {ex.notes && <p className="text-xs text-muted-foreground italic mt-1">{ex.notes}</p>}
-                                                </TableCell>
-                                                <TableCell>{ex.sets}</TableCell>
-                                                <TableCell>{ex.reps}</TableCell>
-                                                <TableCell>{ex.rest}</TableCell>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Exercise</TableHead>
+                                                <TableHead>Sets</TableHead>
+                                                <TableHead>Reps</TableHead>
+                                                <TableHead>Rest</TableHead>
+                                                <TableHead>Video</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {day.exercises.map(ex => (
+                                                <TableRow key={ex.name}>
+                                                    <TableCell className="font-medium">
+                                                        {ex.name}
+                                                        {ex.notes && <p className="text-xs text-muted-foreground italic mt-1">{ex.notes}</p>}
+                                                    </TableCell>
+                                                    <TableCell>{ex.sets}</TableCell>
+                                                    <TableCell>{ex.reps}</TableCell>
+                                                    <TableCell>{ex.rest}</TableCell>
+                                                    <TableCell>
+                                                        {ex.youtubeLink && (
+                                                            <Button variant="ghost" size="icon" onClick={() => setVideoUrl(ex.youtubeLink || '')}>
+                                                                <Youtube className="text-red-600" />
+                                                            </Button>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center text-center py-8">
                                     <Brain className="h-10 w-10 text-primary mb-2" />
@@ -342,6 +374,20 @@ export function AiWorkoutPlan() {
                 </div>
             )}
       </div>
+
+       <Dialog open={!!videoUrl} onOpenChange={(isOpen) => !isOpen && setVideoUrl(null)}>
+        <DialogContent className="max-w-3xl p-0">
+          <div className="aspect-video">
+            <iframe
+              src={getYouTubeEmbedUrl(videoUrl || '')}
+              title="YouTube video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            ></iframe>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
