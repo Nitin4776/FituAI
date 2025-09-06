@@ -15,9 +15,11 @@ import { Loader2, Flame, Wheat, Drumstick, Beef } from 'lucide-react';
 import { getProfile, saveProfile, updateDailySummaryWithNewGoals } from '@/services/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Checkbox } from './ui/checkbox';
 
 const goalSchema = z.object({
-    goal: z.enum(['lose', 'maintain', 'gain', 'build']),
+    goal: z.enum(['lose', 'maintain', 'gain']),
+    buildMuscle: z.boolean().default(false),
     targetWeight: z.coerce.number().optional(),
 }).refine(data => {
     if(data.goal === 'lose' || data.goal === 'gain') {
@@ -37,7 +39,8 @@ type FullProfile = {
   age: number;
   gender: 'male' | 'female';
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  goal: 'lose' | 'maintain' | 'gain' | 'build';
+  goal: 'lose' | 'maintain' | 'gain';
+  buildMuscle?: boolean;
   targetWeight?: number;
   dailyCalories?: number;
   protein?: number;
@@ -72,14 +75,14 @@ const proteinPerKgMultipliers = {
     moderate: 1.6,
     active: 1.8,
     very_active: 2.0,
-    build: 2.2, // Higher protein for muscle building
+    build: 2.2,
 }
 
 const goalCalorieAdjustments = {
     lose: -500,
     maintain: 0,
     gain: 500,
-    build: 300, // Moderate surplus for muscle building
+    build: 300, 
 };
 
 
@@ -92,6 +95,7 @@ export function GoalForm() {
     resolver: zodResolver(goalSchema),
     defaultValues: {
         goal: 'maintain',
+        buildMuscle: false,
         targetWeight: '' as any,
     }
   });
@@ -106,6 +110,7 @@ export function GoalForm() {
         setProfile(savedProfile);
         goalForm.reset({
             goal: savedProfile.goal || 'maintain',
+            buildMuscle: savedProfile.buildMuscle || false,
             targetWeight: savedProfile.targetWeight || '',
         });
       }
@@ -125,7 +130,7 @@ export function GoalForm() {
     }
     try {
         const metrics = calculateBMR(profile);
-        const goalMetrics = calculateGoalMetrics(metrics, profile, data.goal);
+        const goalMetrics = calculateGoalMetrics(metrics, profile, data.goal, data.buildMuscle);
 
         const fullProfileData: FullProfile = {
             ...profile,
@@ -164,27 +169,26 @@ export function GoalForm() {
     return { bmr };
   }
   
-  const calculateGoalMetrics = (baseMetrics: FitnessMetrics, profile: FullProfile, goal: GoalFormValues['goal']): GoalMetrics => {
+  const calculateGoalMetrics = (baseMetrics: FitnessMetrics, profile: FullProfile, goal: GoalFormValues['goal'], buildMuscle: boolean): GoalMetrics => {
       const tdee = baseMetrics.bmr * activityLevelMultipliers[profile.activityLevel];
-      const dailyCalories = Math.round(tdee + goalCalorieAdjustments[goal]);
       
-      const proteinMultiplier = goal === 'build' 
+      let calorieAdjustment = goalCalorieAdjustments[goal];
+      // If maintaining but want to build muscle, add a slight surplus (lean bulk)
+      if (goal === 'maintain' && buildMuscle) {
+          calorieAdjustment = 250;
+      }
+      const dailyCalories = Math.round(tdee + calorieAdjustment);
+      
+      const proteinMultiplier = buildMuscle
         ? proteinPerKgMultipliers.build 
         : proteinPerKgMultipliers[profile.activityLevel];
 
-      // 1. Calculate Protein (based on body weight and activity level/goal)
       const protein = Math.round(proteinMultiplier * profile.weight);
       const proteinCalories = protein * 4;
-
-      // 2. Calculate Fats (25% of total calories)
       const fats = Math.round((dailyCalories * 0.25) / 9);
       const fatCalories = fats * 9;
-
-      // 3. Calculate Carbohydrates (the remainder)
       const carbCalories = dailyCalories - proteinCalories - fatCalories;
       const carbs = Math.round(carbCalories / 4);
-
-      // 4. Calculate Fiber
       const fiber = Math.round((dailyCalories / 1000) * 14);
 
       return { dailyCalories, protein, carbs, fats, fiber };
@@ -201,14 +205,19 @@ export function GoalForm() {
      }
   }, [profile]);
   
-  const getGoalDescription = (goal: string) => {
+  const getGoalDescription = (goal: string, buildMuscle?: boolean) => {
+    let description = '';
     switch(goal) {
-      case 'lose': return 'lose weight.';
-      case 'maintain': return 'maintain your weight.';
-      case 'gain': return 'gain weight.';
-      case 'build': return 'build muscle.';
+      case 'lose': description = 'lose weight'; break;
+      case 'maintain': description = 'maintain your weight'; break;
+      case 'gain': description = 'gain weight'; break;
       default: return '';
     }
+    if (buildMuscle) {
+        description += ' and build muscle';
+    }
+    description += '.';
+    return description;
   }
 
   if(isLoading) {
@@ -230,8 +239,8 @@ export function GoalForm() {
               <Form {...goalForm}>
                   <form onSubmit={goalForm.handleSubmit(onGoalSubmit)} className="space-y-6">
                       <FormField control={goalForm.control} name="goal" render={({ field }) => (
-                          <FormItem className="space-y-3"><FormLabel>Your Goal</FormLabel><FormControl>
-                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                          <FormItem className="space-y-3"><FormLabel>Primary Goal</FormLabel><FormControl>
+                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                   <FormItem>
                                       <FormControl><RadioGroupItem value="lose" id="lose" className="sr-only peer" /></FormControl>
                                       <Label htmlFor="lose" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">Lose Weight</Label>
@@ -244,13 +253,31 @@ export function GoalForm() {
                                       <FormControl><RadioGroupItem value="gain" id="gain" className="sr-only peer" /></FormControl>
                                       <Label htmlFor="gain" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">Gain Weight</Label>
                                   </FormItem>
-                                   <FormItem>
-                                      <FormControl><RadioGroupItem value="build" id="build" className="sr-only peer" /></FormControl>
-                                      <Label htmlFor="build" className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">Build Muscle</Label>
-                                  </FormItem>
                               </RadioGroup>
                           </FormControl><FormMessage /></FormItem>
                       )}/>
+
+                      <FormField
+                        control={goalForm.control}
+                        name="buildMuscle"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                                <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                Also build muscle?
+                                </FormLabel>
+                                <FormMessage />
+                            </div>
+                            </FormItem>
+                        )}
+                        />
+
                       {(goal === 'lose' || goal === 'gain') && (
                           <FormField control={goalForm.control} name="targetWeight" render={({ field }) => (
                               <FormItem><FormLabel>Target Weight (kg)</FormLabel><FormControl><Input type="number" placeholder="kg" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -265,12 +292,12 @@ export function GoalForm() {
       <Card>
           <CardHeader>
               <CardTitle className='text-xl font-headline'>Your Daily Goals</CardTitle>
-              {profile?.goal && <CardDescription>Daily targets to help you {getGoalDescription(profile.goal)}</CardDescription>}
+              {profile?.goal && <CardDescription>Daily targets to help you {getGoalDescription(profile.goal, profile.buildMuscle)}</CardDescription>}
           </CardHeader>
           <CardContent className='space-y-4'>
               {goalMetrics ? (
                   <>
-                      <MetricCard icon={Flame} label="Daily Calorie Goal" value={`${goalMetrics.dailyCalories} kcal`} description={`To ${getGoalDescription(profile!.goal)}`} iconClassName="text-orange-500" />
+                      <MetricCard icon={Flame} label="Daily Calorie Goal" value={`${goalMetrics.dailyCalories} kcal`} description={`To ${getGoalDescription(profile!.goal, profile!.buildMuscle)}`} iconClassName="text-orange-500" />
                       <MetricCard icon={Drumstick} label="Protein" value={`${goalMetrics.protein}g`} description="Essential for muscle repair and growth." iconClassName="text-red-500" />
                       <MetricCard icon={Wheat} label="Carbohydrates" value={`${goalMetrics.carbs}g`} description="Your body's main source of energy." iconClassName="text-yellow-500" />
                       <MetricCard icon={Beef} label="Fats" value={`${goalMetrics.fats}g`} description="Important for hormone production and health." iconClassName="text-purple-500" />
