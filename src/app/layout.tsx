@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -7,11 +7,14 @@ export const metadata: Metadata = {
   title: "FituAI",
   description: "Your personalized AI-powered health and fitness companion.",
   manifest: "/manifest.json",
-  themeColor: [
+};
+
+export const viewport: Viewport = {
+   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FFF9F5" },
     { media: "(prefers-color-scheme: dark)", color: "#040716" },
   ],
-};
+}
 
 export default function RootLayout({
   children,
